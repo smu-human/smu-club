@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 - 상명대학교 동아리</title>
-    <link rel="stylesheet" href="/../static/styles.css">
+    <link rel="stylesheet" th:href="@{/styles.css}">
 </head>
 <body>
     <!-- Header -->
     <div class="page-header">
         <div class="container">
             <div class="page-header-content">
-                <a href="index.html" class="back-btn">
+                <a th:href="@{/}" class="back-btn">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M19 12H5"/>
                         <path d="M12 19l-7-7 7-7"/>
@@ -47,9 +47,9 @@
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                             <circle cx="12" cy="7" r="4"/>
                         </svg>
-                        <input type="text" id="studentId" placeholder="202010823" required>
+                        <input type="text" id="studentId" placeholder="학번을 입력해주세요" required>
                     </div>
-                </div>
+                </div>ㅌ₩
 
                 <!-- 비밀번호 입력 -->
                 <div class="form-group">
@@ -90,7 +90,7 @@
                 </button>
 
                 <!-- 회원가입 버튼 -->
-                <a href="student-auth.html" class="btn btn-outline btn-large">
+                <a href="/register" th:href="@{/register}" class="btn btn-outline btn-large">
                     회원가입 (학생 인증)
                 </a>
             </form>
@@ -106,6 +106,7 @@
     <!-- Footer -->
     <div class="page-footer">
         <p>© 2024 SMUNITY. 상명대학교 동아리 플랫폼</p>
+        <p><a href="https://github.com/smu-human/smu-club">Github</a></p>
     </div>
 
     <script src="login.js"></script>
