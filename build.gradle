@@ -6,9 +6,12 @@ plugins {
 
 group = 'com.smuclub'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
 
+java{
+	toolchain{
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+}
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
