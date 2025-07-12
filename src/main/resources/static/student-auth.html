@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학생 인증 - 상명대학교 동아리</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-content">
+                <button class="back-btn" onclick="history.back()">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M19 12H5"/>
+                        <path d="M12 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <h1>학생 인증</h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- 인증 완료 화면 -->
+    <div class="success-screen" id="successScreen" style="display: none;">
+        <div class="card">
+            <div class="success-content">
+                <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22,4 12,14.01 9,11.01"/>
+                </svg>
+                <h2>인증 완료!</h2>
+                <p>학생 인증이 성공적으로 완료되었습니다.<br>이제 동아리 사이트를 이용하실 수 있습니다.</p>
+                <button class="btn btn-primary btn-large" onclick="history.back()">
+                    돌아가기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 인증 폼 -->
+    <div class="form-container" id="authForm">
+        <div class="card">
+            <div class="card-header">
+                <div class="auth-icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <h3>학생 인증</h3>
+                <p>샘물 통합로그인을 통해 재학생 인증을 진행합니다.</p>
+                <p class="auth-subtitle">상명대학교 샘물포털시스템학번/비밀번호</p>
+            </div>
+
+            <form class="auth-form" id="studentAuthForm">
+                <div class="form-group">
+                    <input type="text" id="authStudentId" placeholder="학번을 입력하세요" required>
+                </div>
+
+                <div class="form-group">
+                    <input type="password" id="authPassword" placeholder="비밀번호를 입력하세요" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="agreeAuth" required>
+                        <span class="checkmark"></span>
+                        상명대학교 샘물포털시스템을 통한 학생 정보 확인에 동의합니다. (학번, 이름, 학과, 재학상태)
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-large" id="authBtn">
+                    <span id="authText">인증하기</span>
+                    <div class="spinner" id="authSpinner" style="display: none;"></div>
+                </button>
+            </form>
+
+            <div class="form-footer">
+                <p>인증 완료 후 자동으로 회원가입이 처리됩니다</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="student-auth.js"></script>
+</body>
+</html>
