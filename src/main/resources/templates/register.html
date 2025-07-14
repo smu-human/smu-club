@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>학생 인증 - 상명대학교 동아리</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" th:href="@{/styles.css}">
 </head>
 <body>
     <!-- Header -->
@@ -66,7 +66,7 @@
                     <label class="checkbox-label">
                         <input type="checkbox" id="agreeAuth" required>
                         <span class="checkmark"></span>
-                        상명대학교 샘물포털시스템을 통한 학생 정보 확인에 동의합니다. (학번, 이름, 학과, 재학상태)
+                        상명대학교 샘물포털시스템을 통해 <strong>본인 확인 및 학생 정보(학번, 이름, 학과, 재학상태) 조회에 동의</strong>합니다.
                     </label>
                 </div>
 

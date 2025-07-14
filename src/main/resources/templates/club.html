@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title text="${club.name + ' - 상명대학교 동아리'}">동아리명 - 상명대학교 동아리</title>
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body>
+<div class="page-header">
+    <div class="container">
+        <div class="page-header-content">
+            <a th:href="@{/}" class="back-btn">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 12H5"/>
+                    <path d="M12 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <h1 text="${club.name}">동아리명</h1>
+            <a href="#" class="btn btn-primary ml-auto">가입 신청</a>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="container">
+        <div class="card">
+            <div class="club-detail-header">
+                <h2 th:text="${club.name}">동아리명</h2>
+                <p class="club-category" th:text="${club.category}">#학술 #봉사</p>
+
+                <div class="club-meta">
+                    <span text="${'회장: ' + club.leaderName}">회장: 김스뮤</span>
+                    <span text="${'연락처: ' + club.contact}">연락처: 010-XXXX-XXXX</span>
+                    <span text="${'모집 기간: ' + club.recruitPeriod}">모집 기간: 2025.03.05 - 2025.03.06</span>
+                </div>
+                <div class="club-meta">
+                    <span text="${'활동 요일: ' + club.activityDays}">활동 요일: 월, 수, 금</span>
+                    <span text="${'활동 시간: ' + club.activityTime}">활동 시간: 18:00 - 20:00</span>
+                </div>
+                <p class="club-status" classappend="${club.status == '모집중' ? 'recruiting' : ''}" th:text="${club.status}">모집중</p>
+            </div>
+
+            <div class="club-detail-tabs">
+                <button class="btn btn-ghost active">동아리 소개</button>
+                <button class="btn btn-ghost">활동 피드</button>
+            </div>
+
+            <div class="club-detail-section">
+                <h3>동아리 소개 이미지</h3>
+                <div class="club-image-gallery">
+                    <img src="@{${club.imageUrl}}" alt="동아리 이미지" class="club-detail-image">
+                </div>
+            </div>
+
+            <div class="club-detail-section">
+                <h3>우리 동아리를 소개할게요</h3>
+                <p text="${club.description}"></p>
+
+                <h4 if="${club.activityExamples != null and !club.activityExamples.isEmpty()}">주요 활동 예시:</h4>
+                <ul if="${club.activityExamples != null and !club.activityExamples.isEmpty()}">
+                    <li each="example : ${club.activityExamples}" text="${example}"></li>
+                </ul>
+
+                <h4 if="${club.idealMembers != null and !club.idealMembers.isEmpty()}">이런 친구들과 함께하고 싶어요:</h4>
+                <ul if="${club.idealMembers != null and !club.idealMembers.isEmpty()}">
+                    <li each="member : ${club.idealMembers}" text="${member}"></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-footer">
+    <p>© 2024 SMUNITY. 상명대학교 동아리 플랫폼</p>
+</div>
+</body>
+</html>
+
+<style>
+    /* club.html 전용 스타일 */
+    .club-detail-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .club-detail-header h2 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .club-category {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-bottom: 1rem;
+    }
+
+    .club-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+
+    .club-status {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #d1d5db;
+        color: #374151;
+        margin-top: 1rem;
+    }
+
+    .club-status.recruiting {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .club-detail-tabs {
+        display: flex;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0 1.5rem;
+    }
+
+    .club-detail-tabs .btn {
+        border-radius: 0;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        color: #6b7280;
+        border-bottom: 2px solid transparent;
+    }
+
+    .club-detail-tabs .btn.active {
+        color: #2563eb;
+        border-bottom-color: #2563eb;
+    }
+
+    .club-detail-section {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .club-detail-section:last-child {
+        border-bottom: none;
+    }
+
+    .club-detail-section h3, .club-detail-section h4 {
+        font-size: 1.125rem;
+        font-weight: bold;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+
+    .club-detail-section p {
+        font-size: 0.9375rem; /* 15px */
+        line-height: 1.7;
+        color: #374151;
+        margin-bottom: 1rem;
+    }
+
+    .club-detail-section ul {
+        list-style: disc;
+        padding-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .club-detail-section ul li {
+        font-size: 0.9375rem; /* 15px */
+        line-height: 1.6;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+
+    .club-image-gallery {
+        margin-bottom: 1.5rem;
+    }
+
+    .club-detail-image {
+        width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        object-fit: cover;
+        max-height: 400px; /* 적절한 높이 제한 */
+    }
+</style>
