@@ -29,8 +29,25 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	runtimeOnly 'com.h2database:h2'
+	runtimeOnly 'org.postgresql:postgresql'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.register('runJapTestMain', JavaExec) {
+	group = "application" // Gradle tasks 명령 시 'Application tasks' 그룹 아래 표시
+	description = "Runs the JapTest.main() method directly." // 태스크 설명
+
+	// 'main' 소스 세트의 런타임 클래스패스를 사용합니다.
+	// 이는 'implementation' 및 'runtimeOnly' 종속성들이 클래스패스에 포함되도록 합니다.
+	classpath = sourceSets.main.runtimeClasspath
+
+	// 실행하려는 main 메서드를 포함하는 클래스의 완전한 이름(패키지 포함)
+	mainClass = 'com.smuclub.smu_club.JapTest'
+	// 예시: 패키지가 com.smuclub.smu_club 이고 클래스 이름이 JapTest 라면 위와 같이 작성
 }

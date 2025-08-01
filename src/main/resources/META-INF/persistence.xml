@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.2" xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
+             http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd">
+
+    <persistence-unit name="testTest">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>com.smuclub.smu_club.domain.Answer</class>
+        <class>com.smuclub.smu_club.domain.Club</class>
+        <class>com.smuclub.smu_club.domain.ClubMember</class>
+        <class>com.smuclub.smu_club.domain.Member</class>
+        <class>com.smuclub.smu_club.domain.Question</class>
+
+        <properties>
+            <!-- 필수 속성 -->
+            <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <property name="javax.persistence.jdbc.user" value="test"/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+            <!--
+            해당 경로로 로컬 생성 먼저 해줘야됨
+            1. smu-club/db 디렉토리를 만들어놓고 test.mv.db를 생성함.
+            2. .gitignore를 통해 *.mv.db는 커밋되지 않도록 설정해둠.
+            3. 나의 디렉토리는 /Users/sjy/documents/github/smu-club/db 이러하여
+                h2 JDBC URL : jdbc:h2:~/documents/github/smu-club/db/test 를 통해 test.mv.db를 생성 후
+                jdbc:h2:tcp://localhost/~/documents/github/smu-club/db/test 를 통해 tcp 통신으로 로컬 서버를 생성해서 테스트 함.
+            4. 이러한 이유로 자신의 디렉토리를 참고하여 최종적으로 "smu-club/db/test" 까지 오게하도록하자.
+            -->
+            <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/documents/github/smu-club/db/test"/>
+
+            <!--Dialect는 사투리라는 뜻이다. JPA가 특정 데이터베이스에 종속하지 않기 때문에 사용하는 데이터베이스에 따라 문법이 조금 달라지는 경우가 생겨서 H2Dialect 라고 정의하고 H2관련 문법을 사용한다는 것이다.-->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+
+            <!-- 옵션 -->
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.use_sql_comments"  value="true"/>
+            <property name="hibernate.hbm2ddl.auto" value="create"/> <!--value가 create이면 애플리케이션 시작시 기본 테이블을 모두 drop한다.-->
+        </properties>
+    </persistence-unit>
+
+</persistence>
