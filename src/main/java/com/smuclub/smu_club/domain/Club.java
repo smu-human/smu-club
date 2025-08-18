@@ -23,7 +23,7 @@ public class Club {
     @OneToMany(mappedBy ="club")
     private List<Answer> answers = new ArrayList<>();
 
-    @OneToOne(mappedBy ="club")
+    @OneToOne(mappedBy ="club", fetch =FetchType.LAZY)
     private Question questions;
 
     @Column(nullable = false)

@@ -17,7 +17,7 @@ public class Question {
     @Column(name = "question_id")
     private int id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id")
     private Club club;
 

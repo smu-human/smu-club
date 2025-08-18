@@ -14,12 +14,12 @@ public class ClubMember {
     private ClubMemberId clubMemberId;
 
     @MapsId("memberId")
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
     @MapsId("clubId")
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id")
     private Club club;
 

@@ -17,17 +17,17 @@ public class Answer {
     //Member/Club/Question 입장 : 하나의 Member/Club/Question는 여러 Answer에 속한다.
     //고로 @ManyToOne을 사용한다.
     @MapsId("memberId")
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
     @MapsId("clubId")
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id")
     private Club club;
 
     @MapsId("questionId")
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id")
     private Question question;
 
