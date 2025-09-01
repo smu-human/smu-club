@@ -9,7 +9,6 @@ import java.time.LocalDate;
 
 @Entity
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 public class ClubMember {
 
