@@ -1,0 +1,113 @@
+/* FRONTEND/css/club.css */
+/* club.html 전용 스타일 */
+
+.club-detail-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.club-detail-header h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.club-category {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.club-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.club-status {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #d1d5db;
+  color: #374151;
+  margin-top: 1rem;
+}
+
+.club-status.recruiting {
+  background: #3b82f6;
+  color: white;
+}
+
+.club-detail-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 1.5rem;
+}
+
+.club-detail-tabs .btn {
+  border-radius: 0;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+}
+
+.club-detail-tabs .btn.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+.club-detail-section {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.club-detail-section:last-child {
+  border-bottom: none;
+}
+
+.club-detail-section h3,
+.club-detail-section h4 {
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: #111827;
+  margin-bottom: 1rem;
+}
+
+.club-detail-section p {
+  font-size: 0.9375rem; /* 15px */
+  line-height: 1.7;
+  color: #374151;
+  margin-bottom: 1rem;
+}
+
+.club-detail-section ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.club-detail-section ul li {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.club-image-gallery {
+  margin-bottom: 1.5rem;
+}
+
+.club-detail-image {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  max-height: 400px;
+}
