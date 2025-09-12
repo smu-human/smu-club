@@ -1,16 +1,41 @@
 /* ========== Header ========== */
+:root {
+  /* 헤더(로고+검색+정렬) 전체 높이 — JS로 실제 값과 동기화됨 */
+  --header-h: 220px;
+  /* 카드 영역 배경색 */
+  --below-bg: #eff3ff;
+}
+
+/* 상단 박스 만큼은 흰색, 그 아래는 전부 채우는 색 */
+html,
+body {
+  height: 100%;
+}
+body {
+  background: #e9f5ff;
+}
+
+/* 메인/카드 영역은 투명해야 아래 배경이 보임 */
+.main-content {
+  background: transparent;
+}
+.container {
+  background: transparent;
+}
+
 .header-logo img.logo-img {
   width: 200px;
   display: block;
 }
 .header {
-  background: linear-gradient(to bottom, #b4a3ff, #ebe6ff);
+  background: #ffffff;
   position: sticky;
   top: 0;
   z-index: 10;
   border-bottom: 1px solid #e5e7eb;
   border-bottom-left-radius: 15px;
   border-bottom-right-radius: 15px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 }
 .header-content {
   display: flex;
@@ -45,7 +70,7 @@
   background: #f9fafb;
 }
 .btn-primary {
-  background: #2563eb;
+  background: #0e207f;
   color: #fff;
   padding: 5px 8px;
 }
@@ -156,18 +181,20 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
+  max-width: calc(380px * 3); /* 카드 3개 + 간격 */
+  margin: 0 auto; /* 가운데 정렬 */
 }
 
 /* ========== Card (설명 중심, 작은 로고) ========== */
 .club-card.desc-first {
-  background: #fff;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
   transition: box-shadow 0.3s;
   cursor: pointer;
 }
@@ -182,9 +209,9 @@
   gap: 12px;
 }
 .club-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
   object-fit: cover;
   border: 1px solid #e5e7eb;
   background: #f3f4f6;
@@ -194,6 +221,7 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  padding-left: 25px;
 }
 .club-name {
   font-size: 1rem;
@@ -406,6 +434,12 @@
   font-size: 0.875rem;
   color: #6b7280;
   line-height: 1.6;
+}
+/* 카드 앵커 기본 스타일 리셋 */
+.club-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
 }
 
 /* ========== Responsive ========== */

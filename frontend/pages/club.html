@@ -1,17 +1,22 @@
-<!-- FRONTEND/pages/club.html -->
 <!DOCTYPE html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>동아리명 - 상명대학교 동아리</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>동아리 상세</title>
+    <!-- 공통 + 페이지 전용 스타일 -->
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/club.css" />
   </head>
   <body>
-    <div class="page-header">
+    <!-- ===== 상단 헤더 (로그인/회원가입과 동일 구조) ===== -->
+    <div class="page-header sticky-header safe-area-top">
       <div class="container">
         <div class="page-header-content">
+          <!-- 로그인 페이지와 동일한 back-btn -->
           <a href="../index.html" class="back-btn" aria-label="뒤로가기">
             <svg
               class="icon"
@@ -23,73 +28,71 @@
               <path d="M12 19l-7-7 7-7" />
             </svg>
           </a>
-          <h1>동아리명</h1>
-          <a href="#" class="btn btn-primary ml-auto">가입 신청</a>
+          <!-- 제목 -->
+          <h1 id="clubTitle">동아리명</h1>
+          <!-- 필요시 우측 버튼 -->
+          <a href="#" class="apply_link" id="applyLink">가입 신청</a>
         </div>
       </div>
     </div>
 
-    <div class="main-content">
+    <!-- ===== 메인 ===== -->
+    <main class="club_main safe-area-padding">
       <div class="container">
-        <div class="card">
-          <div class="club-detail-header">
-            <h2>동아리명</h2>
-            <p class="club-category">#학술 #봉사</p>
-
-            <div class="club-meta">
-              <span>회장: 김스뮤</span>
-              <span>연락처: 010-XXXX-XXXX</span>
-              <span>모집 기간: 2025.03.05 - 2025.03.06</span>
-            </div>
-            <div class="club-meta">
-              <span>활동 요일: 월, 수, 금</span>
-              <span>활동 시간: 18:00 - 20:00</span>
-            </div>
-            <p class="club-status recruiting">모집중</p>
+        <!-- 갤러리: 여러 장 좌우 스와이프 -->
+        <section class="gallery card">
+          <div class="carousel" id="carousel">
+            <!-- JS가 <img> 여러개 삽입 -->
           </div>
+          <button class="nav prev" id="prevBtn" aria-label="이전 이미지">
+            ‹
+          </button>
+          <button class="nav next" id="nextBtn" aria-label="다음 이미지">
+            ›
+          </button>
+          <div class="dots" id="dots"></div>
+        </section>
 
-          <div class="club-detail-tabs">
-            <button class="btn btn-ghost active">동아리 소개</button>
-            <button class="btn btn-ghost">활동 피드</button>
-          </div>
+        <!-- 상단 메타 -->
+        <section class="club_meta card">
+          <ul class="info_list">
+            <li>
+              <span class="label">회장</span>
+              <span class="val" id="leaderName">김스뮤</span>
+            </li>
+            <li>
+              <span class="label">연락처</span>
+              <span class="val" id="contact">010-XXXX-XXXX</span>
+            </li>
+            <li>
+              <span class="label">모집 기간</span>
+              <span class="val" id="period">2025.03.05 ~ 2025.03.06</span>
+            </li>
+            <li>
+              <span class="label">활동 요일</span>
+              <span class="val" id="days">월, 수, 금</span>
+            </li>
+            <li>
+              <span class="label">활동 시간</span>
+              <span class="val" id="time">18:00 ~ 20:00</span>
+            </li>
+            <li>
+              <span class="label">상태</span>
+              <span class="val badge" id="stateBadge">모집중</span>
+            </li>
+          </ul>
+        </section>
 
-          <div class="club-detail-section">
-            <h3>동아리 소개 이미지</h3>
-            <div class="club-image-gallery">
-              <img
-                src="../images/sample_club.jpg"
-                alt="동아리 이미지"
-                class="club-detail-image"
-              />
-            </div>
-          </div>
-
-          <div class="club-detail-section">
-            <h3>우리 동아리를 소개할게요</h3>
-            <p>
-              동아리 설명 예시입니다. 이곳에 동아리 소개와 활동 내용을
-              적어주세요.
-            </p>
-
-            <h4>주요 활동 예시:</h4>
-            <ul>
-              <li>학술 세미나 주최</li>
-              <li>봉사활동 참여</li>
-              <li>스터디 그룹 운영</li>
-            </ul>
-
-            <h4>이런 친구들과 함께하고 싶어요:</h4>
-            <ul>
-              <li>적극적인 참여를 좋아하는 학생</li>
-              <li>협업과 소통을 잘하는 학생</li>
-            </ul>
-          </div>
-        </div>
+        <!-- 동아리 소개 -->
+        <section class="intro card">
+          <h2 class="section_title">동아리 소개</h2>
+          <p class="desc" id="introText">
+            동아리 설명 예시입니다. 이곳에 동아리 소개와 활동 내용을 적어주세요.
+          </p>
+        </section>
       </div>
-    </div>
+    </main>
 
-    <div class="page-footer">
-      <p>© 2024 SMUNITY. 상명대학교 동아리 플랫폼</p>
-    </div>
+    <script src="../js/club.js"></script>
   </body>
 </html>

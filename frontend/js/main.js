@@ -1,5 +1,14 @@
 // FRONTEND/js/main.js
 document.addEventListener("DOMContentLoaded", () => {
+  /* ====== (추가) 내가 넣을 이미지 매핑 ====== */
+  // key는 club.id, value는 이미지 경로(상대/절대/URL 모두 가능)
+  const image_map = {
+    1: "images/justdoit.jpg",
+    2: "images/sori.jpg",
+    3: "images/tornado.jpg",
+    4: "images/trip.jpg",
+  };
+
   /* ====== 더미 데이터: 실제 API 연결 전까지 UI 확인용 ====== */
   const clubs = [
     {
@@ -8,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
       members: 42,
       status: "recruiting", // recruiting | upcoming | closed
       desc: "웹/앱 해커톤을 준비하는 스터디. 매주 수요일 알고리즘/프로젝트 세션 진행.",
-      image: "https://picsum.photos/seed/club1/256/256", // 로고로 사용 (작게)
+      image: "https://picsum.photos/seed/club1/256/256",
       deadline: "2025-09-15",
     },
     {
@@ -92,8 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function getDDay(deadlineStr) {
     if (!deadlineStr) return { label: "-", cls: "dday-neutral" };
     const today = new Date();
-    const dline = new Date(deadlineStr + "T00:00:00"); // 로컬 기준
-    // 시간차 → 남은 '일' 단위 산출
+    const dline = new Date(deadlineStr + "T00:00:00");
     const diffMs = dline.setHours(0, 0, 0, 0) - today.setHours(0, 0, 0, 0);
     const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
@@ -113,48 +121,52 @@ document.addEventListener("DOMContentLoaded", () => {
     $grid.innerHTML = "";
     list.forEach((c) => {
       const { label, cls } = getDDay(c.deadline);
-      const card = document.createElement("div");
+
+      // 매핑된 이미지 우선
+      const imgSrc = image_map[c.id] ?? c.image;
+
+      // ✅ div → a 로 변경 + href 설정
+      const card = document.createElement("a");
       card.className = "club-card desc-first";
+      card.href = `pages/club.html?id=${c.id}`; // 필요시 경로를 club.html 로 바꿔
 
       card.innerHTML = `
-        <div class="club-head">
-          <img class="club-logo" src="${c.image}" alt="${c.name} 로고" />
-          <div class="club-title">
-            <div class="club-name">${c.name}</div>
-            <div class="club-meta">
-              <span class="club-members">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                </svg>
-                ${c.members}명
-              </span>
-              <span class="club-status ${c.status}">${statusLabel(
+      <div class="club-head">
+        <img class="club-logo" src="${imgSrc}" alt="${c.name} 로고" />
+        <div class="club-title">
+          <div class="club-name">${c.name}</div>
+          <div class="club-meta">
+            <span class="club-members">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+              </svg>
+              ${c.members}명
+            </span>
+            <span class="club-status ${c.status}">${statusLabel(
         c.status
       )}</span>
-            </div>
           </div>
-          <span class="club-dday ${cls}">${label}</span>
         </div>
+        <span class="club-dday ${cls}">${label}</span>
+      </div>
 
-        <p class="club-description">${c.desc}</p>
+      <p class="club-description">${c.desc}</p>
 
-        <div class="club-foot">
-          ${
-            c.deadline
-              ? `<span class="deadline">마감일 ${c.deadline}</span>`
-              : ""
-          }
-          <span class="foot-spacer"></span>
-          <span class="foot-hint">${
-            c.status === "recruiting"
-              ? "지금 신청 가능"
-              : c.status === "upcoming"
-              ? "일정 공개 예정"
-              : "모집 마감"
-          }</span>
-        </div>
-      `;
+      <div class="club-foot">
+        ${
+          c.deadline ? `<span class="deadline">마감일 ${c.deadline}</span>` : ""
+        }
+        <span class="foot-spacer"></span>
+        <span class="foot-hint">${
+          c.status === "recruiting"
+            ? "지금 신청 가능"
+            : c.status === "upcoming"
+            ? "일정 공개 예정"
+            : "모집 마감"
+        }</span>
+      </div>
+    `;
       $grid.appendChild(card);
     });
 
@@ -210,7 +222,12 @@ document.addEventListener("DOMContentLoaded", () => {
       list.sort((a, b) => a.status.localeCompare(b.status));
     renderClubs(list);
   }
-
+  function updateHeaderCut() {
+    const h = document.querySelector(".header")?.offsetHeight || 220;
+    document.documentElement.style.setProperty("--header-h", `${h}px`);
+  }
+  window.addEventListener("load", updateHeaderCut);
+  window.addEventListener("resize", updateHeaderCut);
   $noticeBtn?.addEventListener("click", () => {
     $noticeModal.classList.add("show");
   });
