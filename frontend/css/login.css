@@ -9,8 +9,6 @@
   justify-content: center;
   color: #fff;
   text-align: center;
-  border-bottom-left-radius: 15px;
-  border-bottom-right-radius: 15px;
   padding-top: 12px;
 }
 .hero-content h2 {
@@ -182,48 +180,6 @@ body {
 }
 
 /* ===== Header 보정 ===== */
-.page-header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-}
-.page-header .container {
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 0 16px;
-}
-.page-header-content {
-  position: relative;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.page-header h1 {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-}
-.back-btn {
-  position: absolute;
-  left: 0px; /* 기존 8px → 4px (더 왼쪽으로 붙임) */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  color: #111827;
-}
-
-.back-btn .icon {
-  width: 22px;
-  height: 22px;
-  stroke-width: 2;
-}
 
 /* ===== Footer ===== */
 .page-footer {

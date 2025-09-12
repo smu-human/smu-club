@@ -1,113 +1,153 @@
-/* FRONTEND/css/club.css */
-/* club.html 전용 스타일 */
-
-.club-detail-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+.club_main {
+  background-color: #eff3ff;
 }
-
-.club-detail-header h2 {
-  font-size: 1.5rem;
-  font-weight: bold;
+.page_title {
+  font-size: 18px;
+  font-weight: 700;
   color: #111827;
-  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+.apply_link {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: #ffffff;
+  background-color: #0e207f;
+  text-decoration: none;
+  padding: 5px 8px;
+  border-radius: 50px;
 }
 
-.club-category {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 1rem;
+/* ===== 갤러리: 정방형(1:1) + 화살표 배경 제거 ===== */
+/* ===== 갤러리 ===== */
+.gallery {
+  position: relative;
+  overflow: hidden;
 }
 
-.club-meta {
+/* 슬라이드가 화면 폭 100%씩 차지하도록 */
+.carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+
+/* ✅ 슬라이드 래퍼: 중앙정렬 + 최소 높이 확보 */
+.slide {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
-  font-size: 0.875rem;
-  color: #374151;
-  margin-bottom: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  min-height: 320px; /* ← 공간 확보 (이미지 로딩 전에도 높이 유지) */
+  scroll-snap-align: center;
 }
 
-.club-status {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: #d1d5db;
-  color: #374151;
-  margin-top: 1rem;
-}
-
-.club-status.recruiting {
-  background: #3b82f6;
-  color: white;
-}
-
-.club-detail-tabs {
-  display: flex;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0 1.5rem;
-}
-
-.club-detail-tabs .btn {
-  border-radius: 0;
-  padding: 0.75rem 1.5rem;
-  font-weight: 600;
-  color: #6b7280;
-  border-bottom: 2px solid transparent;
-}
-
-.club-detail-tabs .btn.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
-}
-
-.club-detail-section {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.club-detail-section:last-child {
-  border-bottom: none;
-}
-
-.club-detail-section h3,
-.club-detail-section h4 {
-  font-size: 1.125rem;
-  font-weight: bold;
-  color: #111827;
-  margin-bottom: 1rem;
-}
-
-.club-detail-section p {
-  font-size: 0.9375rem; /* 15px */
-  line-height: 1.7;
-  color: #374151;
-  margin-bottom: 1rem;
-}
-
-.club-detail-section ul {
-  list-style: disc;
-  padding-left: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.club-detail-section ul li {
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  color: #374151;
-  margin-bottom: 0.5rem;
-}
-
-.club-image-gallery {
-  margin-bottom: 1.5rem;
-}
-
-.club-detail-image {
-  width: 100%;
+/* ✅ 정방형 이미지(가운데) */
+.slide > img {
+  width: min(500px, 100%);
+  aspect-ratio: 1 / 1;
   height: auto;
-  border-radius: 0.5rem;
   object-fit: cover;
-  max-height: 400px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+
+/* 좌우 네비: 반투명 배경 + 레이어 위로 */
+.nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3); /* ← 반투명 */
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  line-height: 1;
+  z-index: 2; /* ← 이미지 위로 */
+  cursor: pointer;
+}
+.nav:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+.nav.prev {
+  left: 8px;
+}
+.nav.next {
+  right: 8px;
+}
+
+/* 점 인디케이터 */
+.dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 10px 0 0;
+}
+.dots button {
+  width: 6px;
+  height: 6px;
+  border: none;
+  border-radius: 50%;
+  background: #d1d5db;
+}
+.dots button.is_active {
+  background: #374151;
+}
+
+/* ===== 메타 / 소개 (그대로 사용) ===== */
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  margin-top: 10px;
+}
+.info_list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.info_list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed #e5e7eb;
+}
+.info_list li:last-child {
+  border-bottom: 0;
+}
+.label {
+  color: #6b7280;
+  font-size: 13px;
+}
+.val {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+.section_title {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.desc {
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.6;
 }
