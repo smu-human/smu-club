@@ -1,6 +1,6 @@
-package com.example.smu_club.service;
+package com.example.smu_club.club.service;
 
-import com.example.smu_club.repository.ClubMemberRepository;
+import com.example.smu_club.club.repository.ClubMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

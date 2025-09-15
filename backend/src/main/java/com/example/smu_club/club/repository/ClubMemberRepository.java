@@ -1,4 +1,4 @@
-package com.example.smu_club.repository;
+package com.example.smu_club.club.repository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;

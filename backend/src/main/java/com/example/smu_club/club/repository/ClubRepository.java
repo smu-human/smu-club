@@ -1,11 +1,9 @@
-package com.example.smu_club.repository;
+package com.example.smu_club.club.repository;
 
-import com.example.smu_club.controller.GuestController;
 import com.example.smu_club.domain.Club;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
