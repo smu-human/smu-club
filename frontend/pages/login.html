@@ -14,7 +14,7 @@
     <div class="page-header sticky-header safe-area-top">
       <div class="container">
         <div class="page-header-content">
-          <a href="../index.html" class="back-btn">
+          <a href="../index.html" class="back-btn" aria-label="뒤로가기">
             <svg
               class="icon"
               viewBox="0 0 24 24"
@@ -52,7 +52,7 @@
             <p></p>
           </div>
 
-          <form class="login-form" id="loginForm">
+          <form class="login-form" id="loginForm" autocomplete="off">
             <!-- 학번 입력 -->
             <div class="form-group">
               <label for="studentId">학번</label>
@@ -71,6 +71,7 @@
                   id="studentId"
                   placeholder="학번을 입력해주세요"
                   required
+                  inputmode="numeric"
                 />
               </div>
             </div>
@@ -139,11 +140,7 @@
               id="loginBtn"
             >
               <span id="loginText">로그인</span>
-              <div
-                class="spinner"
-                id="loginSpinner"
-                style="display: none"
-              ></div>
+              <div class="spinner" id="loginSpinner" aria-hidden="true"></div>
             </button>
 
             <!-- 회원가입 버튼 -->
@@ -174,7 +171,7 @@
       </p>
     </div>
 
-    <!-- 경로 수정: login.js → ../js/login.js -->
+    <!-- 페이지 스크립트 -->
     <script src="../js/login.js"></script>
   </body>
 </html>

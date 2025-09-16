@@ -1,0 +1,177 @@
+<!-- FRONTEND/pages/club_manage.html -->
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>동아리 관리</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/club_manage.css" />
+  </head>
+  <body>
+    <!-- 공통 헤더 (백버튼/타이틀 동일) -->
+    <div class="page-header sticky-header safe-area-top">
+      <div class="container">
+        <div class="page-header-content">
+          <a href="../pages/club.html" class="back-btn" aria-label="뒤로가기">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+          </a>
+          <h1>동아리 관리</h1>
+        </div>
+      </div>
+    </div>
+
+    <main class="club_main safe-area-padding">
+      <div class="container">
+        <!-- 갤러리 관리 -->
+        <section class="card">
+          <h2 class="section_title">갤러리 이미지</h2>
+          <p class="desc">
+            동아리 페이지 상단 갤러리 이미지를 등록/삭제하세요. (JPG/PNG, 최대
+            10장)
+          </p>
+
+          <div class="gallery_manager">
+            <div class="preview_list" id="galleryPreview"></div>
+            <div class="file_row">
+              <input
+                type="file"
+                id="galleryInput"
+                accept="image/*"
+                multiple
+                hidden
+              />
+              <button type="button" class="btn btn-outline" id="addImagesBtn">
+                이미지 추가
+              </button>
+              <span class="hint">여러 장 선택 가능</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 기본 정보 -->
+        <section class="card">
+          <h2 class="section_title">기본 정보</h2>
+          <form class="grid_form" id="clubBaseForm">
+            <div class="form_group">
+              <label for="clubName">동아리명</label>
+              <input
+                type="text"
+                id="clubName"
+                name="clubName"
+                placeholder="예) 스뮤클럽"
+                required
+              />
+            </div>
+
+            <div class="form_group">
+              <label for="leaderName">회장</label>
+              <input
+                type="text"
+                id="leaderName"
+                name="leaderName"
+                placeholder="예) 김스뮤"
+                required
+              />
+            </div>
+
+            <div class="form_group">
+              <label for="contact">연락처</label>
+              <input
+                type="tel"
+                id="contact"
+                name="contact"
+                placeholder="010-1234-5678"
+                pattern="[0-9]{3}-[0-9]{4}-[0-9]{4}"
+                required
+              />
+            </div>
+
+            <div class="form_group">
+              <label>모집 기간</label>
+              <div class="row">
+                <input type="date" id="periodStart" name="periodStart" />
+                <span class="dash">~</span>
+                <input type="date" id="periodEnd" name="periodEnd" />
+              </div>
+            </div>
+
+            <div class="form_group">
+              <label>활동 요일</label>
+              <div class="chips" id="daysChips">
+                <label><input type="checkbox" value="월" /> 월</label>
+                <label><input type="checkbox" value="화" /> 화</label>
+                <label><input type="checkbox" value="수" /> 수</label>
+                <label><input type="checkbox" value="목" /> 목</label>
+                <label><input type="checkbox" value="금" /> 금</label>
+                <label><input type="checkbox" value="토" /> 토</label>
+                <label><input type="checkbox" value="일" /> 일</label>
+              </div>
+            </div>
+
+            <div class="form_group">
+              <label for="time">활동 시간</label>
+              <input
+                type="text"
+                id="time"
+                name="time"
+                placeholder="예) 18:00 ~ 20:00"
+              />
+            </div>
+
+            <div class="form_group">
+              <label for="state">상태</label>
+              <select id="state" name="state" class="select">
+                <option value="recruiting">모집중</option>
+                <option value="upcoming">예정</option>
+                <option value="closed">마감</option>
+              </select>
+            </div>
+
+            <div class="form_group full">
+              <label for="intro">동아리 소개</label>
+              <textarea
+                id="intro"
+                name="intro"
+                class="textarea"
+                placeholder="동아리 소개와 활동 내용을 적어주세요."
+              ></textarea>
+            </div>
+          </form>
+        </section>
+
+        <div class="actions">
+          <!-- <button type="button" class="btn btn-outline" id="resetBtn">
+            되돌리기
+          </button> -->
+          <button type="button" class="btn btn-primary" id="saveClubBtn">
+            저장하기
+          </button>
+        </div>
+      </div>
+    </main>
+    <div class="page-footer">
+      <p>© 2025 smu-club. 상명대학교 동아리 플랫폼</p>
+      <p>
+        <a
+          href="https://github.com/smu-human/smu-club"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Github</a
+        >
+      </p>
+    </div>
+    <script src="../js/club_manage.js"></script>
+  </body>
+</html>

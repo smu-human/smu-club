@@ -1,0 +1,241 @@
+:root {
+  --club-bg: #e9efff;
+  --text-strong: #111827;
+  --text-muted: #6b7280;
+  --brand: #0e207f;
+  --brand-weak: #24318f;
+  --border: #e5e7eb;
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+html,
+body {
+  height: 100%;
+  min-height: 100%;
+  background: var(--club-bg);
+}
+
+/* 헤더 톤만, 레이아웃은 style.css */
+.page-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+}
+
+.club_main {
+  background: var(--club-bg);
+}
+
+.container {
+  background: transparent;
+}
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--card-shadow);
+  margin-top: 12px;
+}
+.section_title {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.desc {
+  color: #374151;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* 갤러리 매니저 */
+.gallery_manager .file_row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.gallery_manager .hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.preview_list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.preview_item {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f3f4f6;
+  aspect-ratio: 1/1;
+}
+.preview_item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.preview_item .remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+/* 폼 */
+.grid_form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.form_group {
+  display: grid;
+  gap: 6px;
+}
+.form_group.full {
+  grid-column: 1 / -1;
+}
+.form_group label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="date"],
+.select,
+.textarea {
+  width: 100%;
+  font-size: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f9fafb;
+  color: var(--text-strong);
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease,
+    background 0.12s ease;
+}
+input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(14, 32, 127, 0.12);
+  background: #fff;
+}
+.textarea {
+  min-height: 140px;
+  resize: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash {
+  color: var(--text-muted);
+}
+.chips label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+  font-size: 14px;
+  color: var(--text-strong);
+}
+
+/* 버튼 (이 페이지 전용) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  user-select: none;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease,
+    color 0.15s ease, border-color 0.15s ease;
+}
+.btn-outline {
+  background: #fff;
+  color: var(--brand);
+  border-color: var(--brand);
+}
+.btn-outline:hover {
+  background: rgba(14, 32, 127, 0.06);
+}
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(14, 32, 127, 0.22);
+}
+.btn-primary:hover {
+  background: var(--brand-weak);
+  box-shadow: 0 4px 14px rgba(14, 32, 127, 0.2);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin: 16px 0 8px;
+}
+/* ===== 폼: 모바일 1열, 태블릿+ 2열 ===== */
+.grid_form {
+  display: grid;
+  grid-template-columns: 1fr; /* 기본: 한 줄에 하나 */
+  gap: 12px;
+}
+
+/* 폭이 넓어지면 2열로 */
+@media (min-width: 768px) {
+  .grid_form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .form_group.full {
+    grid-column: 1 / -1; /* 긴 항목은 가로 전체 */
+  }
+}
+
+/* 날짜 입력 행: 모바일에서 답답하면 세로로 쌓기 */
+@media (max-width: 480px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .dash {
+    display: none;
+  } /* ‘~’ 기호는 모바일에서 생략 */
+}
+
+/* 저장/되돌리기 버튼: 모바일 풀폭 */
+@media (max-width: 640px) {
+  .actions {
+    flex-direction: column;
+  }
+  .actions .btn {
+    width: 100%;
+  }
+}
