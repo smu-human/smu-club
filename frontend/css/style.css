@@ -1,37 +1,12 @@
 /* ===== Reset & Base (공통) ===== */
-/* iOS 노치 대응: safe-area 보정값 + 기본여백 병행 */
 :root {
   --safe-top: env(safe-area-inset-top);
   --safe-right: env(safe-area-inset-right);
   --safe-bottom: env(safe-area-inset-bottom);
   --safe-left: env(safe-area-inset-left);
-}
 
-/* 상단/하단 바 여백: 최소 여백과 safe-area를 함께 보장 */
-.safe-area-top {
-  padding-top: max(12px, var(--safe-top));
-}
-.safe-area-bottom {
-  padding-bottom: max(12px, var(--safe-bottom));
-}
-
-/* 배경이 헤더까지 꽉 차는 경우(그라데이션/이미지 배경 등) */
-.safe-area-padding {
-  padding-top: max(16px, var(--safe-top));
-  padding-left: max(0px, var(--safe-left));
-  padding-right: max(0px, var(--safe-right));
-  padding-bottom: max(0px, var(--safe-bottom));
-}
-
-/* 고정( fixed / sticky ) 헤더도 살짝 내려주기 */
-.sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  /* 상단 safe-area를 내부 패딩으로 흡수 */
-  /* 상단여백 조절 */
-  padding-top: max(15px, var(--safe-top));
-  background: #fff;
+  --page-header-height: 56px; /* 콘텐츠 높이 */
+  --page-header-maxw: 420px; /* 모바일 기준 최대 너비 */
 }
 
 * {
@@ -59,6 +34,101 @@ body {
   stroke-width: 2;
 }
 
+/* safe-area 유틸 */
+.safe-area-top {
+  padding-top: max(12px, var(--safe-top));
+}
+.safe-area-bottom {
+  padding-bottom: max(12px, var(--safe-bottom));
+}
+.safe-area-padding {
+  padding-top: max(16px, var(--safe-top));
+  padding-left: max(0px, var(--safe-left));
+  padding-right: max(0px, var(--safe-right));
+  padding-bottom: max(0px, var(--safe-bottom));
+}
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding-top: max(15px, var(--safe-top));
+  background: #fff;
+}
+
+/* ===== Global Page Header (공통) ===== */
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+.page-header .container {
+  max-width: var(--page-header-maxw);
+  margin: 0 auto;
+  padding: 0 16px;
+}
+.page-header-content {
+  position: relative;
+  height: var(--page-header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.page-header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+  text-align: center;
+}
+
+/* back-btn (왼쪽 고정) */
+.back-btn {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.back-btn .icon {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2;
+}
+
+/* 오른쪽 버튼/액션 (예: 가입 신청) */
+.page-header-content .header-action,
+.page-header-content .apply_link {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  background: #0e207f;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Footer 공통 */
 .page-footer {
   flex-shrink: 0;
   margin-top: 24px;
@@ -78,7 +148,7 @@ body {
   text-decoration: underline;
 }
 
-/* Responsive (공통) */
+/* Responsive */
 @media (max-width: 640px) {
   .hidden-mobile {
     display: none;
@@ -87,71 +157,4 @@ body {
     padding: 0.5rem;
     font-size: 0.75rem;
   }
-  .form-options {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-}
-/* ===== Global Page Header (공통) ===== */
-:root {
-  --page-header-height: 56px; /* 콘텐츠 높이 (safe-area-top과 합쳐 ~68~70px) */
-  --page-header-maxw: 420px; /* 모바일 폼 페이지 기준 최대 너비 */
-}
-
-/* 상단 고정 헤더 */
-.page-header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* 가운데 정렬 + 좌우 패딩 + 최대너비 공통 */
-.page-header .container {
-  max-width: var(--page-header-maxw);
-  margin: 0 auto;
-  padding: 0 16px;
-}
-
-/* 제목 중앙정렬 라인 (뒤로가기/오른쪽 액션은 absolute) */
-.page-header-content {
-  position: relative;
-  height: var(--page-header-height);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 제목 타이포 통일 */
-.page-header h1 {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-  color: #111827;
-}
-
-/* 뒤로가기 버튼(로그인/학생인증과 동일) */
-.back-btn {
-  position: absolute;
-  left: 0; /* 좌측 정렬 */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 40px; /* 터치 타깃 */
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border: none;
-  color: inherit;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-/* 뒤로가기 아이콘 크기 통일 */
-.back-btn .icon {
-  width: 24px;
-  height: 24px;
-  stroke-width: 2;
 }

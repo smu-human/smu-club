@@ -9,10 +9,10 @@
     <link rel="stylesheet" href="../css/application_form.css" />
   </head>
   <body>
-    <div class="page-header">
+    <div class="page-header sticky-header safe-area-top">
       <div class="container">
         <div class="page-header-content">
-          <a href="../index.html" class="back-btn" aria-label="뒤로가기">
+          <a href="../pages/club.html" class="back-btn" aria-label="뒤로가기">
             <svg
               class="icon"
               viewBox="0 0 24 24"
@@ -42,7 +42,6 @@
           <p>필수 정보를 정확히 입력해주세요.</p>
         </div>
 
-        <!-- 타임리프 제거: th:action, th:object, th:field -->
         <form
           class="auth-form"
           id="applicationForm"
@@ -101,15 +100,16 @@
           <div class="form-group">
             <label>성별</label>
             <div>
-              <label class="checkbox-label">
-                <input type="radio" name="gender" value="male" required /> 남성
-              </label>
-              <label class="checkbox-label">
-                <input type="radio" name="gender" value="female" /> 여성
-              </label>
-              <label class="checkbox-label">
-                <input type="radio" name="gender" value="other" /> 기타
-              </label>
+              <label class="checkbox-label"
+                ><input type="radio" name="gender" value="male" required />
+                남성</label
+              >
+              <label class="checkbox-label"
+                ><input type="radio" name="gender" value="female" /> 여성</label
+              >
+              <label class="checkbox-label"
+                ><input type="radio" name="gender" value="other" /> 기타</label
+              >
             </div>
           </div>
 
@@ -144,6 +144,10 @@
             <p class="auth-subtitle">이력서, 포트폴리오 등 (PDF, DOCX 등)</p>
           </div>
 
+          <!-- (읽기 전용) 에디터에서 저장된 템플릿 기반 추가 질문 -->
+          <div id="extraQuestionList" class="extra-questions"></div>
+          <input type="hidden" name="extraQuestions" id="extraQuestions" />
+
           <button type="submit" class="btn btn-primary btn-large">
             지원서 제출
           </button>
@@ -152,10 +156,17 @@
     </div>
 
     <div class="page-footer">
-      <p>© 2024 SMUNITY. 상명대학교 동아리 플랫폼</p>
+      <p>© 2025 smu-club. 상명대학교 동아리 플랫폼</p>
+      <p>
+        <a
+          href="https://github.com/smu-human/smu-club"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Github</a
+        >
+      </p>
     </div>
 
-    <!-- 타임리프 제거 및 경로 수정 -->
     <script src="../js/application_form.js"></script>
   </body>
 </html>

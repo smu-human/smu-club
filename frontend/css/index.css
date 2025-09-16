@@ -69,21 +69,26 @@ body {
 .btn-outline:hover {
   background: #f9fafb;
 }
+/* ===== 회원가입 버튼 (btn-primary) 색상 통일 ===== */
 .btn-primary {
-  background: #0e207f;
+  background: #0e207f; /* 기본 brand 색 */
   color: #fff;
-  padding: 5px 8px;
+  padding: 5px 8px; /* 기존 크기 유지 */
+  border: none;
+  border-radius: 50px;
+  font-weight: 400;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(14, 32, 127, 0.22);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
-.btn-primary:hover {
-  background: #1d4ed8;
-}
-.btn-ghost {
-  background: transparent;
-  color: #6b7280;
-  position: relative;
-}
-.btn-ghost:hover {
-  background: #f3f4f6;
+
+/* hover/active 시 색상만 변경, 위치 이동 애니메이션 제거 */
+.btn-primary:hover,
+.btn-primary:active {
+  background: #24318f; /* brand-weak */
+  box-shadow: 0 4px 14px rgba(14, 32, 127, 0.2);
+  transform: none !important; /* 위치 이동 없앰 */
 }
 
 /* ========== Search & Stats ========== */

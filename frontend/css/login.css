@@ -20,10 +20,9 @@
   height: auto;
   display: block;
 }
-
 .hero-content p {
-  margin-top: 0; /* 기본 마진 제거 */
-  font-size: 0.875rem; /* 살짝 작게 (선택) */
+  margin-top: 0;
+  font-size: 0.875rem;
   color: rgb(27, 67, 117);
 }
 
@@ -51,7 +50,7 @@
   font-size: 1.25rem;
   font-weight: bold;
   color: #111827;
-  margin: 0; /* 하단 8px 제거 */
+  margin: 0;
 }
 .card-header p {
   font-size: 0.875rem;
@@ -179,35 +178,12 @@ body {
   display: block;
 }
 
-/* ===== Header 보정 ===== */
-
-/* ===== Footer ===== */
-.page-footer {
-  flex-shrink: 0;
-  margin-top: 24px;
-  padding: 16px 0 24px;
-  text-align: center;
-  color: #6b7280;
-  border-top: 1px solid #e5e7eb;
-}
-.page-footer p {
-  margin: 4px 0;
-}
-.page-footer a {
-  color: #3b82f6;
-  text-decoration: none;
-}
-.page-footer a:hover {
-  text-decoration: underline;
-}
-
 /* ===== Buttons ===== */
 #loginBtn,
 .btn.btn-outline.btn-large {
   width: 100%;
-  margin-bottom: 0.5rem; /* 버튼 간격 조절 */
+  margin-bottom: 0.5rem;
 }
-/* 공통 버튼 */
 .btn {
   display: inline-flex;
   justify-content: center;
@@ -221,8 +197,7 @@ body {
   cursor: pointer;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-
-/* 로그인 버튼 (Primary) */
+/* Primary */
 .btn-primary {
   background-color: #3b82f6;
   color: #fff;
@@ -233,8 +208,7 @@ body {
 .btn-primary:hover {
   background-color: #2563eb;
 }
-
-/* 회원가입 버튼 (Secondary – 구분용) */
+/* Secondary */
 .btn-secondary {
   background-color: #fff;
   color: #374151;
@@ -245,6 +219,23 @@ body {
 .btn-secondary:hover {
   background-color: #f9fafb;
   border-color: #9ca3af;
+}
+
+/* ===== Spinner ===== */
+.spinner {
+  display: none;
+  margin-left: 8px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===== Responsive ===== */
