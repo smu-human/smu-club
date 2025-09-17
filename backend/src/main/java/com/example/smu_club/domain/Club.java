@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -45,5 +46,4 @@ public class Club {
 
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
-
 }

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -16,7 +17,7 @@ public class Question {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "question_id")
-    private int id;
+    private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id")
@@ -31,6 +32,7 @@ public class Question {
     @Enumerated(EnumType.STRING)
     private QuestionContentType questionContentType;
 
+    //질문 순서
     @Column(name = "order_num")
     private int orderNum;
 }
