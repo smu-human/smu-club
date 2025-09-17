@@ -1,0 +1,105 @@
+package com.example.smu_club.auth.service;
+import com.example.smu_club.auth.dto.*;
+import com.example.smu_club.auth.external.UnivApiClient;
+import com.example.smu_club.auth.repository.MemberRepository;
+import com.example.smu_club.auth.token.JwtTokenProvider;
+import com.example.smu_club.domain.Member;
+import com.example.smu_club.domain.Role;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+
+import javax.security.auth.login.LoginException;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final UnivApiClient univApiClient;
+    private final MemberRepository memberRepository;
+    private final JwtTokenProvider jwtTokenProvider;
+
+
+    /**
+     * 로그인 로직 처리 메서드
+     */
+    @Transactional
+    public JwtTokenResponse login(LoginRequest loginRequest) throws LoginException {
+
+        // 1. 외부 API 호을 트랜잭션 밖에서 호출
+        UnivUserInfoResponse userInfo = univApiClient.authenticate(
+                loginRequest.getStudentId(), loginRequest.getPassword()
+        );
+
+        if (userInfo == null) {
+            throw new LoginException("학번 또는 비밀번호가 일치하지 않습니다");
+        }
+
+        // DB 작업이 필요한 부분을 별도의 트랜잭션으로 호출
+        return generateTokenAndUpdateRefreshToken(userInfo.getUsername());
+
+    }
+
+    @Transactional
+    public JwtTokenResponse generateTokenAndUpdateRefreshToken(String studentId) throws LoginException {
+
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new LoginException("가입되지 않은 회원입니다"));
+
+        JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(member);
+        String refreshToken = tokenResponse.getRefreshToken();
+        member.updateRefreshToken(refreshToken);
+
+        return tokenResponse;
+    }
+
+    @Transactional
+    public JwtTokenResponse reissueTokens(ReissueRequest reissueRequest) throws LoginException {
+
+        String refreshToken = reissueRequest.getRefreshToken();
+
+        Member member = memberRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new LoginException("유효하지 않은 Refresh Token 입니다"));
+
+        JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(member);
+
+        member.updateRefreshToken(tokenResponse.getRefreshToken());
+
+        return tokenResponse;
+
+    }
+
+    @Transactional
+    public JwtTokenResponse signup(SignupRequest signupRequest) throws LoginException {
+
+        // 1. 학교 API 를 통해서 인증
+        UnivUserInfoResponse userInfo = univApiClient.authenticate(
+                signupRequest.getStudentId(), signupRequest.getPassword()
+        );
+
+        // 2. 중복 확인
+        memberRepository.findByStudentId(userInfo.getUsername())
+                .ifPresent(member -> {
+                    throw new IllegalStateException("이미 가입된 학번입니다.");
+                });
+
+        // 3. Member 객체 생성
+        Member newMember = Member.builder()
+                .studentId(userInfo.getUsername())
+                .name(userInfo.getName())
+                .email(userInfo.getEmail())
+                .department(userInfo.getDepartment())
+                .role(Role.MEMBER)
+                .build();
+
+        // 4. 저장 DB에 newMember저장
+        memberRepository.save(newMember);
+
+        // 5. 토큰 발급 [추후 논의 - 회원가입 하고 바로 로그인 시킬건지 아니면 회원가입 완료 문구 -> 사용자가 로그인]
+        JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(newMember);
+        newMember.updateRefreshToken(tokenResponse.getRefreshToken());
+
+        return tokenResponse;
+    }
+}
