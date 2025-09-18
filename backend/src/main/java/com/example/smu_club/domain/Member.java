@@ -15,7 +15,8 @@ import java.util.List;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class Member implements UserDetails {
 

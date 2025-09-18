@@ -5,6 +5,10 @@ import com.example.smu_club.auth.repository.MemberRepository;
 import com.example.smu_club.auth.token.JwtTokenProvider;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Role;
+import com.example.smu_club.exception.custom.InvalidTokenException;
+import com.example.smu_club.exception.custom.LoginFailedException;
+import com.example.smu_club.exception.custom.MemberAlreadyExistsException;
+import com.example.smu_club.exception.custom.MemberNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +29,7 @@ public class AuthService {
      * 로그인 로직 처리 메서드
      */
     @Transactional
-    public JwtTokenResponse login(LoginRequest loginRequest) throws LoginException {
+    public JwtTokenResponse login(LoginRequest loginRequest) {
 
         // 1. 외부 API 호을 트랜잭션 밖에서 호출
         UnivUserInfoResponse userInfo = univApiClient.authenticate(
@@ -33,7 +37,7 @@ public class AuthService {
         );
 
         if (userInfo == null) {
-            throw new LoginException("학번 또는 비밀번호가 일치하지 않습니다");
+            throw new LoginFailedException("학번 또는 비밀번호가 일치하지 않습니다");
         }
 
         // DB 작업이 필요한 부분을 별도의 트랜잭션으로 호출
@@ -42,10 +46,10 @@ public class AuthService {
     }
 
     @Transactional
-    public JwtTokenResponse generateTokenAndUpdateRefreshToken(String studentId) throws LoginException {
+    public JwtTokenResponse generateTokenAndUpdateRefreshToken(String studentId){
 
         Member member = memberRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new LoginException("가입되지 않은 회원입니다"));
+                .orElseThrow(() -> new MemberNotFoundException("가입되지 않은 회원입니다"));
 
         JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(member);
         String refreshToken = tokenResponse.getRefreshToken();
@@ -55,12 +59,12 @@ public class AuthService {
     }
 
     @Transactional
-    public JwtTokenResponse reissueTokens(ReissueRequest reissueRequest) throws LoginException {
+    public JwtTokenResponse reissueTokens(ReissueRequest reissueRequest){
 
         String refreshToken = reissueRequest.getRefreshToken();
 
         Member member = memberRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new LoginException("유효하지 않은 Refresh Token 입니다"));
+                .orElseThrow(() -> new InvalidTokenException("유효하지 않은 Refresh Token 입니다"));
 
         JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(member);
 
@@ -71,7 +75,7 @@ public class AuthService {
     }
 
     @Transactional
-    public JwtTokenResponse signup(SignupRequest signupRequest) throws LoginException {
+    public JwtTokenResponse signup(SignupRequest signupRequest){
 
         // 1. 학교 API 를 통해서 인증
         UnivUserInfoResponse userInfo = univApiClient.authenticate(
@@ -81,7 +85,7 @@ public class AuthService {
         // 2. 중복 확인
         memberRepository.findByStudentId(userInfo.getUsername())
                 .ifPresent(member -> {
-                    throw new IllegalStateException("이미 가입된 학번입니다.");
+                    throw new MemberAlreadyExistsException("이미 가입된 학번입니다.");
                 });
 
         // 3. Member 객체 생성
@@ -93,7 +97,7 @@ public class AuthService {
                 .role(Role.MEMBER)
                 .build();
 
-        // 4. 저장 DB에 newMember저장
+        // 4. 저장 DB에 newMember 저장
         memberRepository.save(newMember);
 
         // 5. 토큰 발급 [추후 논의 - 회원가입 하고 바로 로그인 시킬건지 아니면 회원가입 완료 문구 -> 사용자가 로그인]

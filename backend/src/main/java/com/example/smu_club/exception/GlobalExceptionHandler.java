@@ -3,6 +3,7 @@ package com.example.smu_club.exception;
 
 import com.example.smu_club.exception.custom.InvalidTokenException;
 import com.example.smu_club.exception.custom.LoginFailedException;
+import com.example.smu_club.exception.custom.MemberAlreadyExistsException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
+    // [이미 가입된 회원이 다시 인증시도] -> 409 Conflict 응답
+    @ExceptionHandler(MemberAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleMemberAlreadyExistsException(MemberAlreadyExistsException e) {
+        ErrorResponse response = new ErrorResponse("MEMBER_ALREADY_EXISTS", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
 
     /*
     Club 예외 관련

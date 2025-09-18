@@ -3,6 +3,7 @@
 
     import com.example.smu_club.auth.dto.JwtTokenResponse;
     import com.example.smu_club.domain.Member;
+    import com.example.smu_club.exception.custom.InvalidTokenException;
     import io.jsonwebtoken.*;
     import io.jsonwebtoken.io.Decoders;
     import io.jsonwebtoken.security.Keys;
@@ -89,29 +90,13 @@
                     .build();
         }
 
-        public boolean validateToken(String token) {
-            try {
-                Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-                return true;
-            } catch (SecurityException | MalformedJwtException e) {
-                log.info("잘못된 JWT 서명입니다.");
-            } catch (ExpiredJwtException e) {
-                log.info("만료된 JWT 토큰입니다.");
-            } catch (UnsupportedJwtException e) {
-                log.info("지원되지 않는 JWT 토큰입니다.");
-            } catch (IllegalArgumentException e) {
-                log.info("JWT 토큰이 잘못되었습니다.");
-            }
-            return false;
-        }
-
 
         public Authentication getAuthentication(String accessToken) {
 
             Claims claims = parseClaims(accessToken);
 
             if(claims.get(AUTHORITIES) == null) {
-                throw new RuntimeException("권한 정보가 없는 토큰입니다.");
+                throw new InvalidTokenException("권한 정보가 없는 토큰입니다.");
             }
 
             Collection<? extends GrantedAuthority> authorities =
@@ -124,10 +109,17 @@
 
         // Key로 토큰 검증
         private Claims parseClaims(String accessToken) {
-            return Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(accessToken)
-                    .getBody();
+            try {
+                return Jwts.parserBuilder()
+                        .setSigningKey(key)
+                        .build()
+                        .parseClaimsJws(accessToken)
+                        .getBody();
+            } catch (ExpiredJwtException e) {
+                throw new InvalidTokenException("만료된 토큰입니다.");
+            } catch (JwtException | IllegalArgumentException e) {
+                throw new InvalidTokenException("유효하지 않은 JWT 토큰입니다.");
+            }
+
         }
     }
