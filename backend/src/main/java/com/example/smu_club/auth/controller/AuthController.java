@@ -25,6 +25,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    // 로그인시도
     @PostMapping("/login")
     public ResponseEntity<JwtTokenResponse> login(@RequestBody LoginRequest loginRequest) {
         log.info("사용자 로그인 시도 :{}", loginRequest.getStudentId());
@@ -34,6 +35,7 @@ public class AuthController {
 
     }
 
+    // 사용자의 accessToken 이 만료되었을 때 이 API 호출을 통해서 RefreshToken 을 통해서 accessToken 을 재발급
     @PostMapping("/reissue")
     public ResponseEntity<JwtTokenResponse> reissue(@RequestBody ReissueRequest reissueRequest) {
         JwtTokenResponse jwtTokenResponse = authService.reissueTokens(reissueRequest);
