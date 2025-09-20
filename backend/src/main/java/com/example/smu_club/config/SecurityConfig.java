@@ -1,7 +1,7 @@
 package com.example.smu_club.config;
 
 
-import com.example.smu_club.auth.token.JwtTokenProvider;
+import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final SecurityContextDebugFilter securityContextDebugFilter; // <- 이 필드
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -51,20 +52,19 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/v1/public/**",
                                 "/api/v1/auth/status",
-
                                 // SWAGGER 주소 허용 (개발용)
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html").permitAll()
-
+                        .requestMatchers("/api/v1/member/**").hasRole("MEMBER")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/owner/**").hasRole("OWNER")
-                        .requestMatchers("/api/v1/member/**").hasRole("MEMBER")
 
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(securityContextDebugFilter, JwtAuthenticationFilter.class); // <-- 디버깅 필터 추가
 
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

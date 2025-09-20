@@ -1,7 +1,9 @@
 package com.example.smu_club.auth.security;
 
 import com.example.smu_club.domain.Member;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,16 +11,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 
+@Getter
+@Setter
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
     private final Member member;
 
-    //member Table의 pk
-    //public Long getMemberId(){return member.getId();}
-
+        //개씨발 필요없음 ㅇㅇ 쓰지마셈 좆같은거
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority(member.getRole().getKey())); //enum to string
+        return Collections.singleton(new SimpleGrantedAuthority(member.getRole().getKey()));
     }
 
     @Override
