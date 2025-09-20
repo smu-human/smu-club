@@ -1,6 +1,7 @@
 package com.example.smu_club.club.service;
 
-import com.example.smu_club.club.dto.ClubGuestDto;
+import com.example.smu_club.club.dto.ClubResponseDto;
+import com.example.smu_club.club.dto.ClubsResponseDto;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.Club;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +18,11 @@ import java.util.stream.Collectors;
 public class ClubService {
     private final ClubRepository clubRepository;
 
-    public List<ClubGuestDto.ClubsResponseDto> findAllClubs(){
+    public List<ClubsResponseDto> findAllClubs(){
         List<Club> findClubs = clubRepository.findAll();
 
         return findClubs.stream()
-                .map(c -> new ClubGuestDto.ClubsResponseDto(
+                .map(c -> new ClubsResponseDto(
                         c.getId(),
                         c.getName(),
                         c.getDescription(),
@@ -31,10 +32,10 @@ public class ClubService {
                 .collect(Collectors.toList());
     }
 
-    public ClubGuestDto.ClubResponseDto findClubById(Long id){
-        Club findClub = clubRepository.findOne(id);
-        if(findClub == null) throw new IllegalArgumentException("id = " + id + " 해당 클럽을 찾을 수 없습니다.");
-        return new ClubGuestDto.ClubResponseDto(findClub);
+    public ClubResponseDto findClubById(Long id){
+        Optional<Club> findClub = clubRepository.findById(id);
+        if(findClub.isEmpty()) throw new IllegalArgumentException("id = " + id + " 해당 클럽을 찾을 수 없습니다.");
+        return new ClubResponseDto(findClub.orElse(null));
     }
 }
 

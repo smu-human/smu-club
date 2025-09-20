@@ -38,6 +38,9 @@ public class Member implements UserDetails {
     @Column(nullable = false)
     private String department;
 
+    @Column(nullable = false, unique = true, name = "phone_number")
+    private String phoneNum;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
