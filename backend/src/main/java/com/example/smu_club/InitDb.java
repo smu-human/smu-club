@@ -38,6 +38,7 @@ public class InitDb {
                 member.setEmail("user" + i + "@smu.ac.kr");
                 member.setStudentId(String.valueOf(202200000+i));
                 member.setDepartment("휴먼지능정보공학과");
+                member.setRole(Role.MEMBER);
                 em.persist(member);
             }
             em.flush();

@@ -1,17 +1,14 @@
 package com.example.smu_club.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Question {
 
     @Id
@@ -19,12 +16,10 @@ public class Question {
     @Column(name = "question_id")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    // 하나의클럽은 여러개의 질문을 가질 수 있다.
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id")
     private Club club;
-
-//    @OneToMany(mappedBy ="question")
-//    private List<Answer> answers = new ArrayList<>();
 
     private String content;
 
@@ -35,4 +30,12 @@ public class Question {
     //질문 순서
     @Column(name = "order_num")
     private int orderNum;
+
+    @Builder
+    public Question(Club club, String content, QuestionContentType questionContentType, int orderNum) {
+        this.club = club;
+        this.content = content;
+        this.questionContentType = questionContentType;
+        this.orderNum = orderNum;
+    }
 }
