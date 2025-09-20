@@ -1,17 +1,19 @@
 package com.example.smu_club.club.dto;
 
+import com.example.smu_club.question.dto.QuestionResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
+
+import java.util.List;
 
 
 @Getter
+@AllArgsConstructor
 public class ApplicationFormResponseDto {
     private Long memberId;
     private String studentId;
     private String name;
     private String phoneNum;
-    private List<QuestionDto> questions;
+    private List<QuestionResponse> questions;
 
-    public
 }
