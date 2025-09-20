@@ -48,7 +48,14 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/public/**", "/api/v1/auth/status").permitAll()
+
+                        .requestMatchers("/api/v1/public/**",
+                                "/api/v1/auth/status",
+
+                                // SWAGGER 주소 허용 (개발용)
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html").permitAll()
 
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/owner/**").hasRole("OWNER")
