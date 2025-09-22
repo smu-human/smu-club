@@ -121,20 +121,4 @@
             }
 
         }
-
-        //JwtAuthenticationFilter에서 사용
-        public boolean validateToken(String token){
-            try{
-                parseClaims(token);
-                return true;
-            }catch(InvalidTokenException e){
-                log.error("유효하지 않은 토큰입니다.\n이유:{}", e.getMessage());
-            }
-            return false; //예외가 발생하면 유효하지 않은 토큰
-        }
-
-        public String getStudentIdFromToken(String token){
-            Claims claims = parseClaims(token);
-            return claims.getSubject(); //subject 에 저장된 studentId 가져오기
-        }
     }

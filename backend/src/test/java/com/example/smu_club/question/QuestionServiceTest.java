@@ -6,7 +6,7 @@ import com.example.smu_club.domain.Question;
 import com.example.smu_club.domain.QuestionContentType;
 import com.example.smu_club.question.dto.QuestionRequest;
 import com.example.smu_club.question.dto.QuestionResponse;
-import com.example.smu_club.question.repository.ClubRepository2;
+import com.example.smu_club.question.repository.ClubRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
 import com.example.smu_club.question.service.QuestionService;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.verify;
     private QuestionRepository questionRepository;
 
     @Mock
-    private ClubRepository2 clubRepository2;
+    private ClubRepository clubRepository;
 
     @Test
     @DisplayName("동아리 ID로 질문 목록 조회 성공")
@@ -49,7 +49,7 @@ import static org.mockito.Mockito.verify;
         );
 
         // clubRepository2.findById(clubId)가 호출되면, Optional.of(club)을 반환하라고 정의
-        given(clubRepository2.findById(clubId)).willReturn(Optional.of(club));
+        given(clubRepository.findById(clubId)).willReturn(Optional.of(club));
         // questionRepository.findAllByClubOrderByOrderNumAsc(club)가 호출되면, questions 리스트를 반환하라고 정의
         given(questionRepository.findAllByClubOrderByOrderNumAsc(club)).willReturn(questions);
 
@@ -62,7 +62,7 @@ import static org.mockito.Mockito.verify;
         assertThat(result.get(1).getOrderNum()).isEqualTo(2);
 
         // Mock 객체들의 메서드가 정확히 1번씩 호출되었는지 검증
-        verify(clubRepository2).findById(clubId);
+        verify(clubRepository).findById(clubId);
         verify(questionRepository).findAllByClubOrderByOrderNumAsc(club);
     }
 
@@ -75,19 +75,19 @@ import static org.mockito.Mockito.verify;
         club.setId(clubId);
 
         List<QuestionRequest> requestList = List.of(
-                new QuestionRequest("새로운 질문1 입니다.",1),
-                new QuestionRequest("새로운 질문2 입니다.",2)
+                new QuestionRequest(1,"새로운 질문1 입니다."),
+                new QuestionRequest(2,"새로운 질문2 입니다.")
         );
 
         // clubRepository가 clubId로 club을 성공적으로 찾아온다고 가정
-        given(clubRepository2.findById(clubId)).willReturn(Optional.of(club));
+        given(clubRepository.findById(clubId)).willReturn(Optional.of(club));
 
         // when (실행)
         questionService.saveQuestions(clubId, requestList);
 
         // then (검증)
         // 1. findById가 1번 호출되었는지 검증
-        verify(clubRepository2).findById(clubId);
+        verify(clubRepository).findById(clubId);
 
         // 2. deleteAll.. 메서드가 TEXT와 FILE 타입에 대해 각각 1번씩 호출되었는지 검증
         verify(questionRepository).deleteAllByClubAndQuestionContentType(club, QuestionContentType.TEXT);

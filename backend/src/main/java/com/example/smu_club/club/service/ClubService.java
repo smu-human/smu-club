@@ -1,16 +1,18 @@
 package com.example.smu_club.club.service;
 
-import com.example.smu_club.auth.repository.MemberRepository;
+import com.example.smu_club.answer.repository.AnswerRepository;
 import com.example.smu_club.club.dto.ApplicationFormResponseDto;
 import com.example.smu_club.club.dto.ClubResponseDto;
 import com.example.smu_club.club.dto.ClubsResponseDto;
-import com.example.smu_club.club.repository.ClubRepository;
+import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.domain.Club;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Question;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
+import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.question.dto.QuestionResponse;
+import com.example.smu_club.question.repository.ClubRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,7 +31,8 @@ public class ClubService {
     private final ClubRepository clubRepository;
     private final QuestionRepository questionRepository;
     private final MemberRepository memberRepository;
-
+    private final ClubMemberRepository clubMemberRepository;
+    private final AnswerRepository answerRepository;
     public List<ClubsResponseDto> findAllClubs(){
         List<Club> findClubs = clubRepository.findAll();
 
@@ -63,11 +66,10 @@ public class ClubService {
         List<QuestionResponse> clubQuestionListResponse =
                 questionList.stream().map
                         (qr -> new QuestionResponse(
-                                qr.getContent(),
-                                qr.getOrderNum()
+                                qr.getId(),
+                                qr.getOrderNum(),
+                                qr.getContent()
                         )).collect(toList());
-
-
         /**
          * Member search
          */

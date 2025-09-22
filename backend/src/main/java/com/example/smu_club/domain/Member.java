@@ -53,12 +53,13 @@ public class Member implements UserDetails {
     private String refreshToken;
 
     @Builder
-    public Member(String studentId, String name, String email, String department, Role role) {
+    public Member(String studentId, String name, String email, String department, Role role, String phoneNumber) {
         this.studentId = studentId;
         this.name = name;
         this.email = email;
         this.department = department;
         this.role = role;
+        this.phoneNumber = phoneNumber;
     }
 
     @Override

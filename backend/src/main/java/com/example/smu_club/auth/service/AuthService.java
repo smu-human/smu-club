@@ -1,7 +1,6 @@
 package com.example.smu_club.auth.service;
 import com.example.smu_club.auth.dto.*;
 import com.example.smu_club.auth.external.UnivApiClient;
-import com.example.smu_club.auth.repository.MemberRepository;
 import com.example.smu_club.auth.token.JwtTokenProvider;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Role;
@@ -9,6 +8,7 @@ import com.example.smu_club.exception.custom.InvalidTokenException;
 import com.example.smu_club.exception.custom.LoginFailedException;
 import com.example.smu_club.exception.custom.MemberAlreadyExistsException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
+import com.example.smu_club.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,6 +92,7 @@ public class AuthService {
                 .email(userInfo.getEmail())
                 .department(userInfo.getDepartment())
                 .role(Role.MEMBER)
+                .phoneNumber(signupRequest.getPhoneNumber())
                 .build();
 
         // 4. 저장 DB에 newMember 저장

@@ -1,5 +1,6 @@
 package com.example.smu_club;
 
+import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
@@ -10,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import static com.example.smu_club.domain.QuestionContentType.TEXT;
 
 
 @Component
@@ -29,7 +32,7 @@ public class InitDb {
     @RequiredArgsConstructor
     static class InitService{
         private final EntityManager em;
-
+        private final ClubRepository clubRepository;
         public void dbInit(){
             //멤버 초기화
             int phoneNumber = 0;
@@ -44,8 +47,7 @@ public class InitDb {
                 phoneNumber++;
                 em.persist(member);
             }
-            em.flush();
-            em.clear();
+
 
 
             long memberIdCounter = 1L;
@@ -55,7 +57,6 @@ public class InitDb {
                 Club club = new Club();
                 createClub1(club);
                 em.persist(club);
-
                 //동아리당 100명씩 각자 다른사람으로 회원가입시킴.
                 memberIdCounter = setMemberUsingIdCounter(memberIdCounter, club);
             }
@@ -80,9 +81,36 @@ public class InitDb {
                 memberIdCounter = setMemberUsingIdCounter(memberIdCounter, club);
             }
 
-
+            //질문 추가
+            createQuestion();
+            em.flush();
+            em.clear();
 
         }
+
+        private void createQuestion() {
+            Club findClub = clubRepository.findById(1L).get();
+
+            Question q1 = new Question();
+            q1.setOrderNum(1);
+            q1.setContent("자기소개를 해보세요.");
+            q1.setClub(findClub);
+            q1.setQuestionContentType(TEXT);
+            em.persist(q1);
+            Question q2 = new Question();
+            q2.setOrderNum(2);
+            q2.setContent("지원 동기는 무엇인가요?");
+            q2.setClub(findClub);
+            q2.setQuestionContentType(TEXT);
+            em.persist(q2);
+            Question q3 = new Question();
+            q3.setOrderNum(3);
+            q3.setContent("사용 가능한 기술 스택을 알려주세요");
+            q3.setClub(findClub);
+            q3.setQuestionContentType(TEXT);
+            em.persist(q3);
+        }
+
 
         private long setMemberUsingIdCounter(long memberIdCounter, Club club) {
             for(int j = 0 ; j < 100 ; j++){
@@ -90,7 +118,6 @@ public class InitDb {
 
 
                 ClubMember clubMember = new ClubMember();
-                clubMember.setClubMemberId(new ClubMemberId());
                 clubMember.setClub(club);
                 clubMember.setMember(member);
                 em.persist(clubMember);

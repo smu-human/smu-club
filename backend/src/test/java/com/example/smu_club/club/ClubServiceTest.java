@@ -1,22 +1,21 @@
 package com.example.smu_club.club;
 
-import com.example.smu_club.auth.repository.MemberRepository;
-import com.example.smu_club.auth.security.CustomUserDetails;
 import com.example.smu_club.club.dto.ApplicationFormResponseDto;
-import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.club.service.ClubService;
 import com.example.smu_club.domain.Club;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Question;
 import com.example.smu_club.domain.Role;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
+import com.example.smu_club.member.repository.MemberRepository;
+import com.example.smu_club.question.repository.ClubRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +24,7 @@ import static com.example.smu_club.domain.QuestionContentType.TEXT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class) // Mockito 사용을 위한 확장
@@ -42,6 +42,8 @@ class ClubServiceTest {
     @Mock // <-- 1. MemberRepository에 대한 Mock 추가!
     private MemberRepository memberRepository;
 
+    @Mock
+    private UserDetails userDetails;
 
     @Test
     void findMemberInfoWithQuestions_Success() {
@@ -52,8 +54,9 @@ class ClubServiceTest {
         member.setStudentId("2020101010");
         member.setPhoneNumber("010-1234-5678");
         member.setRole(Role.MEMBER);
+        given(userDetails.getUsername()).willReturn("2020101010");
 
-        CustomUserDetails userDetails = new CustomUserDetails(member);
+
 
         Club club = new Club();
         club.setId(2L);
@@ -88,8 +91,7 @@ class ClubServiceTest {
         // given (준비)
         Member member = new Member();
         member.setId(1L);
-        CustomUserDetails userDetails = new CustomUserDetails(member);
-
+        given(userDetails.getUsername()).willReturn("202215064");
 
         when(clubRepository.findById(anyLong())).thenReturn(Optional.empty());
 

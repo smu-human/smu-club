@@ -8,7 +8,8 @@ import java.util.List;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
 public class Question {
 
     @Id
@@ -16,7 +17,7 @@ public class Question {
     @Column(name = "question_id")
     private Long id;
 
-    // 하나의클럽은 여러개의 질문을 가질 수 있다.
+    //하나의 클럽은 여러개의 질문을 가질 수 있다.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id")
     private Club club;

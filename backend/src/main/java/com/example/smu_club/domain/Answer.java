@@ -21,10 +21,6 @@ public class Answer {
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "club_id")
-    private Club club;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id")
     private Question question;
 
@@ -33,5 +29,10 @@ public class Answer {
 
     @Column(name = "file_url")
     private String fileUrl; //S3 매핑 주소
+
+    public Answer(String answerContent, Question question){
+        this.answerContent = answerContent;
+        this.question = question;
+    }
 
 }
