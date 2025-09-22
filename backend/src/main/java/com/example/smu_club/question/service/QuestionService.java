@@ -33,7 +33,7 @@ public class QuestionService {
         List<Question> questions = questionRepository.findAllByClubOrderByOrderNumAsc(club);
 
         return questions.stream()
-                .map(question -> new QuestionResponse(question.getContent(), question.getOrderNum()))
+                .map(question -> new QuestionResponse(question.getId(), question.getOrderNum(),question.getContent()))
                 .collect(Collectors.toList());
     }
 

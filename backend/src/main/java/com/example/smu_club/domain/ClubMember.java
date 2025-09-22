@@ -4,11 +4,13 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Entity
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class ClubMember {
@@ -32,4 +34,11 @@ public class ClubMember {
     private ClubMemberStatus status;
 
     private String memo;
+
+    public ClubMember(Member member, Club club, LocalDate appliedAt, ClubMemberStatus status) {
+        this.member = member;
+        this.club = club;
+        this.appliedAt = appliedAt;
+        this.status = status;
+    }
 }

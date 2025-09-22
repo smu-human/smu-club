@@ -75,8 +75,8 @@ import static org.mockito.Mockito.verify;
         club.setId(clubId);
 
         List<QuestionRequest> requestList = List.of(
-                new QuestionRequest("새로운 질문1 입니다.",1),
-                new QuestionRequest("새로운 질문2 입니다.",2)
+                new QuestionRequest(1,"새로운 질문1 입니다."),
+                new QuestionRequest(2,"새로운 질문2 입니다.")
         );
 
         // clubRepository가 clubId로 club을 성공적으로 찾아온다고 가정

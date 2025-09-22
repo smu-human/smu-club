@@ -2,9 +2,11 @@ package com.example.smu_club.club.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 
 import java.util.List;
 
+@Getter
 public class ApiResponseDto {
 
     @Data

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuestionRequest {
-
-    private String content;
     private int orderNum;
+    private String content;
+
 }

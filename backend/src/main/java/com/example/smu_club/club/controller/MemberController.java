@@ -1,25 +1,39 @@
 package com.example.smu_club.club.controller;
 
-
+import java.util.List;
+import com.example.smu_club.answer.dto.AnswerRequestDto;
+import com.example.smu_club.club.dto.ApiResponseDto;
 import com.example.smu_club.club.dto.ApplicationFormResponseDto;
+import com.example.smu_club.club.dto.ApplicationRequestDto;
+import com.example.smu_club.club.dto.ApplicationResponseDto;
 import com.example.smu_club.club.service.ClubService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/member")
 public class MemberController {
     private final ClubService clubService;
 
-    @GetMapping("/api/v1/member/clubs/{clubId}/apply")
-    public ApplicationFormResponseDto getMemberInfoForApplication (
+    @GetMapping("/clubs/{clubId}/apply")
+    public ApiResponseDto.ApiResponse<ApplicationFormResponseDto> getApplication (
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails
             ){
-        return clubService.findMemberInfoWithQuestions(clubId, userDetails);
+        return new ApiResponseDto.ApiResponse<>(clubService.findMemberInfoWithQuestions(clubId, userDetails));
+    }
+
+    @PostMapping("/clubs/{clubId}/apply")
+    public ApiResponseDto.ApiResponse<ApplicationResponseDto> createApplication (
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody ApplicationRequestDto applicationRequestDto
+            ){
+        List<AnswerRequestDto> ard = applicationRequestDto.getQna();
+        String fileUrl = applicationRequestDto.getFileUrl();
+        return  new ApiResponseDto.ApiResponse<>(clubService.saveApplication(clubId, userDetails, ard, fileUrl));
     }
 }
