@@ -37,7 +37,7 @@ public class InitDb {
                 Member member = new Member();
                 member.setName("user" + i);
                 member.setEmail("user" + i + "@smu.ac.kr");
-                member.setStudentId(String.valueOf(202200000+i));
+                member.setStudentId(String.valueOf(202215063+i));
                 member.setDepartment("휴먼지능정보공학과");
                 member.setRole(Role.MEMBER);
                 member.setPhoneNumber(Integer.toString(phoneNumber));

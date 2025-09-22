@@ -7,12 +7,19 @@ import com.example.smu_club.club.dto.ClubsResponseDto;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.Club;
 import com.example.smu_club.domain.Member;
+import com.example.smu_club.domain.Question;
+import com.example.smu_club.exception.custom.ClubNotFoundException;
+import com.example.smu_club.exception.custom.MemberNotFoundException;
+import com.example.smu_club.question.dto.QuestionResponse;
+import com.example.smu_club.question.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 
 @Service
@@ -20,8 +27,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ClubService {
     private final ClubRepository clubRepository;
+    private final QuestionRepository questionRepository;
     private final MemberRepository memberRepository;
-
 
     public List<ClubsResponseDto> findAllClubs(){
         List<Club> findClubs = clubRepository.findAll();
@@ -34,18 +41,48 @@ public class ClubService {
                         c.getRecruitingStatus(),
                         c.getCreatedAt()
                 ))
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
-    public ClubResponseDto findClubById(Long id){
-        Optional<Club> findClub = clubRepository.findById(id);
-        if(findClub.isEmpty()) throw new IllegalArgumentException("id = " + id + " 해당 클럽을 찾을 수 없습니다.");
-        return new ClubResponseDto(findClub.orElse(null));
+    public ClubResponseDto findClubById(Long clubId){
+        Club findClub = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +" is not found"));
+        return new ClubResponseDto(findClub);
     }
 
-    public ApplicationFormResponseDto findMemberInfoWithQuestions(Long id){
-        Optional<Club> findClub = clubRepository.findById(id);
-        Optional<Member> myInfo = memberRepository.
+    public ApplicationFormResponseDto findMemberInfoWithQuestions(Long clubId, UserDetails userDetails){
+        /**
+         * questions search
+         */
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +" is not found"));
+
+        List<Question> questionList =
+                questionRepository.findAllByClubOrderByOrderNumAsc(club);
+
+        List<QuestionResponse> clubQuestionListResponse =
+                questionList.stream().map
+                        (qr -> new QuestionResponse(
+                                qr.getContent(),
+                                qr.getOrderNum()
+                        )).collect(toList());
+
+
+        /**
+         * Member search
+         */
+        String studentId = userDetails.getUsername();
+        Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +" is not found"));
+        /**
+         * Transaction to Dto
+         */
+        return new ApplicationFormResponseDto(
+                myInfo.getId(),
+                myInfo.getStudentId(),
+                myInfo.getName(),
+                myInfo.getPhoneNumber(),
+                clubQuestionListResponse
+        );
     }
 
 }
