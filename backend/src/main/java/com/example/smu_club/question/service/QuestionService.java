@@ -3,11 +3,11 @@ package com.example.smu_club.question.service;
 import com.example.smu_club.domain.Club;
 import com.example.smu_club.domain.Question;
 import com.example.smu_club.domain.QuestionContentType;
+import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.question.dto.QuestionRequest;
 import com.example.smu_club.question.dto.QuestionResponse;
 import com.example.smu_club.question.repository.ClubRepository2;
 import com.example.smu_club.question.repository.QuestionRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +28,7 @@ public class QuestionService {
     public List<QuestionResponse> findQuestionsByClubId(Long clubId) {
 
         Club club = clubRepository2.findById(clubId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 동아리를 찾을 수 없습니다. ID: " + clubId));
+                .orElseThrow(() -> new ClubNotFoundException("해당 동아리를 찾을 수 없습니다. ID: " + clubId));
 
         List<Question> questions = questionRepository.findAllByClubOrderByOrderNumAsc(club);
 
@@ -41,7 +41,7 @@ public class QuestionService {
     public void saveQuestions(Long clubId, List<QuestionRequest> questions) {
 
         Club club = clubRepository2.findById(clubId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 동아리를 찾을 수 없습니다." + clubId));
+                .orElseThrow(() -> new ClubNotFoundException("해당 동아리를 찾을 수 없습니다." + clubId));
 
         questionRepository.deleteAllByClubAndQuestionContentType(club, QuestionContentType.TEXT);
 
