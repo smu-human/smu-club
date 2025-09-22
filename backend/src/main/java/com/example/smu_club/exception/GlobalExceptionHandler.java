@@ -1,10 +1,7 @@
 package com.example.smu_club.exception;
 
 
-import com.example.smu_club.exception.custom.InvalidTokenException;
-import com.example.smu_club.exception.custom.LoginFailedException;
-import com.example.smu_club.exception.custom.MemberAlreadyExistsException;
-import com.example.smu_club.exception.custom.MemberNotFoundException;
+import com.example.smu_club.exception.custom.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -49,4 +46,10 @@ public class GlobalExceptionHandler {
     Club 예외 관련
      */
 
+    // [클럽 정보를 찾을 수 없음] -> 404 Not Found 반환
+    @ExceptionHandler(ClubNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleClubNotFoundException(ClubNotFoundException e) {
+        ErrorResponse response = new ErrorResponse("CLUB_NOT_FOUND", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
 }

@@ -2,25 +2,25 @@ package com.example.smu_club.domain;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Entity
-@Data
+@Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class ClubMember {
 
-    @EmbeddedId
-    private ClubMemberId clubMemberId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @MapsId("memberId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @MapsId("clubId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id")
     private Club club;
@@ -32,6 +32,4 @@ public class ClubMember {
     private ClubMemberStatus status;
 
     private String memo;
-
-    public ClubMember(){}
 }

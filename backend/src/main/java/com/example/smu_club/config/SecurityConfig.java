@@ -49,7 +49,6 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-
                         .requestMatchers("/api/v1/public/**",
                                 "/api/v1/auth/status",
                                 // SWAGGER 주소 허용 (개발용)

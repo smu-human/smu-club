@@ -1,4 +1,4 @@
-package com.example.smu_club.auth.repository;
+package com.example.smu_club.member.repository;
 
 import com.example.smu_club.domain.Member;
 import org.springframework.data.jpa.repository.JpaRepository;

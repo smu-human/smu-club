@@ -11,24 +11,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Answer {
 
-    @EmbeddedId
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "answer_id")
-    private AnswerId answerId;
+    private Long id;
 
-    //Answer 입장 : 하나의 Answer는 하나의 Member/Club/Question에 속한다
-    //Member/Club/Question 입장 : 하나의 Member/Club/Question는 여러 Answer에 속한다.
-    //고로 @ManyToOne을 사용한다.
-    @MapsId("memberId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @MapsId("clubId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id")
     private Club club;
 
-    @MapsId("questionId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id")
     private Question question;
