@@ -92,6 +92,7 @@ public class AuthService {
                 .email(userInfo.getEmail())
                 .department(userInfo.getDepartment())
                 .role(Role.MEMBER)
+                .phoneNumber(signupRequest.getPhoneNumber())
                 .build();
 
         // 4. 저장 DB에 newMember 저장

@@ -6,7 +6,7 @@ import com.example.smu_club.domain.QuestionContentType;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.question.dto.QuestionRequest;
 import com.example.smu_club.question.dto.QuestionResponse;
-import com.example.smu_club.question.repository.ClubRepository2;
+import com.example.smu_club.question.repository.ClubRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,12 +22,12 @@ import java.util.stream.Collectors;
 public class QuestionService {
 
     private final QuestionRepository questionRepository;
-    private final ClubRepository2 clubRepository2;
+    private final ClubRepository clubRepository;
 
 
     public List<QuestionResponse> findQuestionsByClubId(Long clubId) {
 
-        Club club = clubRepository2.findById(clubId)
+        Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("해당 동아리를 찾을 수 없습니다. ID: " + clubId));
 
         List<Question> questions = questionRepository.findAllByClubOrderByOrderNumAsc(club);
@@ -40,7 +40,7 @@ public class QuestionService {
     @Transactional(readOnly = false)
     public void saveQuestions(Long clubId, List<QuestionRequest> questions) {
 
-        Club club = clubRepository2.findById(clubId)
+        Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("해당 동아리를 찾을 수 없습니다." + clubId));
 
         questionRepository.deleteAllByClubAndQuestionContentType(club, QuestionContentType.TEXT);
