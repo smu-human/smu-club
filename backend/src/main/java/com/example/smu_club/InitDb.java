@@ -90,7 +90,6 @@ public class InitDb {
 
 
                 ClubMember clubMember = new ClubMember();
-                clubMember.setClubMemberId(new ClubMemberId());
                 clubMember.setClub(club);
                 clubMember.setMember(member);
                 em.persist(clubMember);

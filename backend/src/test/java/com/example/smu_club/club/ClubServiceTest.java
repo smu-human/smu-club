@@ -1,17 +1,16 @@
 package com.example.smu_club.club;
 
-import com.example.smu_club.auth.repository.MemberRepository;
 import com.example.smu_club.auth.security.CustomUserDetails;
 import com.example.smu_club.club.dto.ApplicationFormResponseDto;
-import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.club.service.ClubService;
 import com.example.smu_club.domain.Club;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Question;
 import com.example.smu_club.domain.Role;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
+import com.example.smu_club.member.repository.MemberRepository;
+import com.example.smu_club.question.repository.ClubRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
