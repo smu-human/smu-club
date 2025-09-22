@@ -39,7 +39,7 @@ public class Member implements UserDetails {
     private String department;
 
     @Column(nullable = false, unique = true, name = "phone_number")
-    private String phoneNum;
+    private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

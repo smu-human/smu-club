@@ -32,6 +32,7 @@ public class InitDb {
 
         public void dbInit(){
             //멤버 초기화
+            int phoneNumber = 0;
             for(int i = 1 ; i <= 1000 ; i++){
                 Member member = new Member();
                 member.setName("user" + i);
@@ -39,6 +40,8 @@ public class InitDb {
                 member.setStudentId(String.valueOf(202200000+i));
                 member.setDepartment("휴먼지능정보공학과");
                 member.setRole(Role.MEMBER);
+                member.setPhoneNumber(Integer.toString(phoneNumber));
+                phoneNumber++;
                 em.persist(member);
             }
             em.flush();
