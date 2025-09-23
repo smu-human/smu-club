@@ -12,7 +12,7 @@ public class ApiResponseDto<T> {
 
     private final String status;
     private final String message;
-    private T data;
+    private final T data;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final String errorCode;
