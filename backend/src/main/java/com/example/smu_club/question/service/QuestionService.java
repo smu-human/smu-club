@@ -6,7 +6,7 @@ import com.example.smu_club.domain.QuestionContentType;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.question.dto.QuestionRequest;
 import com.example.smu_club.question.dto.QuestionResponse;
-import com.example.smu_club.question.repository.ClubRepository;
+import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -6,7 +6,7 @@ import com.example.smu_club.domain.Question;
 import com.example.smu_club.domain.QuestionContentType;
 import com.example.smu_club.question.dto.QuestionRequest;
 import com.example.smu_club.question.dto.QuestionResponse;
-import com.example.smu_club.question.repository.ClubRepository;
+import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
 import com.example.smu_club.question.service.QuestionService;
 import org.junit.jupiter.api.DisplayName;
