@@ -1,7 +1,7 @@
 package com.example.smu_club;
 
-import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
+import com.example.smu_club.club.repository.ClubRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 
