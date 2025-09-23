@@ -3,7 +3,6 @@ package com.example.smu_club.club.dto;
 import com.example.smu_club.domain.RecruitingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
