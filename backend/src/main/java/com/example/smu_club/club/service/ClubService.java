@@ -96,7 +96,7 @@ public class ClubService {
         String studentId = userDetails.getUsername();
         Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +" is not found"));
         Club appliedClub = clubRepository.findById(clubId).orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +" is not found"));
-        ClubMember clubMember = new ClubMember(myInfo, appliedClub, LocalDate.now(), ClubMemberStatus.PENDING);
+        ClubMember clubMember = new ClubMember(myInfo, appliedClub, ClubRole.MEMBER, LocalDate.now(), ClubMemberStatus.PENDING);
         clubMemberRepository.save(clubMember);
 
         //2. 지원서 답변 및 파일 저장 (답변은 질문에 맞게 Mapping 한다.)

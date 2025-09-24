@@ -41,22 +41,6 @@
         }
 
 
-        /*public String generateToken(Authentication authentication) {
-            String authorities = authentication.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.joining(","));
-
-            long now = (new Date()).getTime();
-            Date accessTokenExpiresIn = new Date(now + accessTokenValidityInMilliseconds);
-
-            return Jwts.builder()
-                    .setSubject(authentication.getName())
-                    .claim(AUTHORITIES, authorities)
-                    .setIssuedAt(new Date(now))
-                    .setExpiration(accessTokenExpiresIn)
-                    .signWith(key, SignatureAlgorithm.HS256)
-                    .compact();
-        }*/
 
         public Boolean validateToken(String token) {
             try {
