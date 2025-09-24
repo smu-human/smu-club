@@ -58,6 +58,16 @@
                     .compact();
         }*/
 
+        public Boolean validateToken(String token) {
+            try {
+                parseClaims(token);
+                return true;
+            } catch (InvalidTokenException e) {
+                log.info("유효하지 않는 토큰입니다. 이유: {}", e.getMessage());
+                return false;
+            }
+        }
+
         public JwtTokenResponse generateToken(Member member) {
             String authorities = member.getRole().getKey();
 
@@ -121,4 +131,6 @@
             }
 
         }
+
+
     }
