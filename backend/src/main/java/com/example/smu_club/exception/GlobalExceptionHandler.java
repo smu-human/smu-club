@@ -1,6 +1,7 @@
 package com.example.smu_club.exception;
 
 
+import com.example.smu_club.common.ApiResponseDto;
 import com.example.smu_club.exception.custom.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,30 +16,30 @@ public class GlobalExceptionHandler {
      */
     // [로그인 실패] 예외 처리 -> 401 Unauthorized 응답
     @ExceptionHandler(LoginFailedException.class)
-    public ResponseEntity<ErrorResponse> handleLoginFailedException(LoginFailedException e) {
-        ErrorResponse response = new ErrorResponse("LOGIN_FAILED", e.getMessage());
+    public ResponseEntity<ApiResponseDto<Object>> handleLoginFailedException(LoginFailedException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("LOGIN_FAILED", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
     // [미가입 회원] 예외 처리 -> 404 Not Found 응답
     @ExceptionHandler(MemberNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleMemberNotFoundException(MemberNotFoundException e) {
-        ErrorResponse response = new ErrorResponse("MEMBER_NOT_FOUND", e.getMessage());
+    public ResponseEntity<ApiResponseDto<Object>>  handleMemberNotFoundException(MemberNotFoundException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("MEMBER_NOT_FOUND", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
     // [유효하지 않은 토큰 예외처리] -> 401 Unauthorized 응답
     // 예시 상황 : JWT 토큰이 없거나, 서명이 잘못되었거나 , 권한정보가 없거나
     @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidTokenException(InvalidTokenException e) {
-        ErrorResponse response = new ErrorResponse("INVALID_TOKEN", e.getMessage());
+    public ResponseEntity<ApiResponseDto<Object>>  handleInvalidTokenException(InvalidTokenException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("INVALID_TOKEN", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
     // [이미 가입된 회원이 다시 인증시도] -> 409 Conflict 응답
     @ExceptionHandler(MemberAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleMemberAlreadyExistsException(MemberAlreadyExistsException e) {
-        ErrorResponse response = new ErrorResponse("MEMBER_ALREADY_EXISTS", e.getMessage());
+    public ResponseEntity<ApiResponseDto<Object>> handleMemberAlreadyExistsException(MemberAlreadyExistsException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("MEMBER_ALREADY_EXISTS", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
@@ -48,8 +49,8 @@ public class GlobalExceptionHandler {
 
     // [클럽 정보를 찾을 수 없음] -> 404 Not Found 반환
     @ExceptionHandler(ClubNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleClubNotFoundException(ClubNotFoundException e) {
-        ErrorResponse response = new ErrorResponse("CLUB_NOT_FOUND", e.getMessage());
+    public ResponseEntity<ApiResponseDto<Object>> handleClubNotFoundException(ClubNotFoundException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("CLUB_NOT_FOUND", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 }
