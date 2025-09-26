@@ -6,6 +6,7 @@ import com.example.smu_club.auth.dto.LoginRequest;
 import com.example.smu_club.auth.dto.ReissueRequest;
 import com.example.smu_club.auth.dto.SignupRequest;
 import com.example.smu_club.auth.service.AuthService;
+import com.example.smu_club.common.ApiResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.security.auth.login.LoginException;
 
 @Slf4j
 @RestController
@@ -27,11 +27,12 @@ public class AuthController {
 
     // 로그인시도
     @PostMapping("/login")
-    public ResponseEntity<JwtTokenResponse> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponseDto<JwtTokenResponse>> login(@RequestBody LoginRequest loginRequest) {
         log.info("사용자 로그인 시도 :{}", loginRequest.getStudentId());
 
         JwtTokenResponse jwtTokenResponse = authService.login(loginRequest);
-        return ResponseEntity.ok(jwtTokenResponse);
+        ApiResponseDto<JwtTokenResponse> response = ApiResponseDto.success(jwtTokenResponse, "로그인에 성공했습니다.");
+        return ResponseEntity.ok(response);
 
     }
 
@@ -43,10 +44,14 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<JwtTokenResponse> signup(@RequestBody SignupRequest signupRequest) {
+    public ResponseEntity<ApiResponseDto<Void>> signup(@RequestBody SignupRequest signupRequest) {
         log.info("신규 사용자 회원가입 시도 :{}", signupRequest.getStudentId());
-        JwtTokenResponse jwtTokenResponse = authService.signup(signupRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(jwtTokenResponse);
+        authService.signup(signupRequest);
+
+        ApiResponseDto<Void> responseDto = ApiResponseDto.success("회원가입이 완료되었습니다.");
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+
     }
 
 }

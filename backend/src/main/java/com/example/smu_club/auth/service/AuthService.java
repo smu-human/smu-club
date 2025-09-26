@@ -60,11 +60,14 @@ public class AuthService {
 
         String refreshToken = reissueRequest.getRefreshToken();
 
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new InvalidTokenException("만료되었거나 유효하지 않은 토큰입니다. 다시 로그인해주새요.");
+        }
+
         Member member = memberRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new InvalidTokenException("유효하지 않은 Refresh Token 입니다"));
+                .orElseThrow(() -> new InvalidTokenException("[서버존재 X] 유효하지 않은 Refresh Token 입니다"));
 
         JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(member);
-
         member.updateRefreshToken(tokenResponse.getRefreshToken());
 
         return tokenResponse;

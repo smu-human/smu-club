@@ -13,7 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Slf4j
-@Component // <-- 스프링 빈으로 등록하기 위한 필수 어노테이션입니다.
+@Component
 public class SecurityContextDebugFilter extends OncePerRequestFilter {
 
     @Override
