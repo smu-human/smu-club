@@ -2,10 +2,8 @@ package com.example.smu_club.club.controller;
 
 import java.util.List;
 import com.example.smu_club.answer.dto.AnswerRequestDto;
+import com.example.smu_club.club.dto.*;
 import com.example.smu_club.common.ApiResponseDto;
-import com.example.smu_club.club.dto.ApplicationFormResponseDto;
-import com.example.smu_club.club.dto.ApplicationRequestDto;
-import com.example.smu_club.club.dto.ApplicationResponseDto;
 import com.example.smu_club.club.service.ClubService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +13,34 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/member")
-public class MemberController {
+public class ClubController {
     private final ClubService clubService;
 
-    @GetMapping("/clubs/{clubId}/apply")
+    /**
+     *
+     * GUEST 권한
+     */
+    @GetMapping("/api/v1/public/clubs")
+    public ResponseEntity<ApiResponseDto<List<ClubsResponseDto>>> findAllClubs() {
+        List<ClubsResponseDto> clubs = clubService.findAllClubs();
+
+        return ResponseEntity.ok(ApiResponseDto.success(clubs, "전체 클럽 목록 조회 성공 [메인페이지]"));
+    }
+
+    @GetMapping("/api/v1/public/clubs/{clubId}")
+    public ResponseEntity<ApiResponseDto<ClubResponseDto>> findClubById(@PathVariable Long clubId){
+        ClubResponseDto club = clubService.findClubById(clubId);
+
+        return ResponseEntity.ok(ApiResponseDto.success(club, "클럽 상세 정보 조회 성공"));
+    }
+
+
+
+    /**
+     *
+     * MEMBER 권한
+     */
+    @GetMapping("/api/v1/member/clubs/{clubId}/apply")
     public ResponseEntity<ApiResponseDto<ApplicationFormResponseDto>> getApplication (
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails
@@ -33,10 +54,9 @@ public class MemberController {
         );
 
         return ResponseEntity.ok(apiResponseDto);
-
     }
 
-    @PostMapping("/clubs/{clubId}/apply")
+    @PostMapping("/api/v1/member/clubs/{clubId}/apply")
     public ResponseEntity<ApiResponseDto<ApplicationResponseDto>> createApplication (
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails,

@@ -1,11 +1,7 @@
 package com.example.smu_club.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
-
-import java.util.List;
 
 @Getter
 public class ApiResponseDto<T> {

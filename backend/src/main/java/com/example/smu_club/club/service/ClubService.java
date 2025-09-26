@@ -9,6 +9,7 @@ import com.example.smu_club.club.dto.ClubsResponseDto;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.domain.*;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
+import com.example.smu_club.exception.custom.ClubsNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.exception.custom.QuestionNotFoundException;
 import com.example.smu_club.member.repository.MemberRepository;
@@ -37,8 +38,12 @@ public class ClubService {
     private final MemberRepository memberRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final AnswerRepository answerRepository;
+
     public List<ClubsResponseDto> findAllClubs(){
+
         List<Club> findClubs = clubRepository.findAll();
+        if (findClubs.isEmpty())
+            throw new ClubsNotFoundException("등록된 클럽이 하나도 없습니다.");
 
         return findClubs.stream()
                 .map(c -> new ClubsResponseDto(

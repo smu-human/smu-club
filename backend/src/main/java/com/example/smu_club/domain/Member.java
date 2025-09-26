@@ -18,6 +18,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+
 public class Member implements UserDetails {
 
     @Id

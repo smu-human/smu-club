@@ -53,4 +53,11 @@ public class GlobalExceptionHandler {
         ApiResponseDto<Object> response = ApiResponseDto.fail("CLUB_NOT_FOUND", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
+    // [클럽 정보들을 찾을 수 없음] -> 404 Not Found 반환
+    @ExceptionHandler(ClubsNotFoundException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleClubsNotFoundException(ClubsNotFoundException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("CLUBS_NOT_FOUND", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
 }
