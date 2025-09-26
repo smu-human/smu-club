@@ -38,9 +38,11 @@ public class AuthController {
 
     // 사용자의 accessToken 이 만료되었을 때 이 API 호출을 통해서 RefreshToken 을 통해서 accessToken 을 재발급
     @PostMapping("/reissue")
-    public ResponseEntity<JwtTokenResponse> reissue(@RequestBody ReissueRequest reissueRequest) {
+    public ResponseEntity<ApiResponseDto<JwtTokenResponse>> reissue(@RequestBody ReissueRequest reissueRequest) {
         JwtTokenResponse jwtTokenResponse = authService.reissueTokens(reissueRequest);
-        return ResponseEntity.ok(jwtTokenResponse);
+
+        ApiResponseDto<JwtTokenResponse> response = ApiResponseDto.success(jwtTokenResponse, "토큰이 성공적으로 발급되었습니다.");
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/signup")
