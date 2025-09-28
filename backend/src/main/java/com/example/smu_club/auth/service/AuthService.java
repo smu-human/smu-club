@@ -10,6 +10,7 @@ import com.example.smu_club.exception.custom.MemberAlreadyExistsException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -106,5 +107,15 @@ public class AuthService {
         newMember.updateRefreshToken(tokenResponse.getRefreshToken());
 
         return tokenResponse;
+    }
+
+    // 로그아웃 시 사용자 refreshToken 을 null처리
+    @Transactional
+    public void logout(String studentId) {
+
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("해당 사용자를 찾을 수 없습니다."));
+
+        member.clearRefreshToken();
     }
 }

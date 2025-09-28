@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,9 +41,11 @@ public class AuthController {
 
     // 사용자의 accessToken 이 만료되었을 때 이 API 호출을 통해서 RefreshToken 을 통해서 accessToken 을 재발급
     @PostMapping("/reissue")
-    public ResponseEntity<JwtTokenResponse> reissue(@RequestBody ReissueRequest reissueRequest) {
+    public ResponseEntity<ApiResponseDto<JwtTokenResponse>> reissue(@RequestBody ReissueRequest reissueRequest) {
         JwtTokenResponse jwtTokenResponse = authService.reissueTokens(reissueRequest);
-        return ResponseEntity.ok(jwtTokenResponse);
+
+        ApiResponseDto<JwtTokenResponse> response = ApiResponseDto.success(jwtTokenResponse, "토큰이 성공적으로 발급되었습니다.");
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/signup")
@@ -48,10 +53,19 @@ public class AuthController {
         log.info("신규 사용자 회원가입 시도 :{}", signupRequest.getStudentId());
         authService.signup(signupRequest);
 
-        ApiResponseDto<Void> responseDto = ApiResponseDto.success("회원가입이 완료되었습니다.");
+        ApiResponseDto<Void> response = ApiResponseDto.success("회원가입이 완료되었습니다.");
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponseDto<Void>> logout(@AuthenticationPrincipal User user) {
+
+        String studentId = user.getUsername();
+        authService.logout(studentId);
+
+        ApiResponseDto<Void> response = ApiResponseDto.success("성공적으로 로그아웃 되었습니다.");
+        return ResponseEntity.ok(response);
+    }
 }
