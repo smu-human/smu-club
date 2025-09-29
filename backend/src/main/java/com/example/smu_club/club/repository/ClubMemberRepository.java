@@ -5,8 +5,9 @@ import com.example.smu_club.domain.ClubRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.data.repository.query.Param;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
@@ -14,5 +15,11 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.club WHERE cm.member.id = :memberId AND cm.clubRole = :clubRole")
     List<ClubMember> findByMemberIdAndClubRoleWithClub(long memberId, ClubRole clubRole);
+  
+    @Query( "SELECT cm FROM ClubMember cm JOIN FETCH cm.member m JOIN FETCH cm.club c WHERE m.studentId = :studentId")
+    List<ClubMember> findAllWithMemberAndClubByStudentId(@Param("studentId") String studentId);
+
+    @Query( "SELECT cm FROM ClubMember cm JOIN FETCH cm.member m JOIN FETCH cm.club c WHERE m.studentId = :studentId AND c.id = :clubId")
+    ClubMember findAllWithMemberAndClubByStudentId(@Param("studentId") String studentId, @Param("clubId") Long clubId);
 
 }

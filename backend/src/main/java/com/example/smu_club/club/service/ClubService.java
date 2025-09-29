@@ -6,6 +6,7 @@ import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.domain.*;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
+import com.example.smu_club.exception.custom.ClubsNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.exception.custom.QuestionNotFoundException;
 import com.example.smu_club.member.repository.MemberRepository;
@@ -28,14 +29,18 @@ import static java.util.stream.Collectors.toList;
 @Service
 @Transactional(readOnly = true) //JPA 모든 데이터/로직 변경은 가급적 트랜잭션에서 실행 되어야함. -> 그래야 LAZY 로딩 같은 기능이 가능함
 @RequiredArgsConstructor
-public class ClubService {
+public class    ClubService {
     private final ClubRepository clubRepository;
     private final QuestionRepository questionRepository;
     private final MemberRepository memberRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final AnswerRepository answerRepository;
+
     public List<ClubsResponseDto> findAllClubs(){
+
         List<Club> findClubs = clubRepository.findAll();
+        if (findClubs.isEmpty())
+            throw new ClubsNotFoundException("등록된 클럽이 하나도 없습니다.");
 
         return findClubs.stream()
                 .map(c -> new ClubsResponseDto(

@@ -13,6 +13,10 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "club_member",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_club_member", columnNames = {"member_id", "club_id"})
+        })
 public class ClubMember {
 
     @Id
@@ -35,6 +39,7 @@ public class ClubMember {
 
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ClubMemberStatus status;
 
     private String memo;
