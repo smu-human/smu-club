@@ -2,10 +2,7 @@ package com.example.smu_club.club.service;
 
 import com.example.smu_club.answer.dto.AnswerRequestDto;
 import com.example.smu_club.answer.repository.AnswerRepository;
-import com.example.smu_club.club.dto.ApplicationFormResponseDto;
-import com.example.smu_club.club.dto.ApplicationResponseDto;
-import com.example.smu_club.club.dto.ClubResponseDto;
-import com.example.smu_club.club.dto.ClubsResponseDto;
+import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.domain.*;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
@@ -129,6 +126,23 @@ public class ClubService {
         return new ApplicationResponseDto(QuestionAndAnswer, fileUrl);
     }
 
+    @Transactional
+    public List<ManagedClubResponse> findManagedClubsByMemberId(String studentId) {
+
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("[OWNER] 해당 학번의 사용자를 찾을 수 없습니다: " + studentId));
+
+        long memberId = member.getId();
+
+        List<ClubMember> managedClubRelations = clubMemberRepository.findByMemberIdAndClubRoleWithClub(memberId, ClubRole.OWNER);
+
+        return managedClubRelations.stream()
+                .map(relation -> new ManagedClubResponse(
+                        relation.getClub().getId(),
+                        relation.getClub().getName()
+                ))
+                .collect(Collectors.toList());
+    }
 }
 
 
