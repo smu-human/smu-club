@@ -60,4 +60,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    /*
+    ClubMember 예외 관련
+     */
+    @ExceptionHandler(ClubMemberNotFoundException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleClubMemberNotFoundException(ClubMemberNotFoundException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("CLUB_MEMBER_NOT_FOUND", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
 }

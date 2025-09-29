@@ -39,6 +39,7 @@ public class ClubMember {
 
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ClubMemberStatus status;
 
     private String memo;

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import static com.example.smu_club.domain.ClubMemberStatus.PENDING;
 import static com.example.smu_club.domain.QuestionContentType.TEXT;
 
 
@@ -121,6 +122,7 @@ public class InitDb {
                 clubMember.setClub(club);
                 clubMember.setMember(member);
                 clubMember.setClubRole(ClubRole.MEMBER);
+                clubMember.setStatus(PENDING);
                 em.persist(clubMember);
 
                 memberIdCounter++;

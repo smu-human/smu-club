@@ -3,7 +3,9 @@ package com.example.smu_club.member.service;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.domain.ClubMember;
 import com.example.smu_club.domain.Member;
+import com.example.smu_club.exception.custom.ClubMemberNotFoundException;
 import com.example.smu_club.member.dto.ApplicationListResponseDto;
+import com.example.smu_club.member.dto.ApplicationResultResponseDto;
 import com.example.smu_club.member.dto.MemberNameResponseDto;
 import com.example.smu_club.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,5 +43,17 @@ public class MemberService {
                         cm.getId(),
                         cm.getClub().getName()
                 )).toList();
+    }
+
+    public ApplicationResultResponseDto findResult(String studentId, Long clubId) {
+        ClubMember clubMember = clubMemberRepository.findAllWithMemberAndClubByStudentId(studentId, clubId);
+        if(clubMember == null) throw new ClubMemberNotFoundException("해당 클럽에 지원하지 않았습니다.");
+
+        return new ApplicationResultResponseDto(
+                clubMember.getMember().getId(),
+                clubMember.getClub().getId(),
+                clubMember.getStatus()
+        );
+
     }
 }
