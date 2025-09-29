@@ -1,7 +1,7 @@
 package com.example.smu_club.auth.service;
 import com.example.smu_club.auth.dto.*;
 import com.example.smu_club.auth.external.UnivApiClient;
-import com.example.smu_club.auth.token.JwtTokenProvider;
+import com.example.smu_club.auth.jwt.JwtTokenProvider;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Role;
 import com.example.smu_club.exception.custom.InvalidTokenException;
@@ -10,7 +10,6 @@ import com.example.smu_club.exception.custom.MemberAlreadyExistsException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,7 +75,7 @@ public class AuthService {
     }
 
     @Transactional
-    public JwtTokenResponse signup(SignupRequest signupRequest){
+    public void signUp(SignupRequest signupRequest){
 
         // 1. 학교 API 를 통해서 인증
         UnivUserInfoResponse userInfo = univApiClient.authenticate(
@@ -101,12 +100,6 @@ public class AuthService {
 
         // 4. 저장 DB에 newMember 저장
         memberRepository.save(newMember);
-
-        // 5. 토큰 발급 [추후 논의 - 회원가입 하고 바로 로그인 시킬건지 아니면 회원가입 완료 문구 -> 사용자가 로그인]
-        JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(newMember);
-        newMember.updateRefreshToken(tokenResponse.getRefreshToken());
-
-        return tokenResponse;
     }
 
     // 로그아웃 시 사용자 refreshToken 을 null처리
