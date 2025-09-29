@@ -1,5 +1,6 @@
 package com.example.smu_club.question.controller;
 
+import com.example.smu_club.common.ApiResponseDto;
 import com.example.smu_club.domain.Question;
 import com.example.smu_club.question.dto.QuestionRequest;
 import com.example.smu_club.question.dto.QuestionResponse;
@@ -18,19 +19,22 @@ public class QuestionController {
     private final QuestionService questionService;
 
     @GetMapping("/{clubId}/questions")
-    public ResponseEntity<List<QuestionResponse>> getClubQuestions(@PathVariable Long clubId) {
+    public ResponseEntity<ApiResponseDto<List<QuestionResponse>>> getClubQuestions(@PathVariable Long clubId) {
         List<QuestionResponse> questions = questionService.findQuestionsByClubId(clubId);
-        return ResponseEntity.ok(questions);
+
+        ApiResponseDto<List<QuestionResponse>> response = ApiResponseDto.success(questions, "질문조회에 성공했습니다.");
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{clubId}/questions")
-    public ResponseEntity<Void> saveClubQuestions(
+    public ResponseEntity<ApiResponseDto<Void>> saveClubQuestions(
             @PathVariable Long clubId,
             @RequestBody List<QuestionRequest> questions) {
 
         questionService.saveQuestions(clubId, questions);
+        ApiResponseDto<Void> response = ApiResponseDto.success("[OWNER] 질문저장에 성공했습니다");
 
-        return ResponseEntity.ok().build();
-
+        return ResponseEntity.ok(response);
     }
 }

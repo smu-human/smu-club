@@ -102,4 +102,8 @@ public class Member implements UserDetails {
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
+
+    public void clearRefreshToken() {
+        this.refreshToken = null;
+    }
 }

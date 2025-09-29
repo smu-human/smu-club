@@ -1,7 +1,6 @@
 package com.example.smu_club.config;
 
 
-import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final SecurityContextDebugFilter securityContextDebugFilter; // <- 이 필드
+    private final SecurityContextDebugFilter securityContextDebugFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -62,7 +61,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(securityContextDebugFilter, JwtAuthenticationFilter.class); // <-- 디버깅 필터 추가
+                .addFilterAfter(securityContextDebugFilter, JwtAuthenticationFilter.class);
 
 
         return http.build();

@@ -120,6 +120,7 @@ public class InitDb {
                 ClubMember clubMember = new ClubMember();
                 clubMember.setClub(club);
                 clubMember.setMember(member);
+                clubMember.setClubRole(ClubRole.MEMBER);
                 em.persist(clubMember);
 
                 memberIdCounter++;
