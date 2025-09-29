@@ -52,6 +52,8 @@ public class MemberService {
         return new ApplicationResultResponseDto(
                 clubMember.getMember().getId(),
                 clubMember.getClub().getId(),
+                clubMember.getMember().getName(),
+                clubMember.getClub().getName(),
                 clubMember.getStatus()
         );
 

@@ -7,7 +7,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ApplicationResultResponseDto {
-    private Long MemberId;
-    private Long ClubId;
+    private Long memberId;
+    private Long clubId;
+    private String memberName;
+    private String clubName;
     private ClubMemberStatus status;
 }

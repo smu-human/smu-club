@@ -32,7 +32,7 @@ import static java.util.stream.Collectors.toList;
 @Service
 @Transactional(readOnly = true) //JPA 모든 데이터/로직 변경은 가급적 트랜잭션에서 실행 되어야함. -> 그래야 LAZY 로딩 같은 기능이 가능함
 @RequiredArgsConstructor
-public class ClubService {
+public class    ClubService {
     private final ClubRepository clubRepository;
     private final QuestionRepository questionRepository;
     private final MemberRepository memberRepository;
