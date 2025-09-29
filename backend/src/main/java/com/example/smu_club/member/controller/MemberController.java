@@ -40,5 +40,4 @@ public class MemberController {
         return ResponseEntity.ok(success(appList, "지원 목록 조회 성공"));
     }
 
-    @G
 }
