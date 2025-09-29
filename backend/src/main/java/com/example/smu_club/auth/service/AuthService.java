@@ -4,10 +4,7 @@ import com.example.smu_club.auth.external.UnivApiClient;
 import com.example.smu_club.auth.jwt.JwtTokenProvider;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Role;
-import com.example.smu_club.exception.custom.InvalidTokenException;
-import com.example.smu_club.exception.custom.LoginFailedException;
-import com.example.smu_club.exception.custom.MemberAlreadyExistsException;
-import com.example.smu_club.exception.custom.MemberNotFoundException;
+import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -60,12 +57,14 @@ public class AuthService {
 
         String refreshToken = reissueRequest.getRefreshToken();
 
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new InvalidTokenException("만료되었거나 유효하지 않은 토큰입니다. 다시 로그인해주새요.");
+        try {
+            jwtTokenProvider.validateToken(refreshToken);
+        } catch (ExpiredTokenException | InvalidTokenException e) {
+            throw new InvalidRefreshTokenException("[RefreshToken] 만료되었거나 유효하지 않은 토큰입니다. 다시 로그인해주세요.");
         }
 
         Member member = memberRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new InvalidTokenException("[서버존재 X] 유효하지 않은 Refresh Token 입니다"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("[서버존재 X] 유효하지 않은 Refresh Token 입니다"));
 
         JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(member);
         member.updateRefreshToken(tokenResponse.getRefreshToken());

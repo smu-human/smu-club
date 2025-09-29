@@ -1,6 +1,7 @@
 package com.example.smu_club.config;
 
-import com.example.smu_club.auth.token.JwtTokenProvider;
+import com.example.smu_club.auth.jwt.JwtTokenProvider;
+import com.example.smu_club.exception.custom.ExpiredTokenException;
 import com.example.smu_club.exception.custom.InvalidTokenException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,13 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
-import org.springframework.util.PathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 @Slf4j
 @Component
@@ -39,8 +37,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Authentication authentication = jwtTokenProvider.getAuthentication(jwt);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+        } catch (ExpiredTokenException e) {
+            log.warn("엑세스 토큰이 만료되었습니다.  URI: {}, {}", request.getRequestURI(), e.getMessage());
+            request.setAttribute("exception", "EXPIRED_TOKEN");
         } catch (InvalidTokenException e) {
-            log.debug("유효하지 않은 JWT 토큰입니다. URI: {}, 메시지: {}", request.getRequestURI(), e.getMessage());
+            // [다음 단계] 여기에 유효하지 않은 Access Token 에러 응답 생성 로직 추가
+            log.warn("유효하지 않은 엑세스 토큰입니다. URI: {}, {}", request.getRequestURI(), e.getMessage());
+            request.setAttribute("exception", "INVALID_TOKEN");
         }
 
         filterChain.doFilter(request, response);

@@ -5,7 +5,7 @@ import com.example.smu_club.auth.controller.AuthController;
 import com.example.smu_club.auth.dto.JwtTokenResponse;
 import com.example.smu_club.auth.dto.LoginRequest;
 import com.example.smu_club.auth.service.AuthService;
-import com.example.smu_club.auth.token.JwtTokenProvider;
+import com.example.smu_club.auth.jwt.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

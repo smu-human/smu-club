@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -28,20 +29,29 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    // [유효하지 않은 토큰 예외처리] -> 401 Unauthorized 응답
+    // [유효하지 않은 토큰 예외처리] RefreshToken 관련 -> 401 Unauthorized 응답
     // 예시 상황 : JWT 토큰이 없거나, 서명이 잘못되었거나 , 권한정보가 없거나
-    @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<ApiResponseDto<Object>>  handleInvalidTokenException(InvalidTokenException e) {
-        ApiResponseDto<Object> response = ApiResponseDto.fail("INVALID_TOKEN", e.getMessage());
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<ApiResponseDto<Object>>  handleInvalidTokenException(InvalidRefreshTokenException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("INVALID_REFRESH_TOKEN", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
     // [이미 가입된 회원이 다시 인증시도] -> 409 Conflict 응답
     @ExceptionHandler(MemberAlreadyExistsException.class)
     public ResponseEntity<ApiResponseDto<Object>> handleMemberAlreadyExistsException(MemberAlreadyExistsException e) {
+
         ApiResponseDto<Object> response = ApiResponseDto.fail("MEMBER_ALREADY_EXISTS", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
+
+    // [학교 API 인증에 실패했을 때] -> 401 Unauthorized 응답
+    @ExceptionHandler(UnivAuthenticationFailedException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleUnivAuthenticationFailedException(UnivAuthenticationFailedException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("UNIV_AUTH_FAILED", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
 
     /*
     Club 예외 관련

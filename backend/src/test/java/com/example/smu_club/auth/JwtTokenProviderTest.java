@@ -1,7 +1,7 @@
 package com.example.smu_club.auth;
 
 
-import com.example.smu_club.auth.token.JwtTokenProvider;
+import com.example.smu_club.auth.jwt.JwtTokenProvider;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -30,16 +30,6 @@ public class JwtTokenProviderTest {
 
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
-    }
-    @Test
-    @DisplayName("유효 기간이 남은 정상적인 토큰으로 validateToken을 호출하면 true를 반환한다")
-    void expiredToken_shouldReturn_false() {
-
-        String expiredToken = createExpiredToken();
-
-        boolean isValid = jwtTokenProvider.validateToken(expiredToken);
-
-        assertThat(isValid);
     }
 
     private String createExpiredToken() {

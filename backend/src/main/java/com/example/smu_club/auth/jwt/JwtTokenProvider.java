@@ -1,8 +1,9 @@
-    package com.example.smu_club.auth.token;
+    package com.example.smu_club.auth.jwt;
 
 
     import com.example.smu_club.auth.dto.JwtTokenResponse;
     import com.example.smu_club.domain.Member;
+    import com.example.smu_club.exception.custom.ExpiredTokenException;
     import com.example.smu_club.exception.custom.InvalidTokenException;
     import io.jsonwebtoken.*;
     import io.jsonwebtoken.io.Decoders;
@@ -41,15 +42,8 @@
         }
 
 
-
-        public Boolean validateToken(String token) {
-            try {
-                parseClaims(token);
-                return true;
-            } catch (InvalidTokenException e) {
-                log.info("유효하지 않는 토큰입니다. 이유: {}", e.getMessage());
-                return false;
-            }
+        public void validateToken(String refreshToken) {
+            parseClaims(refreshToken);
         }
 
         public JwtTokenResponse generateToken(Member member) {
@@ -101,15 +95,16 @@
         }
 
         // Key로 토큰 검증
-        private Claims parseClaims(String accessToken) {
+        private Claims parseClaims(String token) {
             try {
                 return Jwts.parserBuilder()
                         .setSigningKey(key)
                         .build()
-                        .parseClaimsJws(accessToken)
+                        .parseClaimsJws(token)
                         .getBody();
             } catch (ExpiredJwtException e) {
-                throw new InvalidTokenException("만료된 토큰입니다.");
+                log.warn("만료된 토큰 확인 ");
+                throw new ExpiredTokenException("만료된 토큰입니다.");
             } catch (JwtException | IllegalArgumentException e) {
                 throw new InvalidTokenException("유효하지 않은 JWT 토큰입니다.");
             }
