@@ -3,6 +3,7 @@ package com.example.smu_club.auth.external;
 
 import com.example.smu_club.auth.dto.UnivAuthRequest;
 import com.example.smu_club.auth.dto.UnivUserInfoResponse;
+import com.example.smu_club.exception.custom.UnivAuthenticationFailedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -29,8 +30,7 @@ public class UnivApiClientImpl implements UnivApiClient {
                     .body(UnivUserInfoResponse.class);
         } catch (RestClientResponseException e) {
             log.warn("학교 인증 실패, 학번: {}, 상태코드: {}", studentId, e.getStatusCode());
-
-            return null;
+            throw new UnivAuthenticationFailedException("학교 인증에 실패했습니다 학번:" + studentId + " 상태코드: " + e.getStatusCode());
         }
     }
 }

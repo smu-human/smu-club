@@ -22,6 +22,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final SecurityContextDebugFilter securityContextDebugFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -47,13 +48,20 @@ public class SecurityConfig {
                 // 세션 사용 안함 - JWT 사용
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint(customAuthenticationEntryPoint))
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/public/**",
-                                "/api/v1/auth/status",
                                 // SWAGGER 주소 허용 (개발용)
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html").permitAll()
+
+                        // 로그아웃은 인증된 회원이 누르니까 인증된 회원에 대해서만
+                        .requestMatchers("/api/v1/auth/logout").authenticated()
+                        // (선택) 아직 넣을지 뺼지 모름
+                        .requestMatchers("/api/v1/auth/status").authenticated()
                         .requestMatchers("/api/v1/member/**").hasRole("MEMBER")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/owner/**").hasRole("OWNER")
