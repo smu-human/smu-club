@@ -22,6 +22,10 @@ public class Club {
     @Column(nullable = false)
     private String name;
 
+    // 대표 메인화면에 표시되면 동아리 설명에 해당합니다.
+    private String title;
+
+    @Lob // Toast UI 에디터 내용은 길이를 예측할 수 없으므로 @Lob 추가 (TEXT 타입)
     private String description;
 
     @Column(name = "created_at")
