@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/owner")
-public class OwnerController {
+public class OwnerClubController {
 
     private final ClubService clubService;
 

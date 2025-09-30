@@ -46,7 +46,7 @@ public class    ClubService {
                 .map(c -> new ClubsResponseDto(
                         c.getId(),
                         c.getName(),
-                        c.getDescription(),
+                        c.getTitle(),
                         c.getRecruitingStatus(),
                         c.getCreatedAt()
                 ))
