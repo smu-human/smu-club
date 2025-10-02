@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 public class ClubResponseDto {
     private Long id;
     private String name;
-    private String description;
     private LocalDateTime createdAt;
     private RecruitingStatus recruitingStatus;
     private LocalDate recruitingStart;
@@ -25,11 +24,12 @@ public class ClubResponseDto {
     private String clubRoom;
     private String thumbnailUrl;
 
+    private String description;
+
     //객체를 파라미터로 넘겨 재사용성 증가
     public ClubResponseDto(Club club) {
         this.id = club.getId();
         this.name = club.getName();
-        this.description = club.getDescription();
         this.createdAt = club.getCreatedAt();
         this.recruitingStatus = club.getRecruitingStatus();
         this.recruitingStart = club.getRecruitingStart();
@@ -38,5 +38,7 @@ public class ClubResponseDto {
         this.contact = club.getContact();
         this.clubRoom = club.getClubRoom();
         this.thumbnailUrl = club.getThumbnailUrl();
+
+        this.description = club.getDescription();
     }
 }

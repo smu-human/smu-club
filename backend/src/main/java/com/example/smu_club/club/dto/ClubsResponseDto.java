@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class ClubsResponseDto {
     private Long id;
     private String name;
-    private String description;
+    private String title;
     private RecruitingStatus recruitingStatus;
     private LocalDateTime createdAt;
 }

@@ -133,7 +133,7 @@ public class InitDb {
         //동아리 모집중 (OPEN)
         private void createClub1(Club club){
             club.setName("스뮤클럽");
-            club.setDescription("안녕하세요 상명대학교 휴먼지능정보공학과에서 만든 스뮤클럽입니다.\n 저희 동아리는 개발동아리로 웹어플리케이션을 개발합니다.");
+            club.setTitle("안녕하세요 상명대학교 휴먼지능정보공학과에서 만든 스뮤클럽입니다.\n 저희 동아리는 개발동아리로 웹어플리케이션을 개발합니다.");
             club.setCreatedAt(LocalDateTime.now());
             club.setRecruitingStatus(RecruitingStatus.OPEN);
             club.setRecruitingStart(LocalDate.of(2025, 9, 1));
@@ -147,7 +147,7 @@ public class InitDb {
         //동아리 모집 예정 (UPCOMING)
         private void createClub2(Club club){
             club.setName("라면클럽");
-            club.setDescription("안녕하세요 상명대학교 외식경영학과에서 만든 라면클럽입니다.\n 저희 동아리는 라면 조합을 연구합니다.");
+            club.setTitle("안녕하세요 상명대학교 외식경영학과에서 만든 라면클럽입니다.\n 저희 동아리는 라면 조합을 연구합니다.");
             club.setCreatedAt(LocalDateTime.now());
             club.setRecruitingStatus(RecruitingStatus.UPCOMING);
             club.setRecruitingStart(LocalDate.of(2025, 10, 1));
@@ -161,7 +161,7 @@ public class InitDb {
         //동아리 비 모집중 (CLOSED)
         private void createClub3(Club club){
             club.setName("헬스클럽");
-            club.setDescription("안녕하세요 상명대학교 스포건강관리학과에서 만든 헬스클럽입니다.\n 저희 동아리는 헬스동아리로 3대 500에 도전합니다.");
+            club.setTitle("안녕하세요 상명대학교 스포건강관리학과에서 만든 헬스클럽입니다.\n 저희 동아리는 헬스동아리로 3대 500에 도전합니다.");
             club.setCreatedAt(LocalDateTime.now());
             club.setRecruitingStatus(RecruitingStatus.CLOSED);
             club.setRecruitingStart(LocalDate.of(2025, 3, 1));
