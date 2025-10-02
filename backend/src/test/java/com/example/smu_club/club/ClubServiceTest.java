@@ -1,7 +1,7 @@
 package com.example.smu_club.club;
 
 import com.example.smu_club.club.dto.ApplicationFormResponseDto;
-import com.example.smu_club.club.service.ClubService;
+import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.domain.Club;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Question;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 class ClubServiceTest {
 
     @InjectMocks // 테스트 대상 클래스 (Mock 객체들이 여기에 주입됨)
-    private ClubService clubService;
+    private MemberClubService clubService;
 
     @Mock // 가짜로 만들 의존성 객체
     private ClubRepository clubRepository;
