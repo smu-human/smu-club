@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class ClubMemberService {
+public class ClubMemberRelationService {
     private final ClubMemberRepository clubMemberRepository;
 
     public Long countClubMembers(Long clubId){

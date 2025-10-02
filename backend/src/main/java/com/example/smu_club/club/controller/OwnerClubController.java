@@ -3,7 +3,7 @@ package com.example.smu_club.club.controller;
 
 import com.example.smu_club.club.dto.ClubInfoRequest;
 import com.example.smu_club.club.dto.ManagedClubResponse;
-import com.example.smu_club.club.service.ClubService;
+import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.common.ApiResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/api/v1/owner")
 public class OwnerClubController {
 
-    private final ClubService clubService;
+    private final OwnerClubService ownerClubService;
 
     // (owner) 동아리 목록 조회  MyPage 기준으로 들어오면 동아리 정보 나옴
     @GetMapping("/managed-clubs")
@@ -27,8 +27,8 @@ public class OwnerClubController {
             @AuthenticationPrincipal User user
     ) {
         String memberId = user.getUsername();
-        List<ManagedClubResponse> managedClubs = clubService.findManagedClubsByMemberId(memberId);
-        ApiResponseDto<List<ManagedClubResponse>> response = ApiResponseDto.success(managedClubs, "운영자의 동아리를 조회합니다.");
+        List<ManagedClubResponse> managedClubs = ownerClubService.findManagedClubsByMemberId(memberId);
+        ApiResponseDto<List<ManagedClubResponse>> response = ApiResponseDto.success(managedClubs, "[OWNER] 운영자의 동아리를 조회합니다.");
 
         return ResponseEntity.ok(response);
     }
@@ -39,9 +39,9 @@ public class OwnerClubController {
             @RequestBody ClubInfoRequest request,
             @AuthenticationPrincipal User user
     ) {
-        clubService.register(user.getUsername(),request);
+        ownerClubService.register(user.getUsername(),request);
 
-        ApiResponseDto<Void> response = ApiResponseDto.success("[Owner] 동아리 정보 등록에 성공했습니다 ");
+        ApiResponseDto<Void> response = ApiResponseDto.success("[Owner] 동아리 정보 등록에 성공했습니다. ");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

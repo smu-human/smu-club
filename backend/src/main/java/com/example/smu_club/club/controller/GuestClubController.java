@@ -2,7 +2,7 @@ package com.example.smu_club.club.controller;
 
 import com.example.smu_club.club.dto.ClubResponseDto;
 import com.example.smu_club.club.dto.ClubsResponseDto;
-import com.example.smu_club.club.service.ClubService;
+import com.example.smu_club.club.service.GuestClubService;
 import com.example.smu_club.common.ApiResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,18 +22,18 @@ import java.util.List;
 @RequestMapping("/api/v1/public")
 public class GuestClubController {
 
-    private final ClubService clubService;
+    private final GuestClubService guestClubService;
 
     @GetMapping("/clubs")
     public ResponseEntity<ApiResponseDto<List<ClubsResponseDto>>> findAllClubs() {
-        List<ClubsResponseDto> clubs = clubService.findAllClubs();
+        List<ClubsResponseDto> clubs = guestClubService.findAllClubs();
 
         return ResponseEntity.ok(ApiResponseDto.success(clubs, "전체 클럽 목록 조회 성공 [메인페이지]"));
     }
 
     @GetMapping("/clubs/{clubId}")
     public ResponseEntity<ApiResponseDto<ClubResponseDto>> findClubById(@PathVariable Long clubId){
-        ClubResponseDto club = clubService.findClubById(clubId);
+        ClubResponseDto club = guestClubService.findClubById(clubId);
 
         return ResponseEntity.ok(ApiResponseDto.success(club, "클럽 상세 정보 조회 성공"));
     }

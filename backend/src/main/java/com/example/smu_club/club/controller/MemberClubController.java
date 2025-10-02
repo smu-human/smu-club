@@ -5,7 +5,7 @@ import com.example.smu_club.answer.dto.AnswerRequestDto;
 import com.example.smu_club.club.dto.ApplicationFormResponseDto;
 import com.example.smu_club.club.dto.ApplicationRequestDto;
 import com.example.smu_club.club.dto.ApplicationResponseDto;
-import com.example.smu_club.club.service.ClubService;
+import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.common.ApiResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +24,7 @@ import java.util.List;
 @RequestMapping("/api/v1/member")
 public class MemberClubController {
 
-    private final ClubService clubService;
+    private final MemberClubService memberClubService;
 
     @GetMapping("/clubs/{clubId}/apply")
     public ResponseEntity<ApiResponseDto<ApplicationFormResponseDto>> getApplication(
@@ -32,7 +32,7 @@ public class MemberClubController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
 
-        ApplicationFormResponseDto responseDto = clubService.findMemberInfoWithQuestions(clubId, userDetails);
+        ApplicationFormResponseDto responseDto = memberClubService.findMemberInfoWithQuestions(clubId, userDetails);
 
         ApiResponseDto<ApplicationFormResponseDto> apiResponseDto = ApiResponseDto.success(
                 responseDto,
@@ -52,7 +52,7 @@ public class MemberClubController {
         List<AnswerRequestDto> ard = applicationRequestDto.getQna();
         String fileUrl = applicationRequestDto.getFileUrl();
 
-        ApplicationResponseDto responseDto = clubService.saveApplication(clubId, userDetails, ard, fileUrl);
+        ApplicationResponseDto responseDto = memberClubService.saveApplication(clubId, userDetails, ard, fileUrl);
         ApiResponseDto<ApplicationResponseDto> apiResponseDto = ApiResponseDto.success(
                 responseDto,
                 "지원서 제출에 성공했습니다."
