@@ -44,7 +44,7 @@ public class GuestClubService {
     @Transactional
     public ClubResponseDto findClubById(Long clubId){
         Club findClub = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +" is not found"));
+                .orElseThrow(() -> new ClubNotFoundException("clubId: "+ clubId +" 를 찾지 못했습니다."));
         return new ClubResponseDto(findClub);
     }
 }

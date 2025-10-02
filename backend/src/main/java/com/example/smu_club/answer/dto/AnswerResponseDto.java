@@ -8,7 +8,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class AnswerResponseDto {
     Long questionId;
-    String orderNum;
+    int orderNum;
     String questionContent;
     String answerContent;
 }
