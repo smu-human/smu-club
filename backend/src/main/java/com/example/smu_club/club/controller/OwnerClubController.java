@@ -44,4 +44,7 @@ public class OwnerClubController {
         ApiResponseDto<Void> response = ApiResponseDto.success("[Owner] 동아리 정보 등록에 성공했습니다. ");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    // 동아리 상태 변경 (UPCOMING -> OPEN)
+
 }
