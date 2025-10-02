@@ -49,13 +49,11 @@ public class MemberClubController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody ApplicationRequestDto applicationRequestDto
     ) {
-        List<AnswerRequestDto> ard = applicationRequestDto.getQuestionAndAnswer();
-            ){
         String studentId = userDetails.getUsername();
         List<AnswerRequestDto> ard = applicationRequestDto.getQuestionAndAnswer();
         String fileUrl = applicationRequestDto.getFileUrl();
 
-        ApplicationResponseDto responseDto = memberClubService.saveApplication(clubId, userDetails, ard, fileUrl);
+        ApplicationResponseDto responseDto = memberClubService.saveApplication(clubId, studentId, ard, fileUrl);
         ApiResponseDto<ApplicationResponseDto> apiResponseDto = ApiResponseDto.success(
                 responseDto,
                 "지원서 제출에 성공했습니다."

@@ -36,8 +36,9 @@ public class MemberController {
             @AuthenticationPrincipal UserDetails userDetails
     ){
         String studentId = userDetails.getUsername();
-        List<ApplicationListResponseDto> appList = memberService.findApplications(studentId);
-        return ResponseEntity.ok(success(appList, "지원 목록 조회 성공"));
+        List<ApplicationListResponseDto> applications = memberService.findApplications(studentId);
+
+        return ResponseEntity.ok(success(applications));
     }
 
     @GetMapping("/mypage/applications/{clubId}/result")
