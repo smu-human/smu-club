@@ -5,8 +5,11 @@
   --safe-bottom: env(safe-area-inset-bottom);
   --safe-left: env(safe-area-inset-left);
 
-  --page-header-height: 56px; /* 콘텐츠 높이 */
-  --page-header-maxw: 420px; /* 모바일 기준 최대 너비 */
+  --page-header-height: 56px;
+  --page-header-maxw: 390px;
+
+  --app-w: 390px;
+  --app-h-min: 844px;
 }
 
 * {
@@ -19,13 +22,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: 1.6;
   color: #333;
-  background-color: #f9fafb;
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  background-color: #eff3ff; /* 🔹 전체 배경색 남색 */
 }
 
 .icon {
@@ -34,41 +31,35 @@ body {
   stroke-width: 2;
 }
 
-/* safe-area 유틸 */
-.safe-area-top {
-  padding-top: max(12px, var(--safe-top));
-}
-.safe-area-bottom {
-  padding-bottom: max(12px, var(--safe-bottom));
-}
 .safe-area-padding {
   padding-top: max(16px, var(--safe-top));
   padding-left: max(0px, var(--safe-left));
   padding-right: max(0px, var(--safe-right));
   padding-bottom: max(0px, var(--safe-bottom));
 }
-
-.sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  padding-top: max(15px, var(--safe-top));
-  background: #fff;
+/* notch 있는 기기 대응: 상단 safe padding */
+.safe-area-top {
+  padding-top: max(16px, var(--safe-top));
 }
 
-/* ===== Global Page Header (공통) ===== */
+/* ===== 상단바 ===== */
 .page-header {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 0 0 14px 14px; /* 하단 좌·우만 radius */
+  padding: max(12px, var(--safe-top)) 16px 12px; /* safe-area 상단 여백 */
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 }
+
 .page-header .container {
   max-width: var(--page-header-maxw);
   margin: 0 auto;
-  padding: 0 16px;
 }
+
 .page-header-content {
   position: relative;
   height: var(--page-header-height);
@@ -76,6 +67,7 @@ body {
   align-items: center;
   justify-content: center;
 }
+
 .page-header h1 {
   font-size: 18px;
   font-weight: 700;
@@ -84,7 +76,7 @@ body {
   text-align: center;
 }
 
-/* back-btn (왼쪽 고정) */
+/* 뒤로가기 버튼 */
 .back-btn {
   position: absolute;
   left: 0;
@@ -97,7 +89,6 @@ body {
   background: transparent;
   border: none;
   color: inherit;
-  text-decoration: none;
   cursor: pointer;
 }
 .back-btn .icon {
@@ -106,9 +97,7 @@ body {
   stroke-width: 2;
 }
 
-/* 오른쪽 버튼/액션 (예: 가입 신청) */
-.page-header-content .header-action,
-.page-header-content .apply_link {
+.page-header-content .header-action {
   position: absolute;
   right: 0;
   top: 50%;
@@ -122,13 +111,66 @@ body {
   background: #0e207f;
   color: #fff;
   font-size: 13px;
-  line-height: 1;
-  text-decoration: none;
   border: none;
   cursor: pointer;
 }
 
-/* Footer 공통 */
+/* ===== 앱 레이아웃 ===== */
+.app-shell {
+  min-height: 100dvh;
+  background: #0e207f; /* 🔹 전체 배경색 일치 */
+  display: flex;
+  justify-content: center;
+}
+
+.app-frame {
+  width: 100%;
+  max-width: var(--app-w);
+  min-height: var(--app-h-min);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  padding: 16px;
+  background: #f9fafb;
+}
+
+/* ===== 카드 그리드 ===== */
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+/* ===== 데스크톱 ===== */
+@media (min-width: 1024px) {
+  .app-frame {
+    max-width: 1200px;
+    border-radius: 16px;
+  }
+  .app-content {
+    padding: 24px;
+  }
+  .cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+/* globals.css */
+
 .page-footer {
   flex-shrink: 0;
   margin-top: 24px;
@@ -136,25 +178,41 @@ body {
   text-align: center;
   color: #6b7280;
   border-top: 1px solid #e5e7eb;
+  font-size: 12px;
 }
+
 .page-footer p {
   margin: 4px 0;
 }
+
 .page-footer a {
   color: #3b82f6;
   text-decoration: none;
 }
+
 .page-footer a:hover {
   text-decoration: underline;
 }
-
-/* Responsive */
-@media (max-width: 640px) {
-  .hidden-mobile {
-    display: none;
+/* Desktop 공통 레이아웃 */
+@media (min-width: 1079px) {
+  /* 홈 본문 */
+  .home_page {
+    max-width: 1500px; /* 본문 넓게 */
+    margin: 0 auto;
   }
-  .btn {
-    padding: 0.5rem;
-    font-size: 0.75rem;
+
+  /* 홈/로그인 등 상단바: 390 고정 중앙 */
+  .home_header,
+  .page-header {
+    /* ← 로그인 헤더가 여기로 들어옴 */
+    max-width: 1500px; /* 본문 넓게 */
+
+    margin: 0 auto; /* 가운데 */
+  }
+
+  /* 홈 카드 그리드 3열 */
+  .home_main {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
   }
 }
