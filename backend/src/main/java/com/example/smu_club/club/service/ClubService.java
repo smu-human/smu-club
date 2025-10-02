@@ -93,9 +93,8 @@ public class    ClubService {
         );
     }
     @Transactional
-    public ApplicationResponseDto saveApplication(Long clubId, UserDetails userDetails, List<AnswerRequestDto> QuestionAndAnswer, String fileUrl) {
+    public ApplicationResponseDto saveApplication(Long clubId, String studentId, List<AnswerRequestDto> QuestionAndAnswer, String fileUrl) {
         //1. ClubMember 에 회원 등록 (Status 기본 값은 PENDING)
-        String studentId = userDetails.getUsername();
         Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +" is not found"));
         Club appliedClub = clubRepository.findById(clubId).orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +" is not found"));
         ClubMember clubMember = new ClubMember(myInfo, appliedClub, ClubRole.MEMBER, LocalDate.now(), ClubMemberStatus.PENDING);

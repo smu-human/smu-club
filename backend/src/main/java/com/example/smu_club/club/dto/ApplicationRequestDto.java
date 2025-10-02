@@ -7,6 +7,6 @@ import java.util.List;
 
 @Data
 public class ApplicationRequestDto {
-    private List<AnswerRequestDto> qna;
+    private List<AnswerRequestDto> QuestionAndAnswer;
     private String fileUrl;
 }

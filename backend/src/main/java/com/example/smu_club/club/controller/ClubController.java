@@ -41,7 +41,7 @@ public class ClubController {
      * MEMBER 권한
      */
     @GetMapping("/api/v1/member/clubs/{clubId}/apply")
-    public ResponseEntity<ApiResponseDto<ApplicationFormResponseDto>> getApplication (
+    public ResponseEntity<ApiResponseDto<ApplicationFormResponseDto>> getQMyInfoAndQuestions (
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails
             ){
@@ -62,10 +62,11 @@ public class ClubController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody ApplicationRequestDto applicationRequestDto
             ){
-        List<AnswerRequestDto> ard = applicationRequestDto.getQna();
+        String studentId = userDetails.getUsername();
+        List<AnswerRequestDto> ard = applicationRequestDto.getQuestionAndAnswer();
         String fileUrl = applicationRequestDto.getFileUrl();
 
-        ApplicationResponseDto responseDto = clubService.saveApplication(clubId, userDetails, ard, fileUrl);
+        ApplicationResponseDto responseDto = clubService.saveApplication(clubId, studentId, ard, fileUrl);
         ApiResponseDto<ApplicationResponseDto> apiResponseDto = ApiResponseDto.success(
                 responseDto,
                 "지원서 제출에 성공했습니다."

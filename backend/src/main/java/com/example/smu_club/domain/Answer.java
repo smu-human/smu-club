@@ -9,6 +9,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "answer",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_answer", columnNames = {"member_id", "question_id"})
+        })
 public class Answer {
 
     @Id
@@ -34,5 +38,4 @@ public class Answer {
         this.answerContent = answerContent;
         this.question = question;
     }
-
 }

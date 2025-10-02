@@ -1,11 +1,13 @@
 package com.example.smu_club.member.service;
 
 import com.example.smu_club.club.repository.ClubMemberRepository;
+import com.example.smu_club.common.ApiResponseDto;
 import com.example.smu_club.domain.ClubMember;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.exception.custom.ClubMemberNotFoundException;
 import com.example.smu_club.member.dto.ApplicationListResponseDto;
 import com.example.smu_club.member.dto.ApplicationResultResponseDto;
+import com.example.smu_club.member.dto.EditApplicationResponseDto;
 import com.example.smu_club.member.dto.MemberNameResponseDto;
 import com.example.smu_club.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +48,7 @@ public class MemberService {
     }
 
     public ApplicationResultResponseDto findResult(String studentId, Long clubId) {
-        ClubMember clubMember = clubMemberRepository.findAllWithMemberAndClubByStudentId(studentId, clubId);
+        ClubMember clubMember = clubMemberRepository.findAllWithMemberAndClubByStudentIdAndClubId(studentId, clubId);
         if(clubMember == null) throw new ClubMemberNotFoundException("해당 클럽에 지원하지 않았습니다.");
 
         return new ApplicationResultResponseDto(
@@ -58,4 +60,16 @@ public class MemberService {
         );
 
     }
+
+//    public ApiResponseDto<EditApplicationResponseDto> showApplication(Long clubId, String studentId) {
+//        /** 순서
+//         *  1. studentId로 Member 객체를 생성하여 내 정보를 가져와야 됨.
+//         *  2. clubId로 Question 객체를 List로 생성한다. -> orderNum으로 정렬한다.
+//         *  3. Member 객체와 Question 객체를 이용하여 Answer객체를 List로 생성한다. (member_id, question_id) → UNIQUE  제약 조건
+//         *  4. Map<Long, Answer> answerMap = answers.stream().collect(Collectors.toMap(answer -> answer.getQuestion().getId(), answer -> answer) f
+//         *     를 이용하여 조회 성능을 향상 시키자.
+//         *  5. EditApplicationResponseDto 안에 AnswerResponseDto 리스트를 채우기 위해 stream().map().collect()로 특정 필드를 채워 리스트를 생성한다.
+//         *  5. EditApplicationResponseDto에 맞게 Member의 특정 필드와 와 AnswerResponseDto 리스트 값을 Mapping 후 반환한다.
+//         */
+//    }
 }
