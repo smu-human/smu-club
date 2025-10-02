@@ -52,14 +52,15 @@ public class MemberController {
     }
 
 
-//    @GetMapping("/mypage/applications/{clubId}/edit")
-//    public ResponseEntity<ApiResponseDto<EditApplicationResponseDto>> showApplication (
-//            @PathVariable Long clubId,
-//            @AuthenticationPrincipal UserDetails userDetails
-//    ){
-//        String studentId = userDetails.getUsername();
-//        EditApplicationResponseDto result = memberService.showApplication(clubId, studentId);
-//
-//    }
+    @GetMapping("/mypage/applications/{clubId}/edit")
+    public ResponseEntity<ApiResponseDto<EditApplicationResponseDto>> showApplication (
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        String studentId = userDetails.getUsername();
+        EditApplicationResponseDto result = memberService.showApplication(clubId, studentId);
+        return ResponseEntity.ok(success(result));
+
+    }
 
 }
