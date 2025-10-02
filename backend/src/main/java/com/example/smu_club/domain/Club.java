@@ -1,15 +1,15 @@
 package com.example.smu_club.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter // 테스트 용 초기 값는 넣는 용
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Club {
@@ -35,7 +35,7 @@ public class Club {
     @Enumerated(EnumType.STRING) //ORDINARY 사용 금지
     private RecruitingStatus recruitingStatus;
 
-    @Column(name = "recruiting_start")
+    @Column(name = "recruiting_start", nullable = true)
     private LocalDate recruitingStart;
 
     @Column(name = "recruiting_end")

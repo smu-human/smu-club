@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -147,6 +148,43 @@ public class    ClubService {
                         relation.getClub().getName()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void register(String studentId, ClubInfoRequest request) {
+
+        // 1. 클럽 정보 등록
+        Club newClub = Club.builder()
+                .name(request.getName())
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .president(request.getPresident())
+                .contact(request.getContact())
+                .clubRoom(request.getClubRoom())
+                .recruitingEnd(request.getRecruitingEnd())
+                .recruitingStart(null)
+                .recruitingStatus(RecruitingStatus.UPCOMING)
+                .createdAt(LocalDateTime.now())
+                .thumbnailUrl(request.getThumbnailUrl())
+                .build();
+
+        clubRepository.save(newClub);
+
+
+        // 2. ClubMember 관계 만들어주기
+
+        Member ownerMember = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("학번 :  " + studentId + "를 찾을 수 없습니다."));
+
+        ClubMember clubMember = new ClubMember(
+                ownerMember,
+                newClub,
+                ClubRole.OWNER,
+                LocalDate.now(),
+                ClubMemberStatus.ACCEPTED
+        );
+
+        clubMemberRepository.save(clubMember);
     }
 }
 
