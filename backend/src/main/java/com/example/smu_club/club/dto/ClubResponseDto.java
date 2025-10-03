@@ -27,7 +27,6 @@ public class ClubResponseDto {
     //toast UI
     private String description;
 
-    //객체를 파라미터로 넘겨 재사용성 증가
     public ClubResponseDto(Club club) {
         this.id = club.getId();
         this.name = club.getName();
