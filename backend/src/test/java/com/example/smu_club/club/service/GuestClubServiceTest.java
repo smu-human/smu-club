@@ -130,5 +130,6 @@ public class GuestClubServiceTest {
         ClubNotFoundException e = Assertions.assertThrows(ClubNotFoundException.class, () -> guestClubService.findClubById(3L));
 
 
+
     }
 }
