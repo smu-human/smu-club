@@ -6,6 +6,8 @@ import com.example.smu_club.club.dto.ManagedClubResponse;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
+import com.example.smu_club.exception.custom.AuthorizationException;
+import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -80,5 +82,26 @@ public class OwnerClubService {
                         relation.getClub().getName()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void startRecruitment(Long clubId, String studentId) {
+
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("힉번 : " + studentId + " 를 찾을 수 없습니다. "));
+
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+
+        ClubMember clubMember = clubMemberRepository.findByClubAndMember(club, member)
+                .orElseThrow(() -> new AuthorizationException("해당 동아리에 소속된 회원이 아닙니다. "));
+
+        if (clubMember.getClubRole() != ClubRole.OWNER) {
+            throw new AuthorizationException ("동아리 모집을 시작할 권한이 없습니다. ");
+        }
+
+        club.startRecruitment();
+
+
     }
 }
