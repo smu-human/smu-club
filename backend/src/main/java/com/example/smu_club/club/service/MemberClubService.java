@@ -8,6 +8,7 @@ import com.example.smu_club.club.dto.ApplicationResponseDto;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
+import com.example.smu_club.exception.custom.ClubNotRecruitmentPeriod;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.exception.custom.QuestionNotFoundException;
@@ -15,7 +16,6 @@ import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.question.dto.QuestionResponse;
 import com.example.smu_club.question.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.example.smu_club.domain.RecruitingStatus.OPEN;
 import static java.util.stream.Collectors.toList;
 
 @Service
@@ -38,9 +39,8 @@ public class MemberClubService {
     private final AnswerRepository answerRepository;
 
     @Transactional
-    public ApplicationResponseDto saveApplication(Long clubId, UserDetails userDetails, List<AnswerRequestDto> QuestionAndAnswer, String fileUrl) {
+    public ApplicationResponseDto saveApplication(Long clubId, String studentId, List<AnswerRequestDto> QuestionAndAnswer, String fileUrl) {
         //1. ClubMember 에 회원 등록 (Status 기본 값은 PENDING)
-        String studentId = userDetails.getUsername();
         Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +" is not found"));
         Club appliedClub = clubRepository.findById(clubId).orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +" is not found"));
         ClubMember clubMember = new ClubMember(myInfo, appliedClub, ClubRole.MEMBER, LocalDate.now(), ClubMemberStatus.PENDING);
@@ -77,15 +77,18 @@ public class MemberClubService {
     }
 
     @Transactional
-    public ApplicationFormResponseDto findMemberInfoWithQuestions(Long clubId, UserDetails userDetails){
+    public ApplicationFormResponseDto findMemberInfoWithQuestions(Long clubId, String studentId){
         /**
          * questions search
          */
         Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +" is not found"));
+                .orElseThrow(() -> new ClubNotFoundException("동아리 ID: "+ clubId +" 해당 동아리를 찾을 수 없습니다."));
+
+        if(club.getRecruitingStatus() != OPEN) throw new ClubNotRecruitmentPeriod("동아리 ID:"+ clubId +" 해당 동아리는 모집기간이 아닙니다.");
 
         List<Question> questionList =
                 questionRepository.findAllByClubOrderByOrderNumAsc(club);
+        if(questionList == null) throw new QuestionNotFoundException("동아리 ID: " + clubId + "의 질문을 찾을 수 없습니다.");
 
         List<QuestionResponse> clubQuestionListResponse =
                 questionList.stream().map
@@ -97,7 +100,6 @@ public class MemberClubService {
         /**
          * Member search
          */
-        String studentId = userDetails.getUsername();
         Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +" is not found"));
         /**
          * Transaction to Dto

@@ -95,4 +95,14 @@ public class GlobalExceptionHandler {
         ApiResponseDto<Object> response = ApiResponseDto.fail("AUTHORIZATION", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
+
+    /*
+    Question 예외 관련
+     */
+    @ExceptionHandler(QuestionNotFoundException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleQuestionNotFoundException(QuestionNotFoundException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("QUESTION_NOT_FOUND", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
 }

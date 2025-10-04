@@ -3,16 +3,14 @@ package com.example.smu_club.member.controller;
 import com.example.smu_club.common.ApiResponseDto;
 import com.example.smu_club.member.dto.ApplicationListResponseDto;
 import com.example.smu_club.member.dto.ApplicationResultResponseDto;
+import com.example.smu_club.member.dto.EditApplicationResponseDto;
 import com.example.smu_club.member.dto.MemberNameResponseDto;
 import com.example.smu_club.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -38,8 +36,9 @@ public class MemberController {
             @AuthenticationPrincipal UserDetails userDetails
     ){
         String studentId = userDetails.getUsername();
-        List<ApplicationListResponseDto> appList = memberService.findApplications(studentId);
-        return ResponseEntity.ok(success(appList, "지원 목록 조회 성공"));
+        List<ApplicationListResponseDto> applications = memberService.findApplications(studentId);
+
+        return ResponseEntity.ok(success(applications));
     }
 
     @GetMapping("/mypage/applications/{clubId}/result")
@@ -51,4 +50,17 @@ public class MemberController {
         ApplicationResultResponseDto result = memberService.findResult(studentId, clubId);
         return ResponseEntity.ok(success(result, "지원 결과 조회 성공"));
     }
+
+
+    @GetMapping("/mypage/applications/{clubId}/edit")
+    public ResponseEntity<ApiResponseDto<EditApplicationResponseDto>> showApplication (
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        String studentId = userDetails.getUsername();
+        EditApplicationResponseDto result = memberService.showApplication(clubId, studentId);
+        return ResponseEntity.ok(success(result));
+
+    }
+
 }
