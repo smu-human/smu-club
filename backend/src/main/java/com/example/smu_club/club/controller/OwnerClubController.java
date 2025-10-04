@@ -2,6 +2,7 @@ package com.example.smu_club.club.controller;
 
 
 import com.example.smu_club.club.dto.ClubInfoRequest;
+import com.example.smu_club.club.dto.ClubInfoResponse;
 import com.example.smu_club.club.dto.ManagedClubResponse;
 import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.common.ApiResponseDto;
@@ -33,6 +34,22 @@ public class OwnerClubController {
         return ResponseEntity.ok(response);
     }
 
+    // 동아리 상세정보 조회 (편집하기 위해서는 정보를 받아와야됨)
+    @GetMapping("/clubs/{clubId}")
+    public ResponseEntity<ApiResponseDto<ClubInfoResponse>> getClubInfo(
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal User user
+    ) {
+
+        ClubInfoResponse clubInfoResponse = ownerClubService.getClubInfo(clubId, user.getUsername());
+
+        ApiResponseDto<ClubInfoResponse> response = ApiResponseDto.success(clubInfoResponse, "[OWNER] 클럽 조회에 성공했습니다.");
+        return ResponseEntity.ok(response);
+
+
+
+    }
+
     // 동아리 상세정보 등록
     @PostMapping("/register/club")
     public ResponseEntity<ApiResponseDto<Void>> registerClub(
@@ -57,5 +74,7 @@ public class OwnerClubController {
         ApiResponseDto<Void> response = ApiResponseDto.success("[OWNER] 동아리 모집을 성공적으로 시작했습니다.");
         return ResponseEntity.ok(response);
     }
+
+
 
 }
