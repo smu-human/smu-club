@@ -97,7 +97,7 @@ public class OwnerClubService {
                 .orElseThrow(() -> new AuthorizationException("해당 동아리에 소속된 회원이 아닙니다. "));
 
         if (clubMember.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException("동아리 모집을 시작할 권한이 없습니다. ");
+            throw new AuthorizationException ("동아리 모집을 시작할 권한이 없습니다. ");
         }
 
         club.startRecruitment();

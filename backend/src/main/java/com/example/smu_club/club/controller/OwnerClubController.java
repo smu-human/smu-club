@@ -39,12 +39,23 @@ public class OwnerClubController {
             @RequestBody ClubInfoRequest request,
             @AuthenticationPrincipal User user
     ) {
-        ownerClubService.register(user.getUsername(),request);
+        ownerClubService.register(user.getUsername(), request);
 
         ApiResponseDto<Void> response = ApiResponseDto.success("[Owner] 동아리 정보 등록에 성공했습니다. ");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 동아리 상태 변경 (UPCOMING -> OPEN)
+    @PostMapping("/clubs/{clubId}/start-recruitment")
+    public ResponseEntity<ApiResponseDto<Void>> startRecruitment(
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal User user
+    ) {
+
+        ownerClubService.startRecruitment(clubId, user.getUsername());
+
+        ApiResponseDto<Void> response = ApiResponseDto.success("[OWNER] 동아리 모집을 성공적으로 시작했습니다.");
+        return ResponseEntity.ok(response);
+    }
 
 }
