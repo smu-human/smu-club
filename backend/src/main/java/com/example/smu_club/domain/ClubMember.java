@@ -1,16 +1,14 @@
 package com.example.smu_club.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 
 @Entity
 @Getter
 @Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "club_member",
@@ -50,5 +48,14 @@ public class ClubMember {
         this.clubRole = clubRole;
         this.appliedAt = appliedAt;
         this.status = status;
+    }
+
+
+    private static ClubMember createTestClubMember(Member member, Club club, ClubRole clubRole) {
+        return ClubMember.builder()
+                .member(member)
+                .club(club)
+                .clubRole(clubRole)
+                .build();
     }
 }

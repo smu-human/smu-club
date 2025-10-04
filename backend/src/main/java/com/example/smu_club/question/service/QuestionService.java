@@ -1,8 +1,9 @@
 package com.example.smu_club.question.service;
 
-import com.example.smu_club.domain.Club;
-import com.example.smu_club.domain.Question;
-import com.example.smu_club.domain.QuestionContentType;
+import com.example.smu_club.club.repository.ClubMemberRepository;
+import com.example.smu_club.domain.*;
+import com.example.smu_club.exception.custom.AuthorizationException;
+import com.example.smu_club.exception.custom.ClubMemberNotFoundException;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.question.dto.QuestionRequest;
 import com.example.smu_club.question.dto.QuestionResponse;
@@ -23,12 +24,20 @@ public class QuestionService {
 
     private final QuestionRepository questionRepository;
     private final ClubRepository clubRepository;
+    private final ClubMemberRepository clubMemberRepository;
 
 
-    public List<QuestionResponse> findQuestionsByClubId(Long clubId) {
+    public List<QuestionResponse> findQuestionsByClubId(Long clubId, String studentId) {
 
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("해당 동아리를 찾을 수 없습니다. ID: " + clubId));
+
+        ClubMember clubMember = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
+                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다. "));
+
+        if (clubMember.getClubRole() != ClubRole.OWNER) {
+            throw new AuthorizationException("[OWNER] 해당 동아리의 질문을 볼 권한이 없습니다.");
+        }
 
         List<Question> questions = questionRepository.findAllByClubOrderByOrderNumAsc(club);
 

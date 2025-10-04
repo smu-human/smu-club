@@ -97,7 +97,7 @@ public class OwnerClubService {
                 .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
 
         ClubMember clubMember = clubMemberRepository.findByClubAndMember(club, member)
-                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리에 소속된 회원이 아닙니다. "));
+                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
 
         if (clubMember.getClubRole() != ClubRole.OWNER) {
             throw new AuthorizationException ("[OWNER] 동아리 모집을 시작할 권한이 없습니다. ");
@@ -119,7 +119,7 @@ public class OwnerClubService {
                 .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
 
         if (clubMember.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException("[OWNER] 동아리 모집을 시작할 권한이 없습니다. ");
+            throw new AuthorizationException("[OWNER] 동아리를 조회할 권한이 없습니다.. ");
         }
 
         return ClubInfoResponse.from(club);
