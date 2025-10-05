@@ -8,12 +8,10 @@ import com.example.smu_club.domain.Question;
 import com.example.smu_club.domain.Role;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +25,8 @@ import static com.example.smu_club.domain.QuestionContentType.FILE;
 import static com.example.smu_club.domain.QuestionContentType.TEXT;
 import static com.example.smu_club.domain.RecruitingStatus.CLOSED;
 import static com.example.smu_club.domain.RecruitingStatus.OPEN;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -45,6 +45,12 @@ public class MemberClubControllerIT {
     @Autowired
     private QuestionRepository questionRepository;
 
+    @BeforeEach
+    void setUp() {
+        clubRepository.deleteAll();
+        memberRepository.deleteAll();
+        questionRepository.deleteAll();
+    }
 
 
     @Test
@@ -94,7 +100,8 @@ public class MemberClubControllerIT {
         memberClubService.findMemberInfoWithQuestions(1L, "202215064");
 
         //then
-
+        //DB테스트는 assertThat을 사용하고, mockMvc는 엔트포인트가 어떻게 응답을 받는지 확인한다.
+        //assertThat()
     }
 
 

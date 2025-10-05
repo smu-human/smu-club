@@ -10,7 +10,6 @@ import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.RecruitingStatus;
 import com.example.smu_club.domain.Role;
 import com.example.smu_club.member.repository.MemberRepository;
-import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
