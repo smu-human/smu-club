@@ -105,4 +105,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    /*
+    MemberClub 예외 관련
+     */
+    @ExceptionHandler(ClubNotRecruitmentPeriodException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleClubNotRecruitmentPeriod(ClubNotRecruitmentPeriodException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("CLUB_NOT_RECRUITMENT_PERIOD", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
 }

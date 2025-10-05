@@ -75,7 +75,7 @@ class ClubServiceTest {
         when(memberRepository.findByStudentId(anyString())).thenReturn(Optional.of(member));
 
         // when (실행)
-        ApplicationFormResponseDto resultDto = clubService.findMemberInfoWithQuestions(2L, userDetails);
+        ApplicationFormResponseDto resultDto = clubService.findMemberInfoWithQuestions(2L, "202215064");
         System.out.println("----------");
         System.out.println(resultDto);
         // then (검증)
@@ -99,7 +99,7 @@ class ClubServiceTest {
         // clubService.findMemberInfoWithQuestions()를 실행했을 때,
         // ClubNotFoundException 예외가 발생하는지 검증
         assertThrows(ClubNotFoundException.class, () -> {
-            clubService.findMemberInfoWithQuestions(999L, userDetails);
+            clubService.findMemberInfoWithQuestions(999L, "202215064");
         });
     }
 }

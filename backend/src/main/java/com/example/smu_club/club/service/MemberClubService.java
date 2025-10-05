@@ -8,7 +8,7 @@ import com.example.smu_club.club.dto.ApplicationResponseDto;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
-import com.example.smu_club.exception.custom.ClubNotRecruitmentPeriod;
+import com.example.smu_club.exception.custom.ClubNotRecruitmentPeriodException;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.exception.custom.QuestionNotFoundException;
@@ -84,11 +84,14 @@ public class MemberClubService {
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("동아리 ID: "+ clubId +" 해당 동아리를 찾을 수 없습니다."));
 
-        if(club.getRecruitingStatus() != OPEN) throw new ClubNotRecruitmentPeriod("동아리 ID:"+ clubId +" 해당 동아리는 모집기간이 아닙니다.");
+        if(club.getRecruitingStatus() != OPEN) throw new ClubNotRecruitmentPeriodException("동아리 ID:"+ clubId +" 해당 동아리는 모집기간이 아닙니다.");
 
         List<Question> questionList =
                 questionRepository.findAllByClubOrderByOrderNumAsc(club);
-        if(questionList == null) throw new QuestionNotFoundException("동아리 ID: " + clubId + "의 질문을 찾을 수 없습니다.");
+
+        //Spring Data JPA의 findAllBy 같은 조회 메서드는 결과가 없을 때 null을 반환하지 않고 empty()인 상태이다.
+        //if문에 null아닌 isEmpty()로 설정해야 된다.
+        if(questionList.isEmpty()) throw new QuestionNotFoundException("동아리 ID: " + clubId + "의 질문을 찾을 수 없습니다.");
 
         List<QuestionResponse> clubQuestionListResponse =
                 questionList.stream().map

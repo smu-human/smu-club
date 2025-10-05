@@ -36,7 +36,7 @@ public class MemberClubController {
 
         ApiResponseDto<ApplicationFormResponseDto> apiResponseDto = ApiResponseDto.success(
                 responseDto,
-                "동아리 지원서 조회에 성공했습니다. "
+                "동아리 지원서 조회에 성공했습니다."
         );
 
         return ResponseEntity.ok(apiResponseDto);
