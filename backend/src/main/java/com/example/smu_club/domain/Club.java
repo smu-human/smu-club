@@ -1,5 +1,6 @@
 package com.example.smu_club.domain;
 
+import com.example.smu_club.exception.custom.IllegalClubStateException;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -49,4 +50,14 @@ public class Club {
 
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
+
+    public void startRecruitment() {
+
+        if (this.recruitingStatus != RecruitingStatus.UPCOMING) {
+            throw new IllegalClubStateException("모집 예정 상태인 동아리만 모집을 시작 할 수 있습니다. ");
+        }
+
+        this.recruitingStatus = RecruitingStatus.OPEN;
+        this.recruitingStart = LocalDate.now();
+    }
 }
