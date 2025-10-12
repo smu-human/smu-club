@@ -1,9 +1,11 @@
 package com.example.smu_club.club.controller;
 
 
+import com.example.smu_club.club.dto.ApplicantResponse;
 import com.example.smu_club.club.dto.ClubInfoRequest;
 import com.example.smu_club.club.dto.ClubInfoResponse;
 import com.example.smu_club.club.dto.ManagedClubResponse;
+import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.common.ApiResponseDto;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +19,11 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/owner")
+@RequestMapping("/api/v1/owner/club")
 public class OwnerClubController {
 
     private final OwnerClubService ownerClubService;
+    private final MemberClubService memberClubService;
 
     // (owner) 동아리 목록 조회  MyPage 기준으로 들어오면 동아리 정보 나옴
     @GetMapping("/managed-clubs")
@@ -35,7 +38,7 @@ public class OwnerClubController {
     }
 
     // 동아리 상세정보 조회 (편집하기 위해서는 정보를 받아와야됨)
-    @GetMapping("/clubs/{clubId}")
+    @GetMapping("/{clubId}")
     public ResponseEntity<ApiResponseDto<ClubInfoResponse>> getClubInfo(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user
@@ -45,8 +48,6 @@ public class OwnerClubController {
 
         ApiResponseDto<ClubInfoResponse> response = ApiResponseDto.success(clubInfoResponse, "[OWNER] 클럽 조회에 성공했습니다.");
         return ResponseEntity.ok(response);
-
-
 
     }
 
@@ -63,7 +64,7 @@ public class OwnerClubController {
     }
 
     // 동아리 상태 변경 (UPCOMING -> OPEN)
-    @PostMapping("/clubs/{clubId}/start-recruitment")
+    @PostMapping("/{clubId}/start-recruitment")
     public ResponseEntity<ApiResponseDto<Void>> startRecruitment(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user
@@ -75,6 +76,16 @@ public class OwnerClubController {
         return ResponseEntity.ok(response);
     }
 
+    // 동아리 지원자 리스트 조회
+    @GetMapping("/{clubId}/applicants")
+    public ResponseEntity<ApiResponseDto<List<ApplicantResponse>>> getClubApplicants (
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal User user
+    ) {
+        List<ApplicantResponse> applicants = memberClubService.getApplicantList(clubId, user.getUsername());
 
+        ApiResponseDto<List<ApplicantResponse>> response = ApiResponseDto.success(applicants, "[OWNER] 지원자 조회에 성공했습니다.");
+        return ResponseEntity.ok(response);
+    }
 
 }

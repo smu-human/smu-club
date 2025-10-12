@@ -3,15 +3,13 @@ package com.example.smu_club.club.service;
 
 import com.example.smu_club.answer.dto.AnswerRequestDto;
 import com.example.smu_club.answer.repository.AnswerRepository;
+import com.example.smu_club.club.dto.ApplicantResponse;
 import com.example.smu_club.club.dto.ApplicationFormResponseDto;
 import com.example.smu_club.club.dto.ApplicationResponseDto;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
-import com.example.smu_club.exception.custom.ClubNotRecruitmentPeriod;
-import com.example.smu_club.exception.custom.ClubNotFoundException;
-import com.example.smu_club.exception.custom.MemberNotFoundException;
-import com.example.smu_club.exception.custom.QuestionNotFoundException;
+import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.question.dto.QuestionResponse;
 import com.example.smu_club.question.repository.QuestionRepository;
@@ -114,4 +112,23 @@ public class MemberClubService {
     }
 
 
+    @Transactional(readOnly = true)
+    public List<ApplicantResponse> getApplicantList(Long clubId, String studentId) {
+
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 존재하지 않는 동아리입니다."));
+
+        ClubMember clubMember = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
+                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아닙니다. "));
+
+        if (clubMember.getClubRole() != ClubRole.OWNER) {
+            throw new AuthorizationException("[OWNER] 지원자 목록을 조회할 권한이 없습니다.");
+        }
+
+        List<ClubMember> applicants = clubMemberRepository.findByClubAndStatus(club, ClubMemberStatus.PENDING);
+
+        return applicants.stream()
+                .map(ApplicantResponse::from)
+                .collect(Collectors.toList());
+    }
 }

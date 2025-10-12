@@ -22,7 +22,6 @@ public class AuthService {
     /**
      * 로그인 로직 처리 메서드
      */
-    @Transactional
     public JwtTokenResponse login(LoginRequest loginRequest) {
 
         // 1. 외부 API 호을 트랜잭션 밖에서 호출
@@ -73,7 +72,6 @@ public class AuthService {
 
     }
 
-    @Transactional
     public void signUp(SignupRequest signupRequest){
 
         // 1. 학교 API 를 통해서 인증
