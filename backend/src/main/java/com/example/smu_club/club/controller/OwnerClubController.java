@@ -79,7 +79,7 @@ public class OwnerClubController {
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user
     ) {
-        List<ApplicantResponse> applicants = memberClubService.getApplicantList(clubId, user.getUsername());
+        List<ApplicantResponse> applicants = ownerClubService.getApplicantList(clubId, user.getUsername());
 
         ApiResponseDto<List<ApplicantResponse>> response = ApiResponseDto.success(applicants, "[OWNER] 지원자 조회에 성공했습니다.");
         return ResponseEntity.ok(response);
@@ -95,7 +95,7 @@ public class OwnerClubController {
 
         String studentId = user.getUsername();
 
-        ApplicantDetailViewResponse applicantData = memberClubService.getApplicantDetails (
+        ApplicantDetailViewResponse applicantData = ownerClubService.getApplicantDetails (
                 clubMemberId,
                 studentId,
                 clubId
