@@ -6,6 +6,7 @@ import com.example.smu_club.domain.Member;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 public class ApplicantResponse {
@@ -14,7 +15,7 @@ public class ApplicantResponse {
     private final Long memberId;
     private final String name;
     private final String studentId;
-    private final LocalDate appliedAt;
+    private final LocalDateTime appliedAt;
 
     public static ApplicantResponse from(ClubMember clubMember) {
         Member member = clubMember.getMember();
@@ -27,7 +28,7 @@ public class ApplicantResponse {
         );
     }
 
-    private ApplicantResponse(Long clubMemberId, Long memberId, String name, String studentId, LocalDate appliedAt) {
+    private ApplicantResponse(Long clubMemberId, Long memberId, String name, String studentId, LocalDateTime appliedAt) {
         this.clubMemberId = clubMemberId;
         this.memberId = memberId;
         this.name = name;

@@ -1,10 +1,7 @@
 package com.example.smu_club.club.controller;
 
 
-import com.example.smu_club.club.dto.ApplicantResponse;
-import com.example.smu_club.club.dto.ClubInfoRequest;
-import com.example.smu_club.club.dto.ClubInfoResponse;
-import com.example.smu_club.club.dto.ManagedClubResponse;
+import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.common.ApiResponseDto;
@@ -78,13 +75,33 @@ public class OwnerClubController {
 
     // 동아리 지원자 리스트 조회
     @GetMapping("/{clubId}/applicants")
-    public ResponseEntity<ApiResponseDto<List<ApplicantResponse>>> getClubApplicants (
+    public ResponseEntity<ApiResponseDto<List<ApplicantResponse>>> getClubApplicants(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user
     ) {
         List<ApplicantResponse> applicants = memberClubService.getApplicantList(clubId, user.getUsername());
 
         ApiResponseDto<List<ApplicantResponse>> response = ApiResponseDto.success(applicants, "[OWNER] 지원자 조회에 성공했습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    //  (동아리 관리자)가 1단계 목록에서 특정 지원자(예: "홍길동")를 클릭했을 때 - 지원자 상세정보 + 질문 및 답변
+    @GetMapping("/{clubId}/applicants/{clubMemberId}")
+    public ResponseEntity<ApiResponseDto<ApplicantDetailViewResponse>> getApplicantDetails(
+            @PathVariable Long clubId,
+            @PathVariable Long clubMemberId,
+            @AuthenticationPrincipal User user
+    ){
+
+        String studentId = user.getUsername();
+
+        ApplicantDetailViewResponse applicantData = memberClubService.getApplicantDetails (
+                clubMemberId,
+                studentId,
+                clubId
+        );
+
+        ApiResponseDto<ApplicantDetailViewResponse> response = ApiResponseDto.success(applicantData, "[OWNER] 지원자 상세 정보 조회 성공");
         return ResponseEntity.ok(response);
     }
 

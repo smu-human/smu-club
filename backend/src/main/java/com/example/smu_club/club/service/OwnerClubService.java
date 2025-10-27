@@ -61,7 +61,7 @@ public class OwnerClubService {
                 ownerMember,
                 newClub,
                 ClubRole.OWNER,
-                LocalDate.now(),
+                LocalDateTime.now(),
                 ClubMemberStatus.ACCEPTED
         );
 

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -33,7 +34,7 @@ public class ClubMember {
     @Column(nullable = false)
     private ClubRole clubRole;
 
-    private LocalDate appliedAt;
+    private LocalDateTime appliedAt;
 
 
     @Enumerated(EnumType.STRING)
@@ -42,7 +43,7 @@ public class ClubMember {
 
     private String memo;
 
-    public ClubMember(Member member, Club club, ClubRole clubRole, LocalDate appliedAt, ClubMemberStatus status) {
+    public ClubMember(Member member, Club club, ClubRole clubRole, LocalDateTime appliedAt, ClubMemberStatus status) {
         this.member = member;
         this.club = club;
         this.clubRole = clubRole;
