@@ -63,6 +63,7 @@ public class MemberClubService {
 
             Answer answer = new Answer();
             answer.setQuestion(question);
+            answer.setMember(myInfo);
 
             if(question.getQuestionContentType() == QuestionContentType.FILE){
                 answer.setFileUrl(fileUrl);
