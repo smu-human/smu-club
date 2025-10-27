@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.example.smu_club.domain.RecruitingStatus.OPEN;
+
 @Service
 @RequiredArgsConstructor
 public class OwnerClubService {
@@ -100,7 +102,7 @@ public class OwnerClubService {
             throw new AuthorizationException ("동아리 모집을 시작할 권한이 없습니다. ");
         }
 
-        club.startRecruitment();
+        club.updateRecruitment(OPEN);
 
 
     }
