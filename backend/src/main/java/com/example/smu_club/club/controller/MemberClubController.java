@@ -31,8 +31,8 @@ public class MemberClubController {
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String stduentId = userDetails.getUsername();
-        ApplicationFormResponseDto responseDto = memberClubService.findMemberInfoWithQuestions(clubId, stduentId);
+        String studentId = userDetails.getUsername();
+        ApplicationFormResponseDto responseDto = memberClubService.findMemberInfoWithQuestions(clubId, studentId);
 
         ApiResponseDto<ApplicationFormResponseDto> apiResponseDto = ApiResponseDto.success(
                 responseDto,
