@@ -1,21 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import AppFrame from "./app_frame";
-import Home from "../pages/home/home";
-import Login from "../pages/login/login";
+import { createBrowserRouter } from "react-router-dom";
 
-export function AppRouter() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* 로그인은 프레임 없이 */}
-        <Route path="/login" element={<Login />} />
+import HomePage from "../pages/home/home.jsx"; // index.jsx면 폴더까지만
+import LoginPage from "../pages/login/login.jsx";
+import SignupPage from "../pages/student_auth/student_auth.jsx";
+import ClubPage from "../pages/club/club.jsx"; // 파일명이 club.jsx라면 이렇게
 
-        {/* 공통 프레임 안에 들어가는 페이지들 */}
-        <Route element={<AppFrame />}>
-          <Route index element={<Navigate to="/home" replace />} />
-          <Route path="/home" element={<Home />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
-}
+export const router = createBrowserRouter([
+  { path: "/", element: <HomePage /> },
+  { path: "/login", element: <LoginPage /> },
+  { path: "/signup", element: <SignupPage /> },
+  { path: "/club/:id", element: <ClubPage /> },
+  // 404 처리 원하면 추가 가능
+  // { path: "*", element: <NotFoundPage /> },
+]);

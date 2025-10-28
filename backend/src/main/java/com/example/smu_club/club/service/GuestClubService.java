@@ -25,7 +25,7 @@ public class GuestClubService {
     @Transactional
     public List<ClubsResponseDto> findAllClubs(){
 
-        List<Club> findClubs = clubRepository.findAll();
+        List<Club> findClubs = clubRepository.findAllSortedByRecruitment();
         if (findClubs.isEmpty())
             throw new ClubsNotFoundException("등록된 클럽이 하나도 없습니다.");
 
