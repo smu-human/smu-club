@@ -5,6 +5,7 @@ import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.common.ApiResponseDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -91,11 +92,11 @@ public class OwnerClubController {
             @PathVariable Long clubId,
             @PathVariable Long clubMemberId,
             @AuthenticationPrincipal User user
-    ){
+    ) {
 
         String studentId = user.getUsername();
 
-        ApplicantDetailViewResponse applicantData = ownerClubService.getApplicantDetails (
+        ApplicantDetailViewResponse applicantData = ownerClubService.getApplicantDetails(
                 clubMemberId,
                 studentId,
                 clubId
@@ -105,4 +106,22 @@ public class OwnerClubController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{clubId}/applicants/{clubMemberId}/status")
+    public ResponseEntity<ApiResponseDto<Void>> updateApplicantStatus(
+            @PathVariable Long clubId,
+            @PathVariable Long clubMemberId,
+            @Valid @RequestBody ApplicantStatusUpdateRequest request,
+            @AuthenticationPrincipal User user
+    ) {
+        ownerClubService.updateApplicantStatus(
+                clubId,
+                clubMemberId,
+                user.getUsername(),
+                request.getNewStatus() //  ACCEPTED, REJECTED중 하나
+        );
+
+        ApiResponseDto<Void> response = ApiResponseDto.success("[OWNER] 지원자 상태가 성공적으로 변경되었습니다. ");
+        return ResponseEntity.ok(response);
+
+    }
 }

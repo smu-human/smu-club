@@ -12,6 +12,7 @@ import com.example.smu_club.exception.custom.ClubMemberNotFoundException;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.member.repository.MemberRepository;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
@@ -207,5 +208,30 @@ public class OwnerClubService {
                 .applicantInfo(applicantInfo)
                 .applicationForm(applicationForm)
                 .build();
+    }
+
+    @Transactional
+    public void updateApplicantStatus(Long clubId, Long clubMemberId, String studentId, @NotNull(message = "변경할 상태를 입력해주세요.") ClubMemberStatus newStatus) {
+
+        // 1. 권한 검증
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("존재하지 않는 동아리 입니다. "));
+
+        ClubMember owner = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
+                .orElseThrow(() -> new ClubMemberNotFoundException("해당 동아리 소속이 아닙니다."));
+
+        if (owner.getClubRole() != ClubRole.OWNER) {
+            throw new AuthorizationException("지원자 상태를 변경할 권한이 없습니다.");
+        }
+
+        // 2. 대상 지원서 조회
+        ClubMember application = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ClubMemberNotFoundException("해당 지원서를 찾을 수 없습니다."));
+
+        if (application.getClub().getId() != clubId) {
+            throw new AuthorizationException("해당 동아리 지원서가 아닙니다.");
+        }
+        // 상태 변경
+        application.setStatus(newStatus);
     }
 }
