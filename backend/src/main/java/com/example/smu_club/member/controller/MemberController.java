@@ -1,10 +1,7 @@
 package com.example.smu_club.member.controller;
 
 import com.example.smu_club.common.ApiResponseDto;
-import com.example.smu_club.member.dto.ApplicationListResponseDto;
-import com.example.smu_club.member.dto.ApplicationResultResponseDto;
-import com.example.smu_club.member.dto.EditApplicationResponseDto;
-import com.example.smu_club.member.dto.MemberNameResponseDto;
+import com.example.smu_club.member.dto.*;
 import com.example.smu_club.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -60,7 +57,40 @@ public class MemberController {
         String studentId = userDetails.getUsername();
         EditApplicationResponseDto result = memberService.showApplication(clubId, studentId);
         return ResponseEntity.ok(success(result));
-
     }
 
+
+    @GetMapping("/mypage/edit")
+    public ResponseEntity<ApiResponseDto<UpdateMyInfoResponseDto>> showMyInformation (
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        String studentId = userDetails.getUsername();
+        UpdateMyInfoResponseDto result = memberService.showMyInformation(studentId);
+
+        return ResponseEntity.ok(success(result));
+    }
+
+    @PutMapping("/mypage/edit/email")
+    public ResponseEntity<ApiResponseDto<UpdateMyEmailRequestDto>> editMyInformation(
+            @RequestBody UpdateMyEmailRequestDto requestDto,
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        String studentId = userDetails.getUsername();
+
+        memberService.updateMyEmail(studentId, requestDto);
+
+        return ResponseEntity.ok(success("이메일 수정이 완료되었습니다."));
+    }
+
+    @PutMapping("/mypage/edit/phone")
+    public ResponseEntity<ApiResponseDto<UpdateMyEmailRequestDto>> editMyInformation(
+            @RequestBody UpdateMyPhoneNumberRequestDto requestDto,
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        String studentId = userDetails.getUsername();
+
+        memberService.updateMyPhoneNumber(studentId, requestDto);
+
+        return ResponseEntity.ok(success("전화번호 수정이 완료되었습니다."));
+    }
 }

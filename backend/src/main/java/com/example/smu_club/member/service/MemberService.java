@@ -3,18 +3,12 @@ package com.example.smu_club.member.service;
 import com.example.smu_club.answer.dto.AnswerResponseDto;
 import com.example.smu_club.answer.repository.AnswerRepository;
 import com.example.smu_club.club.repository.ClubMemberRepository;
-import com.example.smu_club.common.ApiResponseDto;
 import com.example.smu_club.domain.Answer;
 import com.example.smu_club.domain.ClubMember;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Question;
-import com.example.smu_club.exception.custom.ClubMemberNotFoundException;
-import com.example.smu_club.exception.custom.MemberNotFoundException;
-import com.example.smu_club.exception.custom.QuestionNotFoundException;
-import com.example.smu_club.member.dto.ApplicationListResponseDto;
-import com.example.smu_club.member.dto.ApplicationResultResponseDto;
-import com.example.smu_club.member.dto.EditApplicationResponseDto;
-import com.example.smu_club.member.dto.MemberNameResponseDto;
+import com.example.smu_club.exception.custom.*;
+import com.example.smu_club.member.dto.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
@@ -131,8 +125,30 @@ public class MemberService {
                 answerResponseDto,
                 fileUrl
         );
+    }
+
+    public UpdateMyInfoResponseDto showMyInformation(String studentId) {
+        return memberRepository.findEditMyInfoByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
+    }
+
+    public void updateMyEmail(String studentId, UpdateMyEmailRequestDto requestDto) {
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
 
 
+        //@Transactional로 알아 더티 체킹하여 메소드 끝날 때 쿼리 발생
+        if(requestDto.getNewEmail() != null && !requestDto.getNewEmail().isEmpty())
+            member.setEmail(requestDto.getNewEmail());
+    }
 
+    public void updateMyPhoneNumber(String studentId, UpdateMyPhoneNumberRequestDto requestDto) {
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
+
+
+        //@Transactional로 알아 더티 체킹하여 메소드 끝날 때 쿼리 발생
+        if(requestDto.getNewPhoneNumber() != null && !requestDto.getNewPhoneNumber().isEmpty())
+            member.setEmail(requestDto.getNewPhoneNumber());
     }
 }
