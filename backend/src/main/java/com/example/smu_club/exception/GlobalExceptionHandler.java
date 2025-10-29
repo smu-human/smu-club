@@ -114,4 +114,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    /*
+    Member 예외 관련
+     */
+    @ExceptionHandler(ApplicationNotFoundException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleApplicationNotFound(ApplicationNotFoundException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("CLUBMEMBER_NOT_FOUND", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
 }

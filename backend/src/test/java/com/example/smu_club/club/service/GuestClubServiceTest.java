@@ -36,7 +36,6 @@ public class GuestClubServiceTest {
     @DisplayName("성공")
     public void 메인페이지_동아리목록_단위테스트_성공(){
         //Given
-
         List<Club> mockClubs = new ArrayList<>();
         for(int i = 0 ; i < 10 ; i++){
             mockClubs.add(new Club(
