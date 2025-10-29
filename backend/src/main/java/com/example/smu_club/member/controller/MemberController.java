@@ -93,4 +93,16 @@ public class MemberController {
 
         return ResponseEntity.ok(success("전화번호 수정이 완료되었습니다."));
     }
+
+    @PostMapping("/mypage/application/{clubId}/delete")
+    public ResponseEntity<ApiResponseDto<Void>> deleteApplication(
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        String studentId = userDetails.getUsername();
+
+        memberService.deleteApplication(studentId, clubId);
+
+        return ResponseEntity.ok(success("Club Id: "+ clubId +" 지원서 삭제가 완료되었습니다."));
+    }
 }

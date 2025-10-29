@@ -13,4 +13,7 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     @Query("SELECT a FROM Answer a WHERE a.member = :member AND a.question IN :questions")
     List<Answer> findByMemberAndQuestions(@Param("member")Member member, @Param("questions") List<Question> questions);
+
+    @Query("DELETE FROM Answer a WHERE a.member = :member AND a.question IN :questions")
+    void deleteByMemberAndQuestionId(Member member, List<Question> questions);
 }
