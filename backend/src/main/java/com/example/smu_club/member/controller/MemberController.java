@@ -79,7 +79,7 @@ public class MemberController {
 
         memberService.updateMyEmail(studentId, requestDto);
 
-        return ResponseEntity.ok(success("이메일 수정이 완료되었습니다."));
+        return ResponseEntity.ok(success("이메일 수정 완료"));
     }
 
     @PutMapping("/mypage/edit/phone")
@@ -91,7 +91,7 @@ public class MemberController {
 
         memberService.updateMyPhoneNumber(studentId, requestDto);
 
-        return ResponseEntity.ok(success("전화번호 수정이 완료되었습니다."));
+        return ResponseEntity.ok(success("전화번호 수정이 완료"));
     }
 
     @PostMapping("/mypage/application/{clubId}/delete")
@@ -103,6 +103,6 @@ public class MemberController {
 
         memberService.deleteApplication(studentId, clubId);
 
-        return ResponseEntity.ok(success("Club Id: "+ clubId +" 지원서 삭제가 완료되었습니다."));
+        return ResponseEntity.ok(success("지원서 삭제가 완료"));
     }
 }

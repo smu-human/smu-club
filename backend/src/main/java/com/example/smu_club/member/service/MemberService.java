@@ -170,9 +170,13 @@ public class MemberService {
             //ANSWER 검색 후 삭제를 하여 2번 쿼리 발생시키지 말고, 벌크 삭제를 한다. (n+1 문제도 해결된다)
             answerRepository.deleteByMemberAndQuestionId(member, questions); //복합 인덱스로 묶어놨기 때문에 IN방식을 진행 할 경우 시너지가 나올 것이다.
         }
-        else
 
         //status가 PENDING이여도 동아리 멤버에서 탈퇴 시킨다.
-        clubMemberRepository.deleteByClubIdAndMemberId(clubId, member.getId());
+        int deletedCnt = clubMemberRepository.deleteByClubIdAndMemberId(clubId, member.getId());
+
+        //네트워크 오류상 삭제시켰는데 응답이 끊켜서 안 온 경우(이미 지워진 경우)
+        if(deletedCnt == 0)
+            throw new ApplicationNotFoundException(clubId);
+
     }
 }
