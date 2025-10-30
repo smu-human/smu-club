@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
+import static com.example.smu_club.domain.RecruitingStatus.OPEN;
 
 @Service
 @RequiredArgsConstructor
@@ -107,7 +107,7 @@ public class OwnerClubService {
             throw new AuthorizationException ("[OWNER] 동아리 모집을 시작할 권한이 없습니다. ");
         }
 
-        club.startRecruitment();
+        club.updateRecruitment(OPEN);
 
 
     }

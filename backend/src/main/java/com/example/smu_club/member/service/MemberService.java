@@ -3,18 +3,12 @@ package com.example.smu_club.member.service;
 import com.example.smu_club.answer.dto.AnswerResponseDto;
 import com.example.smu_club.answer.repository.AnswerRepository;
 import com.example.smu_club.club.repository.ClubMemberRepository;
-import com.example.smu_club.common.ApiResponseDto;
 import com.example.smu_club.domain.Answer;
 import com.example.smu_club.domain.ClubMember;
 import com.example.smu_club.domain.Member;
 import com.example.smu_club.domain.Question;
-import com.example.smu_club.exception.custom.ClubMemberNotFoundException;
-import com.example.smu_club.exception.custom.MemberNotFoundException;
-import com.example.smu_club.exception.custom.QuestionNotFoundException;
-import com.example.smu_club.member.dto.ApplicationListResponseDto;
-import com.example.smu_club.member.dto.ApplicationResultResponseDto;
-import com.example.smu_club.member.dto.EditApplicationResponseDto;
-import com.example.smu_club.member.dto.MemberNameResponseDto;
+import com.example.smu_club.exception.custom.*;
+import com.example.smu_club.member.dto.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
@@ -131,8 +125,58 @@ public class MemberService {
                 answerResponseDto,
                 fileUrl
         );
+    }
+
+    public UpdateMyInfoResponseDto showMyInformation(String studentId) {
+        return memberRepository.findEditMyInfoByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
+    }
+
+    public void updateMyEmail(String studentId, UpdateMyEmailRequestDto requestDto) {
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
 
 
+        //@Transactional로 알아 더티 체킹하여 메소드 끝날 때 쿼리 발생
+        if(requestDto.getNewEmail() != null && !requestDto.getNewEmail().isEmpty())
+            member.setEmail(requestDto.getNewEmail());
+    }
+
+    public void updateMyPhoneNumber(String studentId, UpdateMyPhoneNumberRequestDto requestDto) {
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
+
+
+        //@Transactional로 알아 더티 체킹하여 메소드 끝날 때 쿼리 발생
+        if(requestDto.getNewPhoneNumber() != null && !requestDto.getNewPhoneNumber().isEmpty())
+            member.setEmail(requestDto.getNewPhoneNumber());
+    }
+
+    public void deleteApplication(String studentId, Long clubId) {
+        /** 순서
+         *  1. clubId로 Question 객체를 List로 생성한다.
+         *  2. memberId로 Member 객체 생성 후 Question 객체 List에서 qeustionId를 이용해 Answer객체를 찾아 List로 생성한다. (member_id, question_id)
+         *  3. Answer List를 모두 삭제한다.
+         *  4. ClubMember 레코드들 중에서 member,clubId에 맞는 레코드 삭제
+         */
+
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
+
+        List<Question> questions = questionRepository.findByClubIdOrderByOrderNumAsc(clubId);
+
+        //질문이 있을 때만 답변을 삭제한다.
+        if(!questions.isEmpty()){
+            //ANSWER 검색 후 삭제를 하여 2번 쿼리 발생시키지 말고, 벌크 삭제를 한다. (n+1 문제도 해결된다)
+            answerRepository.deleteByMemberAndQuestionId(member, questions); //복합 인덱스로 묶어놨기 때문에 IN방식을 진행 할 경우 시너지가 나올 것이다.
+        }
+
+        //status가 PENDING이여도 동아리 멤버에서 탈퇴 시킨다.
+        int deletedCnt = clubMemberRepository.deleteByClubIdAndMemberId(clubId, member.getId());
+
+        //네트워크 오류상 삭제시켰는데 응답이 끊켜서 안 온 경우(이미 지워진 경우)
+        if(deletedCnt == 0)
+            throw new ApplicationNotFoundException(clubId);
 
     }
 }
