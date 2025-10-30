@@ -49,18 +49,30 @@ public class MemberController {
     }
 
 
-    @GetMapping("/mypage/applications/{clubId}/edit")
-    public ResponseEntity<ApiResponseDto<EditApplicationResponseDto>> showApplication (
+    @GetMapping("/mypage/applications/{clubId}/update")
+    public ResponseEntity<ApiResponseDto<UpdateApplicationResponseDto>> showApplication (
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails
     ){
         String studentId = userDetails.getUsername();
-        EditApplicationResponseDto result = memberService.showApplication(clubId, studentId);
+        UpdateApplicationResponseDto result = memberService.showApplication(clubId, studentId);
         return ResponseEntity.ok(success(result));
     }
 
+    @PutMapping("/mypage/applications/{clubId}/update")
+    public ResponseEntity<ApiResponseDto<UpdateApplicationRequestDto>> updateApplication (
+            @PathVariable Long clubId,
+            @RequestBody UpdateApplicationRequestDto updateApplicationRequestDto,
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        String studentId = userDetails.getUsername();
+        memberService.updateApplication(clubId, studentId, updateApplicationRequestDto);
+        return ResponseEntity.ok(success("지원서 수정 완료"));
+    }
 
-    @GetMapping("/mypage/edit")
+
+
+    @GetMapping("/mypage/update")
     public ResponseEntity<ApiResponseDto<UpdateMyInfoResponseDto>> showMyInformation (
             @AuthenticationPrincipal UserDetails userDetails
     ){
@@ -70,8 +82,8 @@ public class MemberController {
         return ResponseEntity.ok(success(result));
     }
 
-    @PutMapping("/mypage/edit/email")
-    public ResponseEntity<ApiResponseDto<UpdateMyEmailRequestDto>> editMyInformation(
+    @PutMapping("/mypage/update/email")
+    public ResponseEntity<ApiResponseDto<UpdateMyEmailRequestDto>> updateMyInformation(
             @RequestBody UpdateMyEmailRequestDto requestDto,
             @AuthenticationPrincipal UserDetails userDetails
     ){
@@ -82,8 +94,8 @@ public class MemberController {
         return ResponseEntity.ok(success("이메일 수정 완료"));
     }
 
-    @PutMapping("/mypage/edit/phone")
-    public ResponseEntity<ApiResponseDto<UpdateMyEmailRequestDto>> editMyInformation(
+    @PutMapping("/mypage/update/phone")
+    public ResponseEntity<ApiResponseDto<UpdateMyEmailRequestDto>> updateMyInformation(
             @RequestBody UpdateMyPhoneNumberRequestDto requestDto,
             @AuthenticationPrincipal UserDetails userDetails
     ){
@@ -103,6 +115,6 @@ public class MemberController {
 
         memberService.deleteApplication(studentId, clubId);
 
-        return ResponseEntity.ok(success("지원서 삭제가 완료"));
+        return ResponseEntity.ok(success("지원서 삭제 완료"));
     }
 }
