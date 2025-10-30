@@ -36,7 +36,7 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
      *     때문에 clearAutomatically = true로 1차 캐시를 싹 비워 나중에 다시 객체를 사용할 일 이 있다면 DB에서 새로 가져와 상태를 일치시킨다.
      *
      *     그렇다면 그냥 @Modifying 쿼리를 사용안하면 되는거 아닌가? 싶지만 그건 아니다.
-     *     왜냐하면 ClubMember 객체를 삭제하는 과정에서 조회 -> 삭제 로 2번의 쿼리가 발생하는데 이 때 삭제가 1차 캐시에 객체가 저장되고 삭제하는 것이다.
+     *     왜냐하면 ClubMember 레코드를 삭제하는 과정에서 조회 -> 삭제 로 2번의 쿼리가 발생하는데 이 때 삭제가 1차 캐시에 객체가 저장되고 삭제하는 것이다.
      *     따라서 조회 -> 1차 캐시 저장 -> 저장된 캐시 내용을 바탕으로 삭제 라는 비효율적인 3단계를 거친다.
      *     따라서 @Modifying를 사용하면 1차캐시를 무시하고 DB에서 직접 삭제 후 1차 캐시도 초기화 시켜서 한번에 일을 하는 것이다.
      *
@@ -45,6 +45,7 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
      *     2. 느리지만 안전한 2번의 쿼리
      *     3. 이 둘을 모두 해결 할 수 있는 삭제 후 캐시 초기화 clearAutomatically = true
      */
-    @Modifying(clearAutomatically = true)//@ void, int 타입 가능 (쿼리로 인해 실제 삭제, 수정된 행(row)의 개수 반환)
-    int deleteByClubIdAndMemberId(Long clubId, Long memberId);
+
+    //Modifying이 필요없어짐.
+    void deleteByClubIdAndMemberId(Long clubId, Long memberId);
 }

@@ -153,13 +153,6 @@ public class MemberService {
     }
 
     public void deleteApplication(String studentId, Long clubId) {
-        /** 순서
-         *  1. clubId로 Question 객체를 List로 생성한다.
-         *  2. memberId로 Member 객체 생성 후 Question 객체 List에서 qeustionId를 이용해 Answer객체를 찾아 List로 생성한다. (member_id, question_id)
-         *  3. Answer List를 모두 삭제한다.
-         *  4. ClubMember 레코드들 중에서 member,clubId에 맞는 레코드 삭제
-         */
-
         Member member = memberRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
 
@@ -172,11 +165,8 @@ public class MemberService {
         }
 
         //status가 PENDING이여도 동아리 멤버에서 탈퇴 시킨다.
-        int deletedCnt = clubMemberRepository.deleteByClubIdAndMemberId(clubId, member.getId());
+        clubMemberRepository.deleteByClubIdAndMemberId(clubId, member.getId());
 
-        //네트워크 오류상 삭제시켰는데 응답이 끊켜서 안 온 경우(이미 지워진 경우)
-        if(deletedCnt == 0)
-            throw new ApplicationNotFoundException(clubId);
 
     }
 }

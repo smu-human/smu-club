@@ -13,7 +13,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findByRefreshToken(String refreshToken);
 
-    @Query("SELECT new com.example.smu_club.member.dto.EditMyInfoResponseDto(m.id, m.email, m.phoneNumber) " +
+    @Query("SELECT new com.example.smu_club.member.dto.UpdateMyInfoResponseDto(m.id, m.email, m.phoneNumber) " +
             "FROM Member m " +
             "where m.studentId = :studentId")
     Optional<UpdateMyInfoResponseDto> findEditMyInfoByStudentId(String studentId);
