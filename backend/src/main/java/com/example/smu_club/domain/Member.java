@@ -17,8 +17,9 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-
+@Builder
 public class Member implements UserDetails {
 
     @Id
@@ -52,16 +53,6 @@ public class Member implements UserDetails {
 
     @Column(length = 255)
     private String refreshToken;
-
-    @Builder
-    public Member(String studentId, String name, String email, String department, Role role, String phoneNumber) {
-        this.studentId = studentId;
-        this.name = name;
-        this.email = email;
-        this.department = department;
-        this.role = role;
-        this.phoneNumber = phoneNumber;
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -106,4 +97,5 @@ public class Member implements UserDetails {
     public void clearRefreshToken() {
         this.refreshToken = null;
     }
+
 }

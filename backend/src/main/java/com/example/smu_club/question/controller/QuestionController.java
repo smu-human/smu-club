@@ -7,6 +7,8 @@ import com.example.smu_club.question.dto.QuestionResponse;
 import com.example.smu_club.question.service.QuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,8 +21,10 @@ public class QuestionController {
     private final QuestionService questionService;
 
     @GetMapping("/{clubId}/questions")
-    public ResponseEntity<ApiResponseDto<List<QuestionResponse>>> getClubQuestions(@PathVariable Long clubId) {
-        List<QuestionResponse> questions = questionService.findQuestionsByClubId(clubId);
+    public ResponseEntity<ApiResponseDto<List<QuestionResponse>>> getClubQuestions(
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal User user) {
+        List<QuestionResponse> questions = questionService.findQuestionsByClubId(clubId, user.getUsername());
 
         ApiResponseDto<List<QuestionResponse>> response = ApiResponseDto.success(questions, "질문조회에 성공했습니다.");
 
