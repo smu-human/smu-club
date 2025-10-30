@@ -2,12 +2,13 @@ package com.example.smu_club.club.service;
 
 
 import com.example.smu_club.answer.dto.AnswerRequestDto;
+import com.example.smu_club.answer.dto.AnswerResponseDto;
 import com.example.smu_club.answer.repository.AnswerRepository;
-import com.example.smu_club.club.dto.ApplicationFormResponseDto;
-import com.example.smu_club.club.dto.ApplicationResponseDto;
+import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
+import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.exception.custom.ClubNotRecruitmentPeriodException;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
@@ -19,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -40,13 +41,13 @@ public class MemberClubService {
 
     @Transactional
     public ApplicationResponseDto saveApplication(Long clubId, String studentId, List<AnswerRequestDto> QuestionAndAnswer, String fileUrl) {
-        //1. ClubMember 에 회원 등록 (Status 기본 값은 PENDING)
+        // 1. ClubMember 에 회원 등록 (Status 기본 값은 PENDING)
         Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +" is not found"));
         Club appliedClub = clubRepository.findById(clubId).orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +" is not found"));
-        ClubMember clubMember = new ClubMember(myInfo, appliedClub, ClubRole.MEMBER, LocalDate.now(), ClubMemberStatus.PENDING);
+        ClubMember clubMember = new ClubMember(myInfo, appliedClub, ClubRole.MEMBER, LocalDateTime.now(), ClubMemberStatus.PENDING);
         clubMemberRepository.save(clubMember);
 
-        //2. 지원서 답변 및 파일 저장 (답변은 질문에 맞게 Mapping 한다.)
+        // 2. 지원서 답변 및 파일 저장 (답변은 질문에 맞게 Mapping 한다.)
         if(QuestionAndAnswer.isEmpty()) throw new QuestionNotFoundException("clubId = " + clubId + ": 해당 동아리에 등록된 질문을 찾을 수 없습니다.");
 
         List<Long> questionIds = QuestionAndAnswer.stream()
@@ -63,6 +64,7 @@ public class MemberClubService {
 
             Answer answer = new Answer();
             answer.setQuestion(question);
+            // Answer 엔티티에 Member 객체를 넣어줌
             answer.setMember(myInfo);
 
             if(question.getQuestionContentType() == QuestionContentType.FILE){
@@ -116,6 +118,4 @@ public class MemberClubService {
                 clubQuestionListResponse
         );
     }
-
-
 }

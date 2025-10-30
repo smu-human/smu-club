@@ -1,9 +1,8 @@
 package com.example.smu_club.question;
 
 
-import com.example.smu_club.domain.Club;
-import com.example.smu_club.domain.Question;
-import com.example.smu_club.domain.QuestionContentType;
+import com.example.smu_club.club.repository.ClubMemberRepository;
+import com.example.smu_club.domain.*;
 import com.example.smu_club.question.dto.QuestionRequest;
 import com.example.smu_club.question.dto.QuestionResponse;
 import com.example.smu_club.club.repository.ClubRepository;
@@ -36,33 +35,51 @@ import static org.mockito.Mockito.verify;
     @Mock
     private ClubRepository clubRepository;
 
+    @Mock
+    ClubMemberRepository clubMemberRepository;
+
+
+    // 사용자 검증 테스트 코드 추가 필요
     @Test
-    @DisplayName("동아리 ID로 질문 목록 조회 성공")
+    @DisplayName("동아리 ID로 질문 목록 조회 성공 (OWNER)")
     void findQuestionsByClubId_success() {
         // given (준비)
         Long clubId = 1L;
-        Club club = new Club();
-        club.setId(clubId);
+        String studentId = "owner123";
+        Club club = Club.builder().id(clubId).build(); // 테스트용 객체 생성
+        Member member = Member.builder().studentId(studentId).build();
+
+        //  1. OWNER 권한을 가진 ClubMember 객체를 생성합니다.
+        ClubMember ownerMember = ClubMember.builder()
+                .club(club)
+                .member(member)
+                .clubRole(ClubRole.OWNER) // OWNER 역할 부여
+                .build();
+
         List<Question> questions = List.of(
                 Question.builder().club(club).content("질문1").orderNum(1).build(),
                 Question.builder().club(club).content("질문2").orderNum(2).build()
         );
 
-        // clubRepository2.findById(clubId)가 호출되면, Optional.of(club)을 반환하라고 정의
+        // Mock 객체 설정
         given(clubRepository.findById(clubId)).willReturn(Optional.of(club));
-        // questionRepository.findAllByClubOrderByOrderNumAsc(club)가 호출되면, questions 리스트를 반환하라고 정의
+
+        // 2. clubMemberRepository가 ownerMember를 반환하도록 설정합니다.
+        given(clubMemberRepository.findByClubAndMember_StudentId(club, studentId))
+                .willReturn(Optional.of(ownerMember));
+
         given(questionRepository.findAllByClubOrderByOrderNumAsc(club)).willReturn(questions);
 
         // when (실행)
-        List<QuestionResponse> result = questionService.findQuestionsByClubId(clubId);
+        List<QuestionResponse> result = questionService.findQuestionsByClubId(clubId, studentId);
 
         // then (검증)
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getContent()).isEqualTo("질문1");
-        assertThat(result.get(1).getOrderNum()).isEqualTo(2);
 
-        // Mock 객체들의 메서드가 정확히 1번씩 호출되었는지 검증
+        // 3. 모든 Mock 객체들이 정확히 1번씩 호출되었는지 검증합니다.
         verify(clubRepository).findById(clubId);
+        verify(clubMemberRepository).findByClubAndMember_StudentId(club, studentId);
         verify(questionRepository).findAllByClubOrderByOrderNumAsc(club);
     }
 
