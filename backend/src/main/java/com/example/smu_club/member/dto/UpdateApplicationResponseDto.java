@@ -8,7 +8,7 @@ import java.util.List;
 
 @Getter
 @AllArgsConstructor
-public class EditApplicationResponseDto {
+public class UpdateApplicationResponseDto {
     //내정보
     private Long memberId;
     private String studentId;

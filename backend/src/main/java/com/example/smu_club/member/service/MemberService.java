@@ -68,7 +68,7 @@ public class MemberService {
 
     }
 
-    public EditApplicationResponseDto showApplication(Long clubId, String studentId) {
+    public UpdateApplicationResponseDto showApplication(Long clubId, String studentId) {
         /** 순서
          *  1. studentId로 Member 객체를 생성하여 내 정보를 가져와야 됨.
          *  2. clubId로 Question 객체를 List로 생성한다. -> orderNum으로 정렬한 생태로 가져온다.
@@ -117,7 +117,7 @@ public class MemberService {
                 ))
                 .toList();
 
-        return new EditApplicationResponseDto(
+        return new UpdateApplicationResponseDto(
                 member.getId(),
                 member.getStudentId(),
                 member.getName(),
@@ -156,17 +156,38 @@ public class MemberService {
         Member member = memberRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
 
-        List<Question> questions = questionRepository.findByClubIdOrderByOrderNumAsc(clubId);
+        answerRepository.deleteByMemberAndClubId(member, clubId);
 
-        //질문이 있을 때만 답변을 삭제한다.
-        if(!questions.isEmpty()){
-            //ANSWER 검색 후 삭제를 하여 2번 쿼리 발생시키지 말고, 벌크 삭제를 한다. (n+1 문제도 해결된다)
-            answerRepository.deleteByMemberAndQuestionId(member, questions); //복합 인덱스로 묶어놨기 때문에 IN방식을 진행 할 경우 시너지가 나올 것이다.
-        }
-
-        //status가 PENDING이여도 동아리 멤버에서 탈퇴 시킨다.
+        //status가 PENDING 이여도 동아리 멤버에서 탈퇴 시킨다.
         clubMemberRepository.deleteByClubIdAndMemberId(clubId, member.getId());
 
 
+    }
+
+    public void updateApplication(Long clubId, String studentId, UpdateApplicationRequestDto requestDto) {
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
+
+        //오랫만이라 까먹고 있었는데 n+1은 쿼리문제가 아니라 네트워크 통신 문제였음
+
+        Map<Long, String> answerContentsMap = requestDto.getAnswers().stream()
+                .collect(Collectors.toMap(
+                        UpdateAnswerRequestDto::getQuestionId,
+                        UpdateAnswerRequestDto::getAnswerContent
+                ));
+
+        //keySet() == key를 모아서 set으로 만든다.
+        List<Answer> answerToUpdate = answerRepository.findByMemberAndQuestionIdIn(
+                member,
+                answerContentsMap.keySet()
+        );
+
+        for(Answer target : answerToUpdate) {
+            String newAnswerContent = answerContentsMap.get(target.getQuestion().getId());
+            target.updateAnswerContent(newAnswerContent);
+        }
+
+
+        //Dirty checking -> batch size(50) -> 네트워크 통신 2번만으로 벌크 연산(업데이트) 해결
     }
 }
