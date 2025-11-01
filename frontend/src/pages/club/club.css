@@ -26,6 +26,38 @@ body {
   background-color: var(--club-bg);
   padding: 0 12px; /* ← 카드 양옆 여백 추가 */
 }
+/* club.css 추가 */
+.club_header_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.club_header_left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.apply_btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #0e207f;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(14, 32, 127, 0.25);
+  transition: filter 0.2s ease;
+}
+.apply_btn:hover {
+  filter: brightness(1.05);
+}
 
 /* ===== 갤러리 ===== */
 .gallery {

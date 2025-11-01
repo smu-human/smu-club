@@ -63,6 +63,8 @@ export default function ClubPage() {
               </svg>
             </button>
             <h1>클럽 {id} 상세</h1>
+            {/* ✅ 지원하기 버튼 추가 */}
+            <button className="apply_btn">지원하기</button>
           </div>
         </div>
       </header>
