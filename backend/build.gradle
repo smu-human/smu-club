@@ -48,8 +48,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 
 	// OCI관련
-	implementation 'com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.44.0'
-	implementation 'com.oracle.oci.sdk:oci-java-sdk-common:3.44.0'
+
+//	// OCI SDK 기본 버전
+//	implementation 'com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.46.0'
+//	implementation 'com.oracle.oci.sdk:oci-java-sdk-common:3.46.0'
+//	implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey:3.46.0'
+
+
 }
 
 tasks.named('test') {

@@ -123,4 +123,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+
+    /**
+     * OCI 파일 업로드 실패 시 처리
+     */
+    @ExceptionHandler(OciUploadException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleOciUploadException(OciUploadException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("OCI_UPLOAD", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

@@ -13,7 +13,7 @@ import com.example.smu_club.exception.custom.ClubMemberNotFoundException;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.member.repository.MemberRepository;
-import com.example.smu_club.util.OciStorageService;
+//import com.example.smu_club.util.OciStorageService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,7 +35,7 @@ public class OwnerClubService {
     private final ClubMemberRepository clubMemberRepository;
     private final MemberRepository memberRepository;
     private final AnswerRepository answerRepository;
-    private final OciStorageService ociStorageService;
+//    private final OciStorageService ociStorageService;
     private final ClubImageRepository clubImageRepository;
 
 
@@ -47,16 +47,16 @@ public class OwnerClubService {
         String thumbnailUrl = null;
         List<String> clubImagerUrls = new ArrayList<>();
 
-        if (images != null && !images.isEmpty()) {
+/*        if (images != null && !images.isEmpty()) {
             for (MultipartFile file : images) {
                 String imageUrl = ociStorageService.upload(file);
                 clubImagerUrls.add(imageUrl);
             }
 
             thumbnailUrl = clubImagerUrls.get(0);
-        } else { //  기본 썸네일 설정하는거 필요할듯
+        } else { //  기본 썸네일 설정하는거 필요할듯 (사진 받으면 )
 
-        }
+        }*/
 
         // 1. 클럽 정보 등록
         Club newClub = Club.builder()
@@ -77,7 +77,7 @@ public class OwnerClubService {
 
         List<ClubImage> imagesToSave = new ArrayList<>();
 
-        int order = 0;
+/*        int order = 0;
         for (String imageUrl : clubImagerUrls) {
 
             ClubImage clubImage = ClubImage.builder()
@@ -91,7 +91,7 @@ public class OwnerClubService {
 
         if (!imagesToSave.isEmpty()) {
             clubImageRepository.saveAll(imagesToSave);
-        }
+        }*/
 
 
         // 2. ClubMember 관계 만들어주기
