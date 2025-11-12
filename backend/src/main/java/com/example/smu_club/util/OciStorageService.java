@@ -1,4 +1,3 @@
-/*
 package com.example.smu_club.util;
 
 import com.example.smu_club.exception.custom.OciUploadException;
@@ -28,10 +27,7 @@ public class OciStorageService {
     private final String bucketName;
     private final String region;
 
-    */
-/**
-     * 생성자: application.properties에서 OCI 설정값들을 자동으로 주입받습니다.
-     *//*
+
 
     public OciStorageService(
             @Value("${oci.config.tenancy-id}") String tenancyId,
@@ -73,14 +69,6 @@ public class OciStorageService {
         this.region = region;
     }
 
-    */
-/**
-     * 파일을 OCI Object Storage에 업로드하고 공개 URL을 반환합니다.
-     *
-     * @param file 업로드할 MultipartFile 객체
-     * @return 업로드된 파일의 공개 URL
-     *//*
-
     public String upload(MultipartFile file) {
         try {
             String uniqueFileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
@@ -115,4 +103,3 @@ public class OciStorageService {
         }
     }
 }
-*/

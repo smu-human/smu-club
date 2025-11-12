@@ -8,6 +8,7 @@ import com.example.smu_club.common.ApiResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -50,7 +51,7 @@ public class OwnerClubController {
     }
 
     // 동아리 상세정보 등록
-    @PostMapping("/register/club")
+    @PostMapping(value = "/register/club", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponseDto<Void>> registerClub(
             @ModelAttribute ClubInfoRequest request,
             @AuthenticationPrincipal User user

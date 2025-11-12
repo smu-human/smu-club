@@ -55,7 +55,7 @@ public class Club {
 
     private String clubRoom;
 
-    @Column(name = "thumbnail_url")
+    @Column(name = "thumbnail_url", length = 1024)
     private String thumbnailUrl;
 
 
