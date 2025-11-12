@@ -4,6 +4,7 @@ package com.example.smu_club.club.service;
 import com.example.smu_club.answer.dto.AnswerResponseDto;
 import com.example.smu_club.answer.repository.AnswerRepository;
 import com.example.smu_club.club.dto.*;
+import com.example.smu_club.club.repository.ClubImageRepository;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
@@ -12,17 +13,18 @@ import com.example.smu_club.exception.custom.ClubMemberNotFoundException;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.member.repository.MemberRepository;
+import com.example.smu_club.util.OciStorageService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
+import static java.util.stream.Collectors.toList;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import static com.example.smu_club.domain.RecruitingStatus.OPEN;
 
 @Service
@@ -33,10 +35,28 @@ public class OwnerClubService {
     private final ClubMemberRepository clubMemberRepository;
     private final MemberRepository memberRepository;
     private final AnswerRepository answerRepository;
+    private final OciStorageService ociStorageService;
+    private final ClubImageRepository clubImageRepository;
 
 
     @Transactional
     public void register(String studentId, ClubInfoRequest request) {
+
+        List<MultipartFile> images = request.getClubImages();
+
+        String thumbnailUrl = null;
+        List<String> clubImagerUrls = new ArrayList<>();
+
+        if (images != null && !images.isEmpty()) {
+            for (MultipartFile file : images) {
+                String imageUrl = ociStorageService.upload(file);
+                clubImagerUrls.add(imageUrl);
+            }
+
+            thumbnailUrl = clubImagerUrls.get(0);
+        } else { //  기본 썸네일 설정하는거 필요할듯
+
+        }
 
         // 1. 클럽 정보 등록
         Club newClub = Club.builder()
@@ -50,10 +70,28 @@ public class OwnerClubService {
                 .recruitingStart(null)
                 .recruitingStatus(RecruitingStatus.UPCOMING)
                 .createdAt(LocalDateTime.now())
-                .thumbnailUrl(request.getThumbnailUrl())
+                .thumbnailUrl(thumbnailUrl)
                 .build();
 
         clubRepository.save(newClub);
+
+        List<ClubImage> imagesToSave = new ArrayList<>();
+
+        int order = 0;
+        for (String imageUrl : clubImagerUrls) {
+
+            ClubImage clubImage = ClubImage.builder()
+                    .club(newClub)
+                    .imageUrl(imageUrl)
+                    .displayOrder(order++)
+                    .build();
+
+            imagesToSave.add(clubImage);
+        }
+
+        if (!imagesToSave.isEmpty()) {
+            clubImageRepository.saveAll(imagesToSave);
+        }
 
 
         // 2. ClubMember 관계 만들어주기

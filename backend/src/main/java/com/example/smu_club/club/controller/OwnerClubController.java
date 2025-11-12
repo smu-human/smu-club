@@ -52,7 +52,7 @@ public class OwnerClubController {
     // 동아리 상세정보 등록
     @PostMapping("/register/club")
     public ResponseEntity<ApiResponseDto<Void>> registerClub(
-            @RequestBody ClubInfoRequest request,
+            @ModelAttribute ClubInfoRequest request,
             @AuthenticationPrincipal User user
     ) {
         ownerClubService.register(user.getUsername(), request);
@@ -106,6 +106,7 @@ public class OwnerClubController {
         return ResponseEntity.ok(response);
     }
 
+    // 멤버 거절할지 받을지 결정하는 API
     @PatchMapping("/{clubId}/applicants/{clubMemberId}/status")
     public ResponseEntity<ApiResponseDto<Void>> updateApplicantStatus(
             @PathVariable Long clubId,

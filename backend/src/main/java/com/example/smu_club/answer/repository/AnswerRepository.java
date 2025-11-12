@@ -24,4 +24,9 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
             @Param("member") Member member,
             @Param("club") Club club
     );
+
+
+    @Query("DELETE FROM Answer a WHERE a.member = :member AND a.question IN :questions")
+    void deleteByMemberAndQuestionId(Member member, List<Question> questions);
+
 }

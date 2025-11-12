@@ -23,7 +23,6 @@ public class SwaggerConfig {
 
         String jwtSchemeName = "jwtAuth";
         SecurityScheme securityScheme = new SecurityScheme()
-                .name(jwtSchemeName)
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
                 .bearerFormat("JWT");
