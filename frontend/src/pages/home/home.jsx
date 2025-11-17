@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../../styles/globals.css";
 import "./home.css";
+import { fetch_public_clubs } from "../../lib/api";
 
 /**
  * 요구사항
@@ -9,62 +10,9 @@ import "./home.css";
  * - 로그인/회원가입 이동
  * - 검색 + 정렬 + 신청가능 토글
  * - 카드 클릭 → /club/:id
- * - D-day 색상 강약
+ * - D-day 색상 강약 (현재는 백엔드 스펙상 d-day 정보가 없어 null 처리)
  * - 모바일 390 레이아웃 / 데스크톱 카드 3열
  */
-
-const mockClubs = [
-  {
-    id: 1,
-    name: "러닝클럽",
-    status: "open",
-    members: 26,
-    dday: 10,
-    deadline: "2025-09-08",
-    desc: "주 3회 함께 달려요! 초보/중급 그룹 나눠 러닝폼 교정과 기록 공유",
-    logo: "/images/trip_road.jpg",
-  },
-  {
-    id: 2,
-    name: "TRIP ROAD",
-    status: "open",
-    members: 18,
-    dday: 2,
-    deadline: "2025-09-03",
-    desc: "트래킹 & 로드 무빙 사진/영상 동아리",
-    logo: "/images/trip_road.jpg",
-  },
-  {
-    id: 3,
-    name: "알고리즘 학회",
-    status: "closed",
-    members: 42,
-    dday: -3,
-    deadline: "2025-08-28",
-    desc: "주 1회 코테 스터디와 세미나 진행",
-    logo: "/images/trip_road.jpg",
-  },
-  {
-    id: 4,
-    name: "알고리즘 학회",
-    status: "closed",
-    members: 42,
-    dday: -3,
-    deadline: "2025-08-28",
-    desc: "주 1회 코테 스터디와 세미나 진행",
-    logo: "/images/trip_road.jpg",
-  },
-  {
-    id: 5,
-    name: "알고리즘 학회",
-    status: "closed",
-    members: 42,
-    dday: -3,
-    deadline: "2025-08-28",
-    desc: "주 1회 코테 스터디와 세미나 진행",
-    logo: "/images/trip_road.jpg",
-  },
-];
 
 function ddayClass(d) {
   if (d == null) return "dday-neutral";
@@ -74,6 +22,7 @@ function ddayClass(d) {
   if (d <= 14) return "dday-warm";
   return "dday-neutral";
 }
+
 function ddayLabel(d) {
   if (d == null) return "예정";
   if (d <= 0) return "마감";
@@ -86,8 +35,42 @@ export default function HomePage() {
   const [sortKey, setSortKey] = useState("name"); // name | members | dday
   const [onlyOpen, setOnlyOpen] = useState(false);
 
+  const [clubs, setClubs] = useState([]);
+  const [is_loading, set_is_loading] = useState(false);
+  const [error_msg, set_error_msg] = useState("");
+
+  // ✅ 백엔드에서 동아리 목록 불러오기
+  useEffect(() => {
+    const load = async () => {
+      set_is_loading(true);
+      set_error_msg("");
+
+      try {
+        const data = await fetch_public_clubs();
+        // data: [{ id, name, title, recruitingStatus, createdAt }]
+        const mapped = data.map((item) => ({
+          id: item.id,
+          name: item.name,
+          status: (item.recruitingStatus || "").toLowerCase(), // open | upcoming | closed
+          members: null, // 백엔드 스펙에 없음 → 추후 필드 생기면 교체
+          dday: null, // 모집 종료일 정보가 없어서 일단 null
+          deadline: null,
+          desc: item.title,
+          logo: "/images/2.png",
+        }));
+        setClubs(mapped);
+      } catch (err) {
+        set_error_msg(err.message || "동아리 목록을 불러오지 못했습니다.");
+      } finally {
+        set_is_loading(false);
+      }
+    };
+
+    load();
+  }, []);
+
   const filtered = useMemo(() => {
-    let list = [...mockClubs];
+    let list = [...clubs];
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
@@ -99,12 +82,12 @@ export default function HomePage() {
 
     list.sort((a, b) => {
       if (sortKey === "name") return a.name.localeCompare(b.name);
-      if (sortKey === "members") return b.members - a.members;
+      if (sortKey === "members") return (b.members ?? 0) - (a.members ?? 0);
       if (sortKey === "dday") return (a.dday ?? 9999) - (b.dday ?? 9999);
       return 0;
     });
     return list;
-  }, [query, onlyOpen, sortKey]);
+  }, [query, onlyOpen, sortKey, clubs]);
 
   return (
     <div className="home_page">
@@ -152,7 +135,7 @@ export default function HomePage() {
 
         {/* 3) 통계/정렬/토글 */}
         <div className="toolbar">
-          <div className="stat">총 {filtered.length}개의 동아리</div>
+          <div className="stat">총 {clubs.length}개의 동아리</div>
 
           <div className="right_controls">
             <label className="toggle">
@@ -179,43 +162,72 @@ export default function HomePage() {
 
       {/* 리스트(모바일: 1열 / 데스크톱: 3열) */}
       <main className="home_main">
-        {filtered.map((c) => (
-          <article className="club_card">
-            <div className="club_head_row">
-              <img className="club_logo" src={c.logo} alt={`${c.name} 로고`} />
-              <div className="club_head_left">
-                <h3 className="club_name">{c.name}</h3>
-                <div className="club_meta_row">
-                  <span
-                    className={`badge ${
-                      c.status === "open" ? "open" : "closed"
-                    }`}
-                  >
-                    {c.status === "open" ? "신청 가능" : "신청 불가"}
+        {error_msg && <div className="error_msg">{error_msg}</div>}
+
+        {is_loading ? (
+          <div className="list_loading">동아리 목록을 불러오는 중...</div>
+        ) : (
+          <>
+            {filtered.map((c) => (
+              <article
+                key={c.id}
+                className="club_card"
+                onClick={() => nav(`/club/${c.id}`)}
+              >
+                <div className="club_head_row">
+                  <img
+                    className="club_logo"
+                    src={c.logo}
+                    alt={`${c.name} 로고`}
+                  />
+                  <div className="club_head_left">
+                    <h3 className="club_name">{c.name}</h3>
+                    <div className="club_meta_row">
+                      <span
+                        className={`badge ${
+                          c.status === "open"
+                            ? "open"
+                            : c.status === "upcoming"
+                            ? "upcoming"
+                            : "closed"
+                        }`}
+                      >
+                        {c.status === "open"
+                          ? "신청 가능"
+                          : c.status === "upcoming"
+                          ? "모집 예정"
+                          : "신청 불가"}
+                      </span>
+                      {c.members != null && (
+                        <span className="members">· {c.members}명</span>
+                      )}
+                    </div>
+                  </div>
+                  <span className={`dday ${ddayClass(c.dday)}`}>
+                    {ddayLabel(c.dday)}
                   </span>
-                  <span className="members">· {c.members}명</span>
                 </div>
+
+                <p className="club_desc">{c.desc}</p>
+
+                <div className="club_foot_row">
+                  {c.deadline && (
+                    <span className="deadline">모집마감일 {c.deadline}</span>
+                  )}
+                </div>
+              </article>
+            ))}
+
+            {filtered.length === 0 && !is_loading && (
+              <div className="empty">
+                <p>검색 결과가 없습니다.</p>
               </div>
-              <span className={`dday ${ddayClass(c.dday)}`}>
-                {ddayLabel(c.dday)}
-              </span>
-            </div>
-
-            <p className="club_desc">{c.desc}</p>
-
-            <div className="club_foot_row">
-              <span className="deadline">모집마감일 {c.deadline}</span>
-            </div>
-          </article>
-        ))}
-
-        {filtered.length === 0 && (
-          <div className="empty">
-            <p>검색 결과가 없습니다.</p>
-          </div>
+            )}
+          </>
         )}
       </main>
-      {/* 🔹 푸터 */}
+
+      {/* 푸터 */}
       <footer className="page-footer">
         <p>© 2025 smu-club. 상명대학교 동아리 통합 플랫폼</p>
         <p>
