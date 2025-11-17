@@ -1,25 +1,51 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import "../../styles/globals.css";
 import "./club.css";
+import { fetch_public_club } from "../../lib/api";
 
 export default function ClubPage() {
   const { id } = useParams();
   const nav = useNavigate();
 
-  // 보여줄 이미지들 (public/images/ 기준)
-  const images = [
+  const default_images = [
     "/images/justdoit.jpg",
     "/images/sori.jpg",
     "/images/tornado.jpg",
     "/images/trip.jpg",
   ];
 
-  // 캐러셀 상태
+  const [club, setClub] = useState(null);
+  const [images, setImages] = useState(default_images);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error_msg, set_error_msg] = useState("");
   const carouselRef = useRef(null);
 
+  // ✅ 백엔드에서 동아리 상세 정보 가져오기
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      set_error_msg("");
+      try {
+        const data = await fetch_public_club(id);
+        setClub(data);
+
+        if (data?.thumbnailUrl) {
+          setImages([data.thumbnailUrl, ...default_images]);
+        }
+      } catch (err) {
+        set_error_msg(err.message || "동아리 정보를 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id]);
+
   const goTo = (nextIdx) => {
-    if (!carouselRef.current) return;
+    if (!carouselRef.current || images.length === 0) return;
     const total = images.length;
     const clamped = (nextIdx + total) % total;
     setActiveIndex(clamped);
@@ -39,6 +65,14 @@ export default function ClubPage() {
     const slideWidth = carouselRef.current.clientWidth;
     const idx = Math.round(carouselRef.current.scrollLeft / slideWidth);
     if (idx !== activeIndex) setActiveIndex(idx);
+  };
+
+  const render_status = (status) => {
+    const s = status?.toUpperCase();
+    if (s === "OPEN") return "모집중";
+    if (s === "UPCOMING") return "모집 예정";
+    if (s === "CLOSED") return "모집 마감";
+    return s || "-";
   };
 
   return (
@@ -62,88 +96,112 @@ export default function ClubPage() {
                 <path d="M12 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1>클럽 {id} 상세</h1>
-            {/* ✅ 지원하기 버튼 추가 */}
-            <button className="apply_btn">지원하기</button>
+            <h1>{club?.name || `클럽 ${id} 상세`}</h1>
+            <button className="apply_btn" onClick={() => nav("/login")}>
+              지원하기
+            </button>
           </div>
         </div>
       </header>
 
       <main className="club_main safe-area-padding">
         <div className="container">
-          {/* ===== 갤러리 ===== */}
-          <section className="gallery card">
-            <div className="carousel" ref={carouselRef} onScroll={onScroll}>
-              {images.map((src, i) => (
-                <div className="slide" key={i}>
-                  <img src={src} alt={`클럽 이미지 ${i + 1}`} />
-                </div>
-              ))}
-            </div>
+          {error_msg && (
+            <p
+              aria-live="polite"
+              style={{ minHeight: 20, color: "#a82d2f", marginBottom: "8px" }}
+            >
+              {error_msg}
+            </p>
+          )}
 
-            {/* 좌우 버튼 */}
-            {images.length > 1 && (
-              <>
-                <button
-                  className="nav prev"
-                  onClick={onPrev}
-                  aria-label="이전 이미지"
-                >
-                  ‹
-                </button>
-                <button
-                  className="nav next"
-                  onClick={onNext}
-                  aria-label="다음 이미지"
-                >
-                  ›
-                </button>
-
-                {/* 네비게이션 dots */}
-                <div className="dots">
-                  {images.map((_, i) => (
-                    <button
-                      key={i}
-                      className={i === activeIndex ? "is_active" : ""}
-                      aria-label={`${i + 1}번째 이미지로 이동`}
-                      onClick={() => goTo(i)}
-                    />
+          {loading ? (
+            <div className="club-loading">동아리 정보를 불러오는 중...</div>
+          ) : !club ? (
+            <div className="club-empty">동아리 정보를 찾을 수 없습니다.</div>
+          ) : (
+            <>
+              {/* ===== 갤러리 ===== */}
+              <section className="gallery card">
+                <div className="carousel" ref={carouselRef} onScroll={onScroll}>
+                  {images.map((src, i) => (
+                    <div className="slide" key={i}>
+                      <img src={src} alt={`클럽 이미지 ${i + 1}`} />
+                    </div>
                   ))}
                 </div>
-              </>
-            )}
-          </section>
 
-          {/* ===== 메타 예시 ===== */}
-          <section className="club_meta card">
-            <ul className="info_list">
-              <li>
-                <span className="label">회장</span>
-                <span className="val">홍길동</span>
-              </li>
-              <li>
-                <span className="label">연락처</span>
-                <span className="val">010-1234-5678</span>
-              </li>
-              <li>
-                <span className="label">모집 기간</span>
-                <span className="val">2025.03.01 ~ 2025.03.15</span>
-              </li>
-              <li>
-                <span className="label">상태</span>
-                <span className="val badge">모집중</span>
-              </li>
-            </ul>
-          </section>
+                {images.length > 1 && (
+                  <>
+                    <button
+                      className="nav prev"
+                      onClick={onPrev}
+                      aria-label="이전 이미지"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      className="nav next"
+                      onClick={onNext}
+                      aria-label="다음 이미지"
+                    >
+                      ›
+                    </button>
 
-          {/* ===== 소개 ===== */}
-          <section className="intro card">
-            <h2 className="section_title">동아리 소개</h2>
-            <p className="desc">
-              이곳에 클럽 {id}의 소개글을 넣어주세요. 활동 목적, 주요 활동, 성과
-              등을 적을 수 있습니다.
-            </p>
-          </section>
+                    <div className="dots">
+                      {images.map((_, i) => (
+                        <button
+                          key={i}
+                          className={i === activeIndex ? "is_active" : ""}
+                          aria-label={`${i + 1}번째 이미지로 이동`}
+                          onClick={() => goTo(i)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </section>
+
+              {/* ===== 메타 ===== */}
+              <section className="club_meta card">
+                <ul className="info_list">
+                  <li>
+                    <span className="label">회장</span>
+                    <span className="val">{club.president}</span>
+                  </li>
+                  <li>
+                    <span className="label">연락처</span>
+                    <span className="val">{club.contact}</span>
+                  </li>
+                  <li>
+                    <span className="label">모집 기간</span>
+                    <span className="val">
+                      {club.recruitingStart} ~ {club.recruitingEnd}
+                    </span>
+                  </li>
+                  <li>
+                    <span className="label">상태</span>
+                    <span className="val badge">
+                      {render_status(club.recruitingStatus)}
+                    </span>
+                  </li>
+                  <li>
+                    <span className="label">동아리방</span>
+                    <span className="val">{club.clubRoom}</span>
+                  </li>
+                </ul>
+              </section>
+
+              {/* ===== 소개 ===== */}
+              <section className="intro card">
+                <h2 className="section_title">동아리 소개</h2>
+                <p className="desc">
+                  {club.description ||
+                    `이곳에 클럽 ${id}의 소개글을 넣어주세요. 활동 목적, 주요 활동, 성과 등을 적을 수 있습니다.`}
+                </p>
+              </section>
+            </>
+          )}
         </div>
       </main>
 

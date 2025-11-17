@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/globals.css";
 import "./login.css";
-import { apiJson } from "../../lib/api";
+import { apiLogin } from "../../lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -32,22 +32,17 @@ export default function Login() {
     set_is_loading(true);
 
     try {
-      const data = await apiJson("/api/v1/public/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          studentId: student_id,
-          password,
-        }),
+      await apiLogin({
+        studentId: student_id,
+        password,
       });
 
-      // remember me 저장
       if (remember_me) {
         localStorage.setItem("smu_student_id", student_id);
       } else {
         localStorage.removeItem("smu_student_id");
       }
 
-      // 성공 후 이동 (필요 시 role 분기)
       navigate("/");
     } catch (err) {
       if (err.code === "UNAUTHORIZED") {
