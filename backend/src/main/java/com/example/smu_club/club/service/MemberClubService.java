@@ -2,13 +2,11 @@ package com.example.smu_club.club.service;
 
 
 import com.example.smu_club.answer.dto.AnswerRequestDto;
-import com.example.smu_club.answer.dto.AnswerResponseDto;
 import com.example.smu_club.answer.repository.AnswerRepository;
 import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
-import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.exception.custom.ClubNotRecruitmentPeriodException;
 import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
