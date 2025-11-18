@@ -1,0 +1,63 @@
+version: '3'
+services:
+  db:
+    image: mysql:8.0.43-oracle
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: smu1234!
+      MYSQL_DATABASE: smu_db
+      MYSQL_USER: smu
+      MYSQL_PASSWORD: smu1234!
+    volumes:
+      - ./db/store:/var/lib/mysql
+    networks:
+      - network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    environment:
+      # 'docker' 프로필 활성화 및 DB 이름 수정
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:    # 호스트 pc와 컨테이너 코드를 실시간으로 동기화한다.
+      - ./backend/src:/app/src
+    networks:
+      - network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile-dev
+    restart: always
+    ports:
+      - 3000:3000
+    volumes:
+        #소스 코드 동기화
+        - ./frontend:/app
+        #node_modules은 호스트와 동기화 하지 않음 -> 충돌 방지
+        - /app/node_modules
+    #react 개발 서버가 정상적으로 실행되도록 하는 옵션
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+    networks:
+      - network
+
+#하나의 가상 네트워크로 묶어주는 기술 -> 컴포즈의 핵심
+networks:
+  network:
