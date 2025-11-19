@@ -62,6 +62,21 @@ public class OwnerClubController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+
+/*    // 동아리 상세정보 편집
+    @PutMapping(value = "/{clubId}/edit/club", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponseDto<Void>> editClub(
+            @PathVariable Long clubId,
+            @ModelAttribute ClubUpdateRequest request,
+            @AuthenticationPrincipal User user
+    ) {
+
+        ownerClubService.updateClub(clubId, user.getUsername(), request);
+
+        ApiResponseDto<Void> response = ApiResponseDto.success(null, "[Owner] 동아리 정보 수정에 성공하였습니다. ");
+        return ResponseEntity.ok(response);
+    }*/
+
     // 동아리 상태 변경 (UPCOMING -> OPEN)
     @PostMapping("/{clubId}/start-recruitment")
     public ResponseEntity<ApiResponseDto<Void>> startRecruitment(

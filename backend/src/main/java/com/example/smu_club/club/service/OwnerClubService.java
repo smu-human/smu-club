@@ -39,6 +39,15 @@ public class OwnerClubService {
     private final ClubImageRepository clubImageRepository;
 
 
+    // 동아리 상세정보 업데이트인데 이미지 클라우드에 무작정 다 쌓이면안돼서 그 부분을 고려해서 만들어야 함 .
+//    @Transactional()
+//    public void updateClub(Long clubId, String username, ClubUpdateRequest request) {
+//
+//
+//
+//    }
+
+
     @Transactional
     public void register(String studentId, ClubInfoRequest request) {
 
