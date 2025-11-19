@@ -248,7 +248,7 @@ public class OwnerClubService {
                             content
                     );
                 })
-                .collect(toList());
+                .collect(Collectors.toList());
 
         // 최종 DTO 반환
         return ApplicantDetailViewResponse.builder()

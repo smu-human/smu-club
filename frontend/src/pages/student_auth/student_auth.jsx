@@ -2,34 +2,35 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/globals.css";
 import "./student_auth.css";
-import { apiJson } from "../../lib/api";
+import { apiSignup } from "../../lib/api";
 
 export default function StudentAuth() {
   const navigate = useNavigate();
+
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const onSubmit = async (e) => {
     e.preventDefault();
+
     if (!agree) {
       return setErrorMsg("개인정보 조회 동의가 필요합니다.");
     }
+
     setErrorMsg("");
     setLoading(true);
 
     try {
-      const data = await apiJson("/api/v1/public/auth/signup", {
-        method: "POST",
-        body: JSON.stringify({
-          studentId,
-          password,
-        }),
+      await apiSignup({
+        studentId,
+        password,
+        phoneNumber,
       });
 
-      // 인증 완료 후 로그인 페이지로 이동
       navigate("/login", { replace: true });
     } catch (err) {
       if (err.code === "UNAUTHORIZED") {
@@ -101,6 +102,7 @@ export default function StudentAuth() {
               </div>
 
               <form className="auth-form" onSubmit={onSubmit}>
+                {/* 학번 */}
                 <div className="form-group">
                   <label htmlFor="authStudentId">학번</label>
                   <div className="input-container">
@@ -124,6 +126,7 @@ export default function StudentAuth() {
                   </div>
                 </div>
 
+                {/* 비밀번호 */}
                 <div className="form-group">
                   <label htmlFor="authPassword">비밀번호</label>
                   <div className="input-container">
@@ -148,6 +151,30 @@ export default function StudentAuth() {
                   </div>
                 </div>
 
+                {/* 연락처 */}
+                <div className="form-group">
+                  <label htmlFor="authPhone">연락처</label>
+                  <div className="input-container">
+                    <svg
+                      className="input-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.05 4.1 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.83.37 1.64.72 2.39a2 2 0 0 1-.45 2.18l-1.27 1.27a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.18-.45 13 13 0 0 1 2.39.72A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    <input
+                      type="text"
+                      id="authPhone"
+                      placeholder="연락처(숫자만 입력)"
+                      required
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* 동의 체크 */}
                 <div className="form-group">
                   <label className="checkbox-label">
                     <input
@@ -165,6 +192,7 @@ export default function StudentAuth() {
                   </label>
                 </div>
 
+                {/* 버튼 */}
                 <button
                   type="submit"
                   className="btn btn-primary btn-large"
@@ -196,6 +224,7 @@ export default function StudentAuth() {
         </div>
       </main>
 
+      {/* Footer */}
       <div className="page-footer">
         <p>© 2025 smu-club. 상명대학교 동아리 플랫폼</p>
         <p>

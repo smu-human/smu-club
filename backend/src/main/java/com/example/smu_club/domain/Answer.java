@@ -2,11 +2,13 @@ package com.example.smu_club.domain;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "answer",
@@ -37,5 +39,9 @@ public class Answer {
     public Answer(String answerContent, Question question){
         this.answerContent = answerContent;
         this.question = question;
+    }
+
+    public void updateAnswerContent(String newAnswerContent) {
+        this.answerContent = newAnswerContent;
     }
 }

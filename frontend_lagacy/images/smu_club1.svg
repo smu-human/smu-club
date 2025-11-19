@@ -1,9 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200" role="img" aria-label="SMU CLUB logo - Playfair Display Bold">
-  <ns0:title>SMU CLUB — Playfair Display Bold (SM Blue)</ns0:title>
-  <ns0:desc>Hex #0E207F · text-only logo</ns0:desc>
-  <ns0:text x="50%" y="55%" text-anchor="middle" dominant-baseline="middle" font-family="'Playfair Display', 'Times New Roman', Times, serif" font-size="140" fill="#0E207F" letter-spacing="1">
-    <ns0:tspan font-weight="700">SMU </ns0:tspan>
-    <ns0:tspan font-weight="700">CLUB</ns0:tspan>
-  </ns0:text>
-</ns0:svg>

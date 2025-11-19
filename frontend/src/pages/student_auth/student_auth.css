@@ -114,6 +114,10 @@
   height: auto;
   margin-right: 0.5rem;
 }
+/* student_auth.css 맨 아래 추가 */
+a {
+  text-decoration: none;
+}
 
 /* ===== Footer Info ===== */
 .form-footer {

@@ -139,7 +139,7 @@
 .club_card {
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 14px !important; /* ✅ 네 모서리 모두 둥글게 강제 적용 */
   padding: 12px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   cursor: pointer;
