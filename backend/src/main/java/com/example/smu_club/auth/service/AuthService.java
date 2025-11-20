@@ -79,6 +79,10 @@ public class AuthService {
                 signupRequest.getStudentId(), signupRequest.getPassword()
         );
 
+        if (userInfo == null) {
+                throw new LoginFailedException("학번 또는 비밀번호가 일치하지 않아 학교 인증에 실패했습니다.");
+        }
+
         // 2. 중복 확인
         memberRepository.findByStudentId(userInfo.getUsername())
                 .ifPresent(member -> {

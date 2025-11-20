@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.RestClientResponseException;
 
 
 @RestControllerAdvice
@@ -50,6 +51,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponseDto<Object>> handleUnivAuthenticationFailedException(UnivAuthenticationFailedException e) {
         ApiResponseDto<Object> response = ApiResponseDto.fail("UNIV_AUTH_FAILED", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * 외부 API 호출 실패 시 처리
+     */
+    @ExceptionHandler(RestClientResponseException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleRestClientResponseException(RestClientResponseException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("EXTERNAL_API_ERROR", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.valueOf(e.getRawStatusCode()));
     }
 
 
@@ -124,4 +134,6 @@ public class GlobalExceptionHandler {
         ApiResponseDto<Object> response = ApiResponseDto.fail("OCI_UPLOAD", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+
 }

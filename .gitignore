@@ -5,6 +5,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### Database
+/db/store
+
 ### STS ###
 .apt_generated
 .classpath
@@ -35,6 +38,9 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### docker-compose.override
+docker-compose.override.yml
 
 # --- OS 공통 ---
 .DS_Store
