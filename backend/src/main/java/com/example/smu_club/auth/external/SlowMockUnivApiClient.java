@@ -24,5 +24,10 @@ public class SlowMockUnivApiClient implements UnivApiClient {
 
     }
 
+    private UnivUserInfoResponse authenticateFallback(String studentId, String password, Throwable e) {
+        System.out.println("[TEST] Fallback triggered: " + e.getMessage());
+        return new UnivUserInfoResponse(studentId, "FallbackUser", studentId, "테스트용 학과", "테스트 부전공");
+    }
+
 
 }

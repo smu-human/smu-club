@@ -1,16 +1,21 @@
 package com.example.smu_club.club.dto;
 
 import com.example.smu_club.domain.Club;
+import com.example.smu_club.domain.ClubImage;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
+@Builder
 @AllArgsConstructor
 public class ClubInfoResponse {
 
-    private String thumbnailUrl;
     private String name;
     private String title;
     private String president;
@@ -19,16 +24,24 @@ public class ClubInfoResponse {
     private String clubRoom;
     private String description;
 
+    private List<String> clubImageUrls;
+
     public static ClubInfoResponse from(Club club) {
-        return new ClubInfoResponse(
-                club.getThumbnailUrl(),
-                club.getName(),
-                club.getTitle(),
-                club.getPresident(),
-                club.getContact(),
-                club.getRecruitingEnd(),
-                club.getClubRoom(),
-                club.getDescription()
-        );
+
+        List<String> imageUrls = club.getClubImages().stream()
+                .sorted(Comparator.comparingInt(ClubImage::getDisplayOrder))
+                .map(ClubImage::getImageUrl)
+                .toList();
+
+        return ClubInfoResponse.builder()
+                .name(club.getName())
+                .title(club.getTitle())
+                .president(club.getPresident())
+                .contact(club.getContact())
+                .recruitingEnd(club.getRecruitingEnd())
+                .clubRoom(club.getClubRoom())
+                .description(club.getDescription())
+                .clubImageUrls(imageUrls)
+                .build();
     }
 }

@@ -8,6 +8,7 @@ import com.example.smu_club.common.ApiResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -50,9 +51,9 @@ public class OwnerClubController {
     }
 
     // 동아리 상세정보 등록
-    @PostMapping("/register/club")
+    @PostMapping(value = "/register/club", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponseDto<Void>> registerClub(
-            @RequestBody ClubInfoRequest request,
+            @ModelAttribute ClubInfoRequest request,
             @AuthenticationPrincipal User user
     ) {
         ownerClubService.register(user.getUsername(), request);
@@ -60,6 +61,21 @@ public class OwnerClubController {
         ApiResponseDto<Void> response = ApiResponseDto.success("[Owner] 동아리 정보 등록에 성공했습니다. ");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+
+/*    // 동아리 상세정보 편집
+    @PutMapping(value = "/{clubId}/edit/club", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponseDto<Void>> editClub(
+            @PathVariable Long clubId,
+            @ModelAttribute ClubUpdateRequest request,
+            @AuthenticationPrincipal User user
+    ) {
+
+        ownerClubService.updateClub(clubId, user.getUsername(), request);
+
+        ApiResponseDto<Void> response = ApiResponseDto.success(null, "[Owner] 동아리 정보 수정에 성공하였습니다. ");
+        return ResponseEntity.ok(response);
+    }*/
 
     // 동아리 상태 변경 (UPCOMING -> OPEN)
     @PostMapping("/{clubId}/start-recruitment")
@@ -106,6 +122,7 @@ public class OwnerClubController {
         return ResponseEntity.ok(response);
     }
 
+    // 멤버 거절할지 받을지 결정하는 API
     @PatchMapping("/{clubId}/applicants/{clubMemberId}/status")
     public ResponseEntity<ApiResponseDto<Void>> updateApplicantStatus(
             @PathVariable Long clubId,

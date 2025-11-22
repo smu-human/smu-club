@@ -34,7 +34,12 @@ public class UnivApiClientImpl implements UnivApiClient {
                     .body(UnivUserInfoResponse.class);
         } catch (RestClientResponseException e) {
             log.warn("학교 인증 실패, 학번: {}, 상태코드: {}", studentId, e.getStatusCode());
-            throw new UnivAuthenticationFailedException("학교 인증에 실패했습니다 학번:" + studentId + " 상태코드: " + e.getStatusCode());
+
+            if (e.getStatusCode().is4xxClientError()) {
+                return null; // <-- 4XX(비즈니스 오류) 시 null 반환
+            }
+
+            throw e;
         }
     }
 

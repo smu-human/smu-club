@@ -6,6 +6,8 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -55,8 +57,14 @@ public class Club {
 
     private String clubRoom;
 
-    @Column(name = "thumbnail_url")
+    @Column(name = "thumbnail_url", length = 1024)
     private String thumbnailUrl;
+
+    @OneToMany (mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default // 빌더를 사용하면 빌더가 컬렉션에 대해서 다 null로 바꾸는데 이거를 막기 위해서
+    private List<ClubImage> clubImages = new ArrayList<>();
+
+
 
 
     /*
