@@ -44,6 +44,8 @@ services:
     restart: always
     ports:
       - 3000:3000
+    environment:
+      - VITE_API_URL=http://backend:8080
     volumes:
         #소스 코드 동기화
         - ./frontend:/app

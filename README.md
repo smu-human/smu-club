@@ -58,7 +58,7 @@ docker exec -i smu-club-db-1 mysql -u <username> -p'<password>' smu_db < dump.sq
 
 # Docker Compose 명령어 정리
 
-## 백그라운드 실행법 (daemon == -d)
+## 백그라운드(daemon, -d) 실행법 
 ```sh
 # 디렉토리 위치 확인
 docker-compose -f docker-compose-dev.yml up -d
@@ -70,6 +70,10 @@ docker-compose -f docker-compose-dev.yml up -d --build
 ## 프로세스 중지[메모리 스왑 아웃] (평상 시 삭제 x 중지 o)
 ```sh
 docker-compose -f docker-compose-dev.yml stop
+```
+## 프로세스 재시작[메모리 스왑 인]
+```sh
+docker-compose -f docker-compose-dev.yml start
 ```
 
 
