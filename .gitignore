@@ -49,3 +49,6 @@ Thumbs.db
 # --- 환경 파일 ---
 .env
 *.env
+
+# --- Spring Boot 로컬 DB 접속 시 각자 원하는 포트 번호 사용 가능---
+/backend/src/main/resources/application-dev.properties
