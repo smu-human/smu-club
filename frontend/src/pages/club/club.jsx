@@ -1,8 +1,14 @@
+// src/pages/club/club.jsx
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import "../../styles/globals.css";
 import "./club.css";
-import { fetch_public_club } from "../../lib/api";
+import {
+  fetch_public_club,
+  fetch_member_club_apply,
+  is_logged_in,
+} from "../../lib/api";
 
 export default function ClubPage() {
   const { id } = useParams();
@@ -75,6 +81,25 @@ export default function ClubPage() {
     return s || "-";
   };
 
+  const handleApply = async () => {
+    if (!is_logged_in()) {
+      nav("/login");
+      return;
+    }
+
+    try {
+      const data = await fetch_member_club_apply(id);
+      nav("/apply_form", {
+        state: {
+          club,
+          applyData: data,
+        },
+      });
+    } catch (err) {
+      set_error_msg(err.message || "지원 정보를 불러오지 못했습니다.");
+    }
+  };
+
   return (
     <div className="club_page">
       {/* 페이지 헤더 */}
@@ -97,7 +122,7 @@ export default function ClubPage() {
               </svg>
             </button>
             <h1>{club?.name || `클럽 ${id} 상세`}</h1>
-            <button className="apply_btn" onClick={() => nav("/login")}>
+            <button className="apply_btn" onClick={handleApply}>
               지원하기
             </button>
           </div>

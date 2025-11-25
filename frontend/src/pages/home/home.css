@@ -51,9 +51,10 @@
   font-weight: 500;
   height: 30px; /* 기존 28px → 더 낮게 */
   padding: 0 8px; /* 좌우 여백도 조금 줄임 */
-  line-height: 1.2; /* 텍스트 줄간격 압축 */
+  line-height: 1; /* 텍스트 줄간격 압축 */
   border-radius: 9999px; /* pill 모양 유지 */
   white-space: nowrap; /* 줄바꿈 방지 */
+  border: none !important;
 }
 .btn.primary {
   background: #0e207f;
@@ -66,7 +67,7 @@
   font-weight: 500;
   height: 30px; /* 기존 28px → 더 낮게 */
   padding: 0 8px; /* 좌우 여백도 조금 줄임 */
-  line-height: 1.2; /* 텍스트 줄간격 압축 */
+  line-height: 1; /* 텍스트 줄간격 압축 */
   border-radius: 9999px; /* pill 모양 유지 */
   white-space: nowrap; /* 줄바꿈 방지 */
 } /* 검색 */
