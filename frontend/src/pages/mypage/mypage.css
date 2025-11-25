@@ -90,16 +90,23 @@
 }
 
 .mypage_footer {
+  display: flex;
+  flex-direction: column;
   text-align: center;
-  font-size: 14px;
-  color: #444;
-  line-height: 1.8;
+}
+
+.link_btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #333;
 }
 
 .logout_red {
-  color: #d62b2b;
+  color: #d9534f;
   font-weight: 600;
 }
+
 /* src/pages/mypage/mypage.css 하단에 추가 */
 .recruit_actions {
   margin-top: 4px;
