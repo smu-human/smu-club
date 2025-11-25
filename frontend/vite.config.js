@@ -10,7 +10,8 @@ export default defineConfig({
     proxy: {
       // '/api'로 시작하는 요청이 오면 백엔드로 전달
       "/api": {
-        target: "http://localhost:8080", // Docker Compose 서비스 이름 사용 target: "http://backend:8080"
+        // eslint-disable-next-line no-undef
+        target: process.env.VITE_API_URL || "http://localhost:8080", // Docker Compose 서비스 이름 사용 target: "http://backend:8080"
         changeOrigin: true,
         secure: false,
       },
