@@ -19,7 +19,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-dev
     restart: always
     ports:
       - 8080:8080
@@ -32,8 +32,14 @@ services:
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+
+      # Spring Devtools 활성화 (실시간 반영의 핵심)
+      SPRING_DEVTOOLS_RESTART_ENABLED: true
+      SPRING_DEVTOOLS_RESTART_TRIGGER_FILE: ""
+
+
     volumes:    # 호스트 pc와 컨테이너 코드를 실시간으로 동기화한다.
-      - ./backend/src:/app/src
+      - ./backend:/app
     networks:
       - network
 

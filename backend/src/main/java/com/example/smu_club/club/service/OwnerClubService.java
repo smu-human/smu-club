@@ -8,10 +8,7 @@ import com.example.smu_club.club.repository.ClubImageRepository;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
-import com.example.smu_club.exception.custom.AuthorizationException;
-import com.example.smu_club.exception.custom.ClubMemberNotFoundException;
-import com.example.smu_club.exception.custom.ClubNotFoundException;
-import com.example.smu_club.exception.custom.MemberNotFoundException;
+import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.util.OciStorageService;
 import jakarta.validation.constraints.NotNull;
@@ -39,32 +36,27 @@ public class OwnerClubService {
     private final ClubImageRepository clubImageRepository;
 
 
-    // 동아리 상세정보 업데이트인데 이미지 클라우드에 무작정 다 쌓이면안돼서 그 부분을 고려해서 만들어야 함 .
-//    @Transactional()
-//    public void updateClub(Long clubId, String username, ClubUpdateRequest request) {
-//
-//
-//
-//    }
-
-
     @Transactional
     public void register(String studentId, ClubInfoRequest request) {
 
-        List<MultipartFile> images = request.getClubImages();
+        List<String> uploadedImageFileNames = request.getUploadedImageFileNames();
 
         String thumbnailUrl = null;
         List<String> clubImagerUrls = new ArrayList<>();
 
-        if (images != null && !images.isEmpty()) {
-            for (MultipartFile file : images) {
-                String imageUrl = ociStorageService.upload(file);
-                clubImagerUrls.add(imageUrl);
+        if (uploadedImageFileNames != null && !uploadedImageFileNames.isEmpty()) {
+            for (String uniqueFileName : uploadedImageFileNames) {
+                String finalImageUrl = ociStorageService.createFinalOciUrl(uniqueFileName);
+                clubImagerUrls.add(finalImageUrl);
             }
 
             thumbnailUrl = clubImagerUrls.get(0);
         } else { //  기본 썸네일 설정하는거 필요할듯 (사진 받으면 )
 
+        }
+
+        if (clubRepository.existsByName(request.getName())) {
+            throw new DuplicateClubNameException("[OWNER] 이미 존재하는 동아리 이름입니다.");
         }
 
         // 1. 클럽 정보 등록
