@@ -12,5 +12,6 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
     @Query("SELECT c FROM Club c ORDER BY c.recruitPriority ASC, c.name ASC")
     List<Club> findAllSortedByRecruitment();
 
+    boolean existsByName(String name);
 }
 

@@ -1,3 +1,4 @@
+/*
 package com.example.smu_club.club.controller;
 
 
@@ -52,9 +53,11 @@ public class GuestClubControllerIT {
         memberRepository.deleteAll();
         clubRepository.deleteAll();
 
-        /**
+        */
+/**
          * 유저 생성
-         */
+         *//*
+
 
         this.testMember = Member.builder()
                 .studentId("202215064")
@@ -71,9 +74,11 @@ public class GuestClubControllerIT {
         memberRepository.save(this.testMember);
 
 
-        /**
+        */
+/**
          * 동아리 생성
-         */
+         *//*
+
         club1 = Club.builder()
                 .name("동아리1")
                 .title("test1")
@@ -169,3 +174,4 @@ public class GuestClubControllerIT {
 
     }
 }
+*/

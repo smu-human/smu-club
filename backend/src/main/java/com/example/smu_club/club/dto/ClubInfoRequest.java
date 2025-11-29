@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ClubInfoRequest {
 
-    private List<MultipartFile> clubImages;
+    private List<String> uploadedImageFileNames;
     private String name;
     private String title;
     private String president;
@@ -24,8 +24,4 @@ public class ClubInfoRequest {
     private String clubRoom;
     private String description;
 
-    // 기존에 있던 사진에 대해서는 프론트에서 이렇게 보내줌
-    private List<String> remainingImageUrls;
-    // 새로 추가할 사진들에 대해서는 새로 업로드한 파일
-    private List<MultipartFile> newImages;
 }

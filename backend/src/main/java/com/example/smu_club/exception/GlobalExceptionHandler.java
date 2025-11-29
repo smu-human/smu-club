@@ -88,6 +88,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
+    // [OWNER] 동아리 등록하려하는데 이름이 기존하고 겹칠 때
+    @ExceptionHandler(DuplicateClubNameException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleDuplicateClubName(DuplicateClubNameException e) {
+        ApiResponseDto<Object> response =
+                ApiResponseDto.fail("DUPLICATE_CLUB_NAME", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT); // 409
+    }
+
     /*
     ClubMember 예외 관련
      */

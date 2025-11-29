@@ -199,6 +199,32 @@ export async function fetch_mypage_name() {
   return res.data; // { name: string }
 }
 
+// 내 전체 정보 조회(수정 페이지용): GET /api/v1/member/mypage/update
+export async function fetch_mypage_profile() {
+  const res = await apiJson("/member/mypage/update", {
+    method: "GET",
+  });
+  return res.data;
+}
+
+// 전화번호 수정: PUT /api/v1/member/mypage/update/phone
+export async function update_mypage_phone(newPhoneNumber) {
+  const res = await apiJson("/member/mypage/update/phone", {
+    method: "PUT",
+    body: JSON.stringify({ newPhoneNumber }),
+  });
+  return res.data;
+}
+
+// 이메일 수정: PUT /api/v1/member/mypage/update/email
+export async function update_mypage_email(newEmail) {
+  const res = await apiJson("/member/mypage/update/email", {
+    method: "PUT",
+    body: JSON.stringify({ newEmail }),
+  });
+  return res.data;
+}
+
 // 내 지원 목록: GET /api/v1/member/mypage/applications
 export async function fetch_my_applications() {
   const res = await apiJson("/member/mypage/applications", {

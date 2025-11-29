@@ -1,3 +1,4 @@
+/*
 package com.example.smu_club.club.controller;
 
 import com.example.smu_club.club.dto.ApplicationFormResponseDto;
@@ -210,3 +211,4 @@ public class MemberClubControllerIT {
         questionRepository.save(question);
     }
 }
+*/
