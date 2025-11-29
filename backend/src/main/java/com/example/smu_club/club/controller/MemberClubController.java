@@ -61,4 +61,8 @@ public class MemberClubController {
 
         return ResponseEntity.ok(apiResponseDto);
     }
+
+
+
+
 }

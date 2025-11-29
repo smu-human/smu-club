@@ -41,6 +41,10 @@ public class ClubMember {
     @Column(nullable = false)
     private ClubMemberStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "email_status")
+    private EmailStatus emailStatus;
+
     private String memo;
 
     public ClubMember(Member member, Club club, ClubRole clubRole, LocalDateTime appliedAt, ClubMemberStatus status) {
@@ -49,6 +53,7 @@ public class ClubMember {
         this.clubRole = clubRole;
         this.appliedAt = appliedAt;
         this.status = status;
+        this.emailStatus = EmailStatus.READY;
     }
 
 

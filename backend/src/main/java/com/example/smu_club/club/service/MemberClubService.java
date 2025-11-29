@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MemberClubService {
 
     private final ClubRepository clubRepository;
@@ -37,11 +38,11 @@ public class MemberClubService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
 
-    @Transactional
+    @Transactional(readOnly = false)
     public ApplicationResponseDto saveApplication(Long clubId, String studentId, List<AnswerRequestDto> QuestionAndAnswer, String fileUrl) {
         // 1. ClubMember 에 회원 등록 (Status 기본 값은 PENDING)
-        Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +" is not found"));
-        Club appliedClub = clubRepository.findById(clubId).orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +" is not found"));
+        Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +"에 해당하는 회원을 찾을 수 없습니다."));
+        Club appliedClub = clubRepository.findById(clubId).orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +"에 해당하는 동아리를 찾을 수 없습니다."));
         ClubMember clubMember = new ClubMember(myInfo, appliedClub, ClubRole.MEMBER, LocalDateTime.now(), ClubMemberStatus.PENDING);
         clubMemberRepository.save(clubMember);
 

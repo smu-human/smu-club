@@ -3,10 +3,8 @@ package com.example.smu_club.member.service;
 import com.example.smu_club.answer.dto.AnswerResponseDto;
 import com.example.smu_club.answer.repository.AnswerRepository;
 import com.example.smu_club.club.repository.ClubMemberRepository;
-import com.example.smu_club.domain.Answer;
-import com.example.smu_club.domain.ClubMember;
-import com.example.smu_club.domain.Member;
-import com.example.smu_club.domain.Question;
+import com.example.smu_club.club.repository.ClubRepository;
+import com.example.smu_club.domain.*;
 import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.dto.*;
 import com.example.smu_club.member.repository.MemberRepository;
@@ -14,6 +12,7 @@ import com.example.smu_club.question.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,6 +20,7 @@ import java.util.stream.Collectors;
 import static com.example.smu_club.domain.QuestionContentType.FILE;
 import static com.example.smu_club.domain.QuestionContentType.TEXT;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true) //JPA 모든 데이터/로직 변경은 가급적 트랜잭션에서 실행 되어야함. -> 그래야 LAZY 로딩 같은 기능이 가능함
 @RequiredArgsConstructor
@@ -29,6 +29,7 @@ public class MemberService {
     private final ClubMemberRepository clubMemberRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
+    private final ClubRepository clubRepository;
 
     public MemberNameResponseDto MyName(String studentId) {
         Member member = memberRepository.findByStudentId(studentId)
@@ -81,6 +82,10 @@ public class MemberService {
         Member member = memberRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
 
+        clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("동아리 ID: " + clubId + "에 해당하는 동아리를 찾을 수 없습니다."));
+
+
         List<Question> questions = questionRepository.findByClubIdOrderByOrderNumAsc(clubId);
         if(questions.isEmpty()) throw new QuestionNotFoundException("동아리 ID: " + clubId + "에 해당하는 질문들을 찾을 수 없습니다.");
 
@@ -132,6 +137,7 @@ public class MemberService {
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
     }
 
+    @Transactional(readOnly = false)
     public void updateMyEmail(String studentId, UpdateMyEmailRequestDto requestDto) {
         Member member = memberRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
@@ -142,16 +148,17 @@ public class MemberService {
             member.setEmail(requestDto.getNewEmail());
     }
 
+    @Transactional(readOnly = false)
     public void updateMyPhoneNumber(String studentId, UpdateMyPhoneNumberRequestDto requestDto) {
+
         Member member = memberRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
 
-
         //@Transactional로 알아 더티 체킹하여 메소드 끝날 때 쿼리 발생
         if(requestDto.getNewPhoneNumber() != null && !requestDto.getNewPhoneNumber().isEmpty())
-            member.setEmail(requestDto.getNewPhoneNumber());
+            member.setPhoneNumber(requestDto.getNewPhoneNumber());
     }
-
+    @Transactional(readOnly = false)
     public void deleteApplication(String studentId, Long clubId) {
         Member member = memberRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
@@ -163,7 +170,7 @@ public class MemberService {
 
 
     }
-
+    @Transactional(readOnly = false)
     public void updateApplication(Long clubId, String studentId, UpdateApplicationRequestDto requestDto) {
         Member member = memberRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
@@ -173,13 +180,15 @@ public class MemberService {
         Map<Long, String> answerContentsMap = requestDto.getAnswers().stream()
                 .collect(Collectors.toMap(
                         UpdateAnswerRequestDto::getQuestionId,
-                        UpdateAnswerRequestDto::getAnswerContent
+                        dto -> dto.getAnswerContent() == null ? "" : dto.getAnswerContent() //dto -> getAnswer()의 answer 필드를 의미
                 ));
 
-        //keySet() == key를 모아서 set으로 만든다.
-        List<Answer> answerToUpdate = answerRepository.findByMemberAndQuestionIdIn(
+        //keySet() == key를 모아서 set으로 던진다.
+        List<Answer> answerToUpdate = answerRepository.findAnswerForUpdateWithClubId
+                (
                 member,
-                answerContentsMap.keySet()
+                answerContentsMap.keySet(),
+                clubId //검증용
         );
 
         for(Answer target : answerToUpdate) {
