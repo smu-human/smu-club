@@ -5,10 +5,11 @@ import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.common.ApiResponseDto;
+import com.example.smu_club.util.OciStorageService;
+import com.example.smu_club.util.PreSignedUrlResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -23,6 +24,7 @@ public class OwnerClubController {
 
     private final OwnerClubService ownerClubService;
     private final MemberClubService memberClubService;
+    private final OciStorageService ociStorageService;
 
     // (owner) 동아리 목록 조회  MyPage 기준으로 들어오면 동아리 정보 나옴
     @GetMapping("/managed-clubs")
@@ -50,10 +52,26 @@ public class OwnerClubController {
 
     }
 
+    // preSignedUrl 받는 API
+    @PostMapping("/upload-url")
+    public ResponseEntity<ApiResponseDto<PreSignedUrlResponse>> getUploadUrl(
+            @RequestBody UploadUrlRequest request
+    ) {
+        PreSignedUrlResponse urlResponse = ociStorageService.createUploadPreSignedUrl(
+                request.getOriginalFileName(),
+                request.getContentType()
+        );
+
+        ApiResponseDto<PreSignedUrlResponse> response =
+                ApiResponseDto.success(urlResponse, "[OWNER] OCI 업로드 URL 생성 성공했습니다.");
+
+        return ResponseEntity.ok(response);
+    }
+
     // 동아리 상세정보 등록
-    @PostMapping(value = "/register/club", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/register/club")
     public ResponseEntity<ApiResponseDto<Void>> registerClub(
-            @ModelAttribute ClubInfoRequest request,
+            @RequestBody ClubInfoRequest request,
             @AuthenticationPrincipal User user
     ) {
         ownerClubService.register(user.getUsername(), request);
