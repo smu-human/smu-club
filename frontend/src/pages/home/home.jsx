@@ -1,13 +1,16 @@
+// src/pages/home/home.jsx
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../../styles/globals.css";
 import "./home.css";
-import { fetch_public_clubs } from "../../lib/api";
+import { fetch_public_clubs, is_logged_in } from "../../lib/api";
 
 /**
  * 요구사항
  * - 로고 클릭 새로고침
  * - 로그인/회원가입 이동
+ * - 로그인 시 → "마이페이지" 버튼 노출
  * - 검색 + 정렬 + 신청가능 토글
  * - 카드 클릭 → /club/:id
  * - D-day 색상 강약 (현재는 백엔드 스펙상 d-day 정보가 없어 null 처리)
@@ -38,6 +41,12 @@ export default function HomePage() {
   const [clubs, setClubs] = useState([]);
   const [is_loading, set_is_loading] = useState(false);
   const [error_msg, set_error_msg] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  // 로그인 여부 확인
+  useEffect(() => {
+    setLoggedIn(is_logged_in());
+  }, []);
 
   // ✅ 백엔드에서 동아리 목록 불러오기
   useEffect(() => {
@@ -47,7 +56,7 @@ export default function HomePage() {
 
       try {
         const data = await fetch_public_clubs();
-        // data: [{ id, name, title, recruitingStatus, createdAt }]
+        // data: [{ id, name, title, recruitingStatus, createdAt, ... }]
         const mapped = data.map((item) => ({
           id: item.id,
           name: item.name,
@@ -105,12 +114,24 @@ export default function HomePage() {
           </button>
 
           <div className="header_actions">
-            <Link to="/login" className="btn text">
-              로그인
-            </Link>
-            <Link to="/signup" className="btn primary">
-              회원가입
-            </Link>
+            {loggedIn ? (
+              <button
+                type="button"
+                className="btn text"
+                onClick={() => nav("/mypage")}
+              >
+                마이페이지
+              </button>
+            ) : (
+              <>
+                <Link to="/login" className="btn text">
+                  로그인
+                </Link>
+                <Link to="/signup" className="btn primary">
+                  회원가입
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
