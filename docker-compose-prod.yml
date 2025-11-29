@@ -31,6 +31,8 @@ services:
       SPRING_DATASOURCE_URL: #나중에 정해지면 작성
       SPRING_DATASOURCE_USERNAME: #나중에 정해지면 작성
       SPRING_DATASOURCE_PASSWORD: #나중에 정해지면 작성
+    volumes: # 호스트 pc와 컨테이너 코드를 실시간으로 동기화한다.
+      - ./backend/src:/app/src
     networks:
       - network
 

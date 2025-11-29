@@ -18,6 +18,9 @@ configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
 	}
+	all {
+		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging' // Logback 제거 -> Log4j2 사용
+	}
 }
 
 repositories {
@@ -56,13 +59,18 @@ dependencies {
 	implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-choices:3.38.0'
 	implementation ('com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.37.0')
 
+	// JavaMailSender
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	//Log4j2
+	implementation 'org.springframework.boot:spring-boot-starter-log4j2'
 
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
 }
-// JAR 파일 생성 안함 -> Dockerfile 사용 시 꼭 필요
+// JAR 파일 생성 안함 -> Dockerfile-prod 사용 시 꼭 필요
 jar {
 
 	enabled = false

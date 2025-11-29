@@ -38,6 +38,17 @@ public class MemberController {
         return ResponseEntity.ok(success(applications));
     }
 
+    @GetMapping("/mypage/applications/{clubId}/update")
+    public ResponseEntity<ApiResponseDto<UpdateApplicationResponseDto>> showApplication (
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        String studentId = userDetails.getUsername();
+        UpdateApplicationResponseDto result = memberService.showApplication(clubId, studentId);
+        return ResponseEntity.ok(success(result));
+    }
+
+
     @GetMapping("/mypage/applications/{clubId}/result")
     public ResponseEntity<ApiResponseDto<ApplicationResultResponseDto>> findConfirmation(
             @PathVariable Long clubId,
@@ -49,15 +60,7 @@ public class MemberController {
     }
 
 
-    @GetMapping("/mypage/applications/{clubId}/update")
-    public ResponseEntity<ApiResponseDto<UpdateApplicationResponseDto>> showApplication (
-            @PathVariable Long clubId,
-            @AuthenticationPrincipal UserDetails userDetails
-    ){
-        String studentId = userDetails.getUsername();
-        UpdateApplicationResponseDto result = memberService.showApplication(clubId, studentId);
-        return ResponseEntity.ok(success(result));
-    }
+
 
     @PutMapping("/mypage/applications/{clubId}/update")
     public ResponseEntity<ApiResponseDto<UpdateApplicationRequestDto>> updateApplication (

@@ -14,19 +14,29 @@ import com.example.smu_club.exception.custom.ClubNotFoundException;
 import com.example.smu_club.exception.custom.MemberNotFoundException;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.util.OciStorageService;
+import jakarta.mail.SendFailedException;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import static java.util.stream.Collectors.toList;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import static com.example.smu_club.domain.RecruitingStatus.OPEN;
 
+import static com.example.smu_club.domain.EmailStatus.*;
+import static com.example.smu_club.domain.RecruitingStatus.*;
+
+@Slf4j // <-- 이거 하나면 끝! (private static final Logger log = ... 자동 생성됨)
+@EnableAsync
 @Service
 @RequiredArgsConstructor
 public class OwnerClubService {
@@ -37,7 +47,7 @@ public class OwnerClubService {
     private final AnswerRepository answerRepository;
     private final OciStorageService ociStorageService;
     private final ClubImageRepository clubImageRepository;
-
+    private final JavaMailSender javaMailSender;
 
     // 동아리 상세정보 업데이트인데 이미지 클라우드에 무작정 다 쌓이면안돼서 그 부분을 고려해서 만들어야 함 .
 //    @Transactional()
@@ -151,7 +161,7 @@ public class OwnerClubService {
                 .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
 
         if (clubMember.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException ("[OWNER] 동아리 모집을 시작할 권한이 없습니다. ");
+            throw new AuthorizationException("[OWNER] 동아리 모집을 시작할 권한이 없습니다. ");
         }
 
         club.updateRecruitment(OPEN);
@@ -281,4 +291,101 @@ public class OwnerClubService {
         // 상태 변경
         application.setStatus(newStatus);
     }
+
+    public void validateOwnerAuthority(Long clubId, String studentId) {
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+
+        ClubMember owner = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
+                .orElseThrow(() -> new ClubMemberNotFoundException("해당 동아리 소속이 아닙니다."));
+
+        if (owner.getClubRole() != ClubRole.OWNER) {
+            throw new AuthorizationException("이메일 전송 권한이 없습니다.");
+        }
+    }
+
+
+    @Async("mailExecutor") // 호출시 즉시 리턴, 실제 전송은 별도 스레드에서 처리
+    @Transactional(readOnly = false)
+    public void sendEmailsAsync(Long clubId, List<Long> clubMemberIdList) {
+        //1. 클럽 정보 검색
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+
+        //3. 이메일 전송 로직
+        for(Long cmId : clubMemberIdList){
+            ClubMember applicant = clubMemberRepository.findByIdWithMember(cmId).orElse(null);
+
+            if(applicant == null) {
+                log.error("ClubMember ID: {} 찾을 수 없습니다. 이메일 전송을 건너뜁니다.", cmId);
+                continue;
+            }
+
+            Member m = applicant.getMember(); // 지연 로딩 주의 (Fetch Join 권장)
+
+            String toEmail = m.getEmail();
+            String subject = "[SMU-CLUB]  '" + club.getName() + "' 동아리 지원 결과 안내";
+            String body = "안녕하세요, " + m.getName() + "님.\n\n" +
+                    "귀하의 동아리 '" + club.getName() + "' 지원 결과가 업데이트되었습니다. " +
+                    "스뮤클럽에 접속하여 결과를 확인해주시기 바랍니다.\n" +
+                    "확인 방법: 홈페이지 접속 -> 로그인 -> 마이페이지 \n\n" +
+                    "감사합니다.";
+
+            try{
+                //메일 전송 (SMTP)
+                sendEmail(toEmail, subject, body);
+
+                //전송 성공시 상태 업데이트
+                applicant.setEmailStatus(COMPLETE);
+                clubMemberRepository.save(applicant); // Async라 명시적 save 권장
+
+                Thread.sleep(100); // 0.1초 대기
+            } catch(SendFailedException e){ //실패시 로그만 남기기
+                log.error("이메일 전송 실패: 잘못된 이메일 주소 {}", toEmail, e);
+                updateClubMemberEmailStatus(club, m, EmailStatus.FAILED);
+            } catch (Exception e) { //실패시 로그만 남기기
+                log.error("메일 전송 실패: {}", toEmail, e);
+                updateClubMemberEmailStatus(club, m, EmailStatus.FAILED);
+            }
+        }
+    }
+
+    private void updateClubMemberEmailStatus(Club club, Member applicant, EmailStatus emailStatus) {
+        ClubMember clubMember = clubMemberRepository.findByClubAndMember(club, applicant)
+                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
+
+    }
+
+    private void sendEmail(String toEmail, String subject, String body) throws Exception {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "utf-8"); // false indicates not multipart -> no file attachments
+            helper.setFrom("no-reply@smuclub.com", "스뮤클럽");
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body, false); // false indicates plain text -> no use HTML
+            javaMailSender.send(message);
+    }
+
+    @Transactional(readOnly = false)
+    public List<Long> fetchPendingAndMarkAsProcessing(Long clubId) {
+        //1. clubId 로 Club 찾기
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+
+        //2. clubMember WHERE Club = :club,  status = :findByClubAndEmailStatus.READY 인 사람들 조회
+        //여기서 락 걸림.
+        List<ClubMember> targets = clubMemberRepository.findByClubAndEmailStatus(club, READY);
+
+        List<Long> toList = new ArrayList<>();
+
+        //3. 조회된 사람들 상태 Processing 으로 변경
+        for(ClubMember cm : targets) {
+            cm.setEmailStatus(PROCESSING);
+            toList.add(cm.getId());
+
+        }
+
+        return toList;
+    }
 }
+

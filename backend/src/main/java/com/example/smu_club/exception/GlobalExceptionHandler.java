@@ -136,4 +136,12 @@ public class GlobalExceptionHandler {
     }
 
 
+    //이메일 전송관련
+    @ExceptionHandler(EmptyEmailListException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleEmptyEmailListException(EmptyEmailListException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("EMPTY_EMAIL_LIST", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+
 }

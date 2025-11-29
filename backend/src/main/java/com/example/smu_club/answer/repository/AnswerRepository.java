@@ -37,7 +37,14 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
             @Param("club") Club club
     );
 
-    List<Answer> findByMemberAndQuestionIdIn(Member member, Set<Long> questionsId);
+    @Query("SELECT a FROM Answer a JOIN FETCH a.question q " +
+            "WHERE a.member = :member " +
+            "AND q.id IN :questionIds " +
+            "AND q.club.id = :clubId ")
+    List<Answer> findAnswerForUpdateWithClubId(
+            @Param("member") Member member,
+            @Param("questionIds") Set<Long> questionIds,
+            @Param("clubId") Long clubId);
 
 
     @Query("DELETE FROM Answer a WHERE a.member = :member AND a.question IN :questions")
