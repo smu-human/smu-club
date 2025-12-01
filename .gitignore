@@ -49,3 +49,6 @@ Thumbs.db
 # --- 환경 파일 ---
 .env
 *.env
+
+# 각자 원하는 포트번호에 대한 정보
+/backend/src/main/resources/application-dev.properties

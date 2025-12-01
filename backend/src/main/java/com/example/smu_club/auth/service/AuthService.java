@@ -89,7 +89,7 @@ public class AuthService {
                     throw new MemberAlreadyExistsException("이미 가입된 학번입니다.");
                 });
 
-        // 3. Member 객체 생성
+        // 3. Member 객체 생성 -
         Member newMember = Member.builder()
                 .studentId(userInfo.getUsername())
                 .name(userInfo.getName())
