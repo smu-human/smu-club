@@ -17,6 +17,7 @@ public class AuthService {
     private final UnivApiClient univApiClient;
     private final MemberRepository memberRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenService tokenService;
 
 
     /**
@@ -34,41 +35,7 @@ public class AuthService {
         }
 
         // DB 작업이 필요한 부분을 별도의 트랜잭션으로 호출
-        return generateTokenAndUpdateRefreshToken(userInfo.getUsername());
-
-    }
-
-    @Transactional
-    public JwtTokenResponse generateTokenAndUpdateRefreshToken(String studentId){
-
-        Member member = memberRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new MemberNotFoundException("가입되지 않은 회원입니다"));
-
-        JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(member);
-        String refreshToken = tokenResponse.getRefreshToken();
-        member.updateRefreshToken(refreshToken);
-
-        return tokenResponse;
-    }
-
-    @Transactional
-    public JwtTokenResponse reissueTokens(ReissueRequest reissueRequest){
-
-        String refreshToken = reissueRequest.getRefreshToken();
-
-        try {
-            jwtTokenProvider.validateToken(refreshToken);
-        } catch (ExpiredTokenException | InvalidTokenException e) {
-            throw new InvalidRefreshTokenException("[RefreshToken] 만료되었거나 유효하지 않은 토큰입니다. 다시 로그인해주세요.");
-        }
-
-        Member member = memberRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new InvalidRefreshTokenException("[서버존재 X] 유효하지 않은 Refresh Token 입니다"));
-
-        JwtTokenResponse tokenResponse = jwtTokenProvider.generateToken(member);
-        member.updateRefreshToken(tokenResponse.getRefreshToken());
-
-        return tokenResponse;
+        return tokenService.generateTokenAndUpdateRefreshToken(userInfo.getUsername());
 
     }
 
