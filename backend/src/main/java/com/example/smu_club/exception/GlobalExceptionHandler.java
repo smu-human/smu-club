@@ -157,5 +157,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    // 엑셀 파일 다운로드 실패 관련
+    @ExceptionHandler(ExcelException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleExcelException(ExcelException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("EXCEL_ERROR", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
 
 }

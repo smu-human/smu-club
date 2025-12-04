@@ -58,4 +58,12 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.id = :id")
     Optional<ClubMember> findByIdWithMember(Long id);
+
+    List<ClubMember> club(Club club);
+
+    // N+1 문제 막으려고
+    @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member " +
+            "WHERE cm.club.id = :clubId AND cm.clubRole = :role")
+    List<ClubMember> findAllByClubIdAndRoleWithMember(@Param("clubId") Long clubId,
+                                                      @Param("role") ClubRole role);
 }

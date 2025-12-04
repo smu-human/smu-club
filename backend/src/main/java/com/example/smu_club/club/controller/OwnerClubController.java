@@ -10,7 +10,9 @@ import com.example.smu_club.exception.custom.EmptyEmailListException;
 import com.example.smu_club.util.OciStorageService;
 import com.example.smu_club.util.PreSignedUrlResponse;
 import jakarta.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -187,6 +189,21 @@ public class OwnerClubController {
 
         ApiResponseDto<Void> response = ApiResponseDto.success("이메일이 성공적으로 발송되었습니다.");
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{clubId}/applicants/excel")
+    public ResponseEntity<byte[]> downloadExcel(
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal User user
+    ) {
+        byte[] excelBytes = ownerClubService.downloadAcceptedMembersExcel(clubId, user.getUsername());
+
+        String fileName = "accepted_members.xlsx";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .body(excelBytes);
     }
 
 }
