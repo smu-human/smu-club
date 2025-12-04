@@ -143,6 +143,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(OciDeletionException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleOciDeletionException(OciDeletionException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("OCI_DELETION", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
 
     //이메일 전송관련
     @ExceptionHandler(EmptyEmailListException.class)

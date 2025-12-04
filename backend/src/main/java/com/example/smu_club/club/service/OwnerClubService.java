@@ -10,11 +10,13 @@ import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
 import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
+import com.example.smu_club.util.OCICleanupEvent;
 import com.example.smu_club.util.OciStorageService;
 import jakarta.mail.SendFailedException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -44,10 +46,20 @@ public class OwnerClubService {
     private final AnswerRepository answerRepository;
     private final OciStorageService ociStorageService;
     private final ClubImageRepository clubImageRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
     private final JavaMailSender javaMailSender;
 
     @Transactional
     public void register(String studentId, ClubInfoRequest request) {
+
+        Member ownerMember = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("[OWNER] 학번 :  " + studentId + "를 찾을 수 없습니다."));
+
+        if (clubRepository.existsByName(request.getName())) {
+            throw new DuplicateClubNameException("[OWNER] 이미 존재하는 동아리 이름입니다.");
+        }
+
 
         List<String> uploadedImageFileNames = request.getUploadedImageFileNames();
 
@@ -63,10 +75,6 @@ public class OwnerClubService {
             thumbnailUrl = clubImagerUrls.get(0);
         } else { //  기본 썸네일 설정하는거 필요할듯 (사진 받으면 )
 
-        }
-
-        if (clubRepository.existsByName(request.getName())) {
-            throw new DuplicateClubNameException("[OWNER] 이미 존재하는 동아리 이름입니다.");
         }
 
         // 1. 클럽 정보 등록
@@ -107,9 +115,6 @@ public class OwnerClubService {
 
         // 2. ClubMember 관계 만들어주기
 
-        Member ownerMember = memberRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new MemberNotFoundException("학번 :  " + studentId + "를 찾을 수 없습니다."));
-
         ClubMember clubMember = new ClubMember(
                 ownerMember,
                 newClub,
@@ -119,6 +124,74 @@ public class OwnerClubService {
         );
 
         clubMemberRepository.save(clubMember);
+    }
+
+    @Transactional
+    public void updateClub(Long clubId, String studentId, ClubInfoRequest request) {
+
+        // 예외 먼저 처리 (검증하기)
+        Member member = memberRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new MemberNotFoundException("[OWNER] 힉번 : " + studentId + " 를 찾을 수 없습니다. "));
+
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+
+        ClubMember clubMember = clubMemberRepository.findByClubAndMember(club, member)
+                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
+
+        if (clubMember.getClubRole() != ClubRole.OWNER) {
+            throw new AuthorizationException ("[OWNER] 동아리 수정/삭제 권한이 없습니다.");
+        }
+
+        // Club 이름 중복 확인 (이름이 변경된 경우에만)
+        if (!club.getName().equals(request.getName()) && clubRepository.existsByName(request.getName())) {
+            throw new DuplicateClubNameException("[OWNER] 이미 존재하는 동아리 이름입니다.");
+        }
+
+        // 새로운 이미지 URL 목록 생성
+        List<String> newUniqueFileNames = request.getUploadedImageFileNames();
+        List<String> newImagesUrls = newUniqueFileNames.stream()
+                .map(ociStorageService::createFinalOciUrl)
+                .toList();
+
+        // 썸네일 결정
+        String newThumbnailUrl = newImagesUrls.isEmpty() ? null : newImagesUrls.getFirst();
+
+        // 기존 DB 이미지 URL 조회 및 리스트로만들어두기
+        List<ClubImage> existingImages = clubImageRepository.findAllByClubId(clubId);
+        List<String> existingUrls = existingImages.stream()
+                .map(ClubImage::getImageUrl)
+                .toList();
+
+        // 삭제할 URL  (OciStorage 에서 삭제해야돼서)
+        List<String> urlsToDeleteFromOci = existingUrls.stream()
+                .filter(url -> !newImagesUrls.contains(url))
+                .toList();
+
+        club.updateInfo(request, newThumbnailUrl);
+
+        // 다 삭제 시키고 이제 다시 만들어줌
+        clubImageRepository.deleteAll(existingImages);
+
+        List<ClubImage> imageToSave = new ArrayList<>();
+        int order = 0;
+        for (String newImagesUrl : newImagesUrls) {
+            ClubImage newImage = ClubImage.builder()
+                    .club(club)
+                    .imageUrl(newImagesUrl)
+                    .displayOrder(order)
+                    .build();
+            imageToSave.add(newImage);
+        }
+        // 여기서 이제 DB 트랜잭션 종료
+        if (!imageToSave.isEmpty()) {
+            clubImageRepository.saveAll(imageToSave);
+        }
+
+        if (!urlsToDeleteFromOci.isEmpty()) {
+            eventPublisher.publishEvent(new OCICleanupEvent(urlsToDeleteFromOci));
+        }
+
     }
 
 

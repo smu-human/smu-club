@@ -85,11 +85,11 @@ public class OwnerClubController {
     }
 
 
-/*    // 동아리 상세정보 편집
-    @PutMapping(value = "/{clubId}/edit/club", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // 동아리 상세정보 편집 PUT
+    @PutMapping( "/club/{clubId}")
     public ResponseEntity<ApiResponseDto<Void>> editClub(
             @PathVariable Long clubId,
-            @ModelAttribute ClubUpdateRequest request,
+            @RequestBody ClubInfoRequest request,
             @AuthenticationPrincipal User user
     ) {
 
@@ -97,7 +97,7 @@ public class OwnerClubController {
 
         ApiResponseDto<Void> response = ApiResponseDto.success(null, "[Owner] 동아리 정보 수정에 성공하였습니다. ");
         return ResponseEntity.ok(response);
-    }*/
+    }
 
     // 동아리 상태 변경 (UPCOMING -> OPEN)
     @PostMapping("/{clubId}/start-recruitment")

@@ -1,5 +1,6 @@
 package com.example.smu_club.domain;
 
+import com.example.smu_club.club.dto.ClubInfoRequest;
 import com.example.smu_club.exception.custom.IllegalClubStateException;
 import jakarta.persistence.*;
 import lombok.*;
@@ -99,6 +100,20 @@ public class Club {
 
         this.recruitingStatus = status;
         syncRecruitPriority();
+    }
+
+    //  [OWNER] 클럽 편집 기능
+    public void updateInfo(ClubInfoRequest request, String newThumbnailUrl) {
+
+        this.name = request.getName();
+        this.title = request.getTitle();
+        this.description = request.getDescription();
+        this.president = request.getPresident();
+        this.contact = request.getContact();
+        this.clubRoom = request.getClubRoom();
+        this.thumbnailUrl = newThumbnailUrl;
+        this.recruitingEnd = request.getRecruitingEnd();
+
     }
 }
 
