@@ -18,6 +18,9 @@ configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
 	}
+	all {
+		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging' // Logback 제거 -> Log4j2 사용
+	}
 }
 
 repositories {
@@ -59,13 +62,18 @@ dependencies {
 	// 트랜잭션 이벤트 리스너 관련
 	implementation 'org.springframework.retry:spring-retry'
 	implementation 'org.springframework:spring-aspects' // AOP 기능 사용을 위한 AspectJ 의존성
+	// JavaMailSender
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	//Log4j2
+	implementation 'org.springframework.boot:spring-boot-starter-log4j2'
 
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
 }
-// JAR 파일 생성 안함 -> Dockerfile 사용 시 꼭 필요
+// JAR 파일 생성 안함 -> Dockerfile-prod 사용 시 꼭 필요
 jar {
 
 	enabled = false

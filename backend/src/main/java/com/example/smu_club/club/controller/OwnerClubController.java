@@ -5,14 +5,18 @@ import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.common.ApiResponseDto;
+import com.example.smu_club.domain.Member;
+import com.example.smu_club.exception.custom.EmptyEmailListException;
 import com.example.smu_club.util.OciStorageService;
 import com.example.smu_club.util.PreSignedUrlResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -159,4 +163,30 @@ public class OwnerClubController {
         return ResponseEntity.ok(response);
 
     }
+
+    // 통보 이메일 보내는 API
+    @PreAuthorize("hasRole('OWNER')") //1.[AOP] 단순 권한 확인 (Spring Security)
+    @PostMapping("/email/{clubId}")
+    public ResponseEntity<ApiResponseDto<Void>> sendNotificationEmails(
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal UserDetails userDetail
+    ) {
+
+        //[동기] 실제 권한 확인 (Database)
+        ownerClubService.validateOwnerAuthority(clubId, userDetail.getUsername());
+
+        //[동기] 이메일 리스트 존재 확인 => LOCK & 상태 변경
+        List<Long> clubMemberIdList = ownerClubService.fetchPendingAndMarkAsProcessing(clubId); // clubMemberId list
+
+        if(clubMemberIdList.isEmpty()) {
+            throw new EmptyEmailListException("발송할 대상이 존재하지 않습니다.");
+        }
+
+        //[비동기] 이메일 발송
+        ownerClubService.sendEmailsAsync(clubId, clubMemberIdList);
+
+        ApiResponseDto<Void> response = ApiResponseDto.success("이메일이 성공적으로 발송되었습니다.");
+        return ResponseEntity.ok(response);
+    }
+
 }

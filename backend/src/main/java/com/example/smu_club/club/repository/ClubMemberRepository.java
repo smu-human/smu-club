@@ -1,8 +1,9 @@
 package com.example.smu_club.club.repository;
 
 import com.example.smu_club.domain.*;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
@@ -29,6 +30,10 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     List<ClubMember> findByClubAndStatus(Club club, ClubMemberStatus status);
 
+    @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.club = :club AND cm.status = :status")
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<ClubMember> findByClubAndEmailStatus(Club club, EmailStatus status);
+
     /**
      *     {@code @Modifying(clearAutomatically} = true) 를 쓰는 이유는 이러하다.
      *     {@code @Modifying} 쿼리가 실행되면 실행되면 1차 캐시를 무시하고 DB로 먼저 전송되어 DB에 데이터가 바뀌게 된다.
@@ -48,4 +53,9 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     //Modifying이 필요없어짐.
     void deleteByClubIdAndMemberId(Long clubId, Long memberId);
+
+    boolean findByClubAndMemberAndClubRole(Club club, Member member, ClubRole clubRole);
+
+    @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.id = :id")
+    Optional<ClubMember> findByIdWithMember(Long id);
 }

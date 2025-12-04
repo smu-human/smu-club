@@ -32,14 +32,11 @@ services:
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-
-      # Spring Devtools 활성화 (실시간 반영의 핵심)
-      SPRING_DEVTOOLS_RESTART_ENABLED: true
-      SPRING_DEVTOOLS_RESTART_TRIGGER_FILE: ""
-
-
-    volumes:    # 호스트 pc와 컨테이너 코드를 실시간으로 동기화한다.
-      - ./backend:/app
+      OCI_SMTP_USERNAME: ${OCI_SMTP_USERNAME}
+      OCI_SMTP_PASSWORD: ${OCI_SMTP_PASSWORD}
+    volumes:
+      - ./backend:/app # 호스트 pc와 컨테이너 코드를 실시간으로 동기화한다.
+      - /app/build # 빌드된 파일은 호스트와 동기화 하지 않음 -> 충돌 방지
     networks:
       - network
 
@@ -50,6 +47,8 @@ services:
     restart: always
     ports:
       - 3000:3000
+    environment:
+      - VITE_API_URL=http://backend:8080
     volumes:
         #소스 코드 동기화
         - ./frontend:/app

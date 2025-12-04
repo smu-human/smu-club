@@ -28,6 +28,11 @@ export function clear_tokens() {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
+// 로그인 여부 헬퍼
+export function is_logged_in() {
+  return !!get_access_token();
+}
+
 // ===== 내부 공통 =====
 function resolve_url(path) {
   if (typeof path === "string" && /^https?:\/\//.test(path)) return path;
@@ -61,7 +66,7 @@ export async function apiFetch(path, init = {}) {
     /* json 아님 */
   }
 
-  // 토큰 만료 처리 (백엔드에서 이런 식으로 내려온다고 가정)
+  // 토큰 만료 처리
   const expired =
     data?.status === "FAIL" && data?.errorCode === "EXPIRED_TOKEN";
 
@@ -76,7 +81,7 @@ export async function apiFetch(path, init = {}) {
       );
     }
 
-    // ✨ 토큰 재발급 요청: POST /api/v1/public/auth/reissue
+    // 토큰 재발급 요청: POST /api/v1/public/auth/reissue
     const re_res = await fetch(resolve_url("/public/auth/reissue"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -158,18 +163,81 @@ export async function apiLogout() {
   return res;
 }
 
-// 동아리 목록
+// ===== 클럽 공개 목록/상세 =====
+
+// 동아리 목록: GET /api/v1/public/clubs
 export async function fetch_public_clubs() {
   const res = await apiJson("/public/clubs", {
     method: "GET",
   });
-  // dataType이 Array 라고 했으니까 data 배열만 반환
   return res.data || [];
 }
 
+// 동아리 단건 조회: GET /api/v1/public/clubs/{clubId}
 export async function fetch_public_club(club_id) {
-  const res = await apiJson(`/public/club/${club_id}`, {
+  const res = await apiJson(`/public/clubs/${club_id}`, {
     method: "GET",
   });
-  return res.data; // 단일 객체
+  return res.data;
+}
+
+// 동아리 지원 사전 정보 조회: GET /api/v1/member/clubs/{clubId}/apply
+export async function fetch_member_club_apply(club_id) {
+  const res = await apiJson(`/member/clubs/${club_id}/apply`, {
+    method: "GET",
+  });
+  return res.data;
+}
+
+// ===== 마이페이지 관련 =====
+
+// 내 이름 조회: GET /api/v1/member/mypage/name
+export async function fetch_mypage_name() {
+  const res = await apiJson("/member/mypage/name", {
+    method: "GET",
+  });
+  return res.data; // { name: string }
+}
+
+// 내 전체 정보 조회(수정 페이지용): GET /api/v1/member/mypage/update
+export async function fetch_mypage_profile() {
+  const res = await apiJson("/member/mypage/update", {
+    method: "GET",
+  });
+  return res.data;
+}
+
+// 전화번호 수정: PUT /api/v1/member/mypage/update/phone
+export async function update_mypage_phone(newPhoneNumber) {
+  const res = await apiJson("/member/mypage/update/phone", {
+    method: "PUT",
+    body: JSON.stringify({ newPhoneNumber }),
+  });
+  return res.data;
+}
+
+// 이메일 수정: PUT /api/v1/member/mypage/update/email
+export async function update_mypage_email(newEmail) {
+  const res = await apiJson("/member/mypage/update/email", {
+    method: "PUT",
+    body: JSON.stringify({ newEmail }),
+  });
+  return res.data;
+}
+
+// 내 지원 목록: GET /api/v1/member/mypage/applications
+export async function fetch_my_applications() {
+  const res = await apiJson("/member/mypage/applications", {
+    method: "GET",
+  });
+  return res.data || []; // [{ clubId, clubName, ... }, ...]
+}
+
+// 회원 탈퇴 (엔드포인트는 백엔드 스펙에 맞게 수정 필요할 수 있음)
+export async function api_member_withdraw() {
+  const res = await apiJson("/member/mypage/delete", {
+    method: "POST",
+  });
+  clear_tokens();
+  return res;
 }
