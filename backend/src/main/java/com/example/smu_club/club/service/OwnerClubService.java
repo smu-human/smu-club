@@ -10,6 +10,7 @@ import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
 import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
+import com.example.smu_club.util.ExcelService;
 import com.example.smu_club.util.OCICleanupEvent;
 import com.example.smu_club.util.OciStorageService;
 import jakarta.mail.SendFailedException;
@@ -28,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,6 +49,7 @@ public class OwnerClubService {
     private final OciStorageService ociStorageService;
     private final ClubImageRepository clubImageRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ExcelService excelService;
 
     private final JavaMailSender javaMailSender;
 
@@ -335,16 +338,7 @@ public class OwnerClubService {
     @Transactional
     public void updateApplicantStatus(Long clubId, Long clubMemberId, String studentId, @NotNull(message = "변경할 상태를 입력해주세요.") ClubMemberStatus newStatus) {
 
-        // 1. 권한 검증
-        Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubNotFoundException("존재하지 않는 동아리 입니다. "));
-
-        ClubMember owner = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
-                .orElseThrow(() -> new ClubMemberNotFoundException("해당 동아리 소속이 아닙니다."));
-
-        if (owner.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException("지원자 상태를 변경할 권한이 없습니다.");
-        }
+        validateOwnerAuthority(clubId, studentId);
 
         // 2. 대상 지원서 조회
         ClubMember application = clubMemberRepository.findById(clubMemberId)
@@ -365,7 +359,7 @@ public class OwnerClubService {
                 .orElseThrow(() -> new ClubMemberNotFoundException("해당 동아리 소속이 아닙니다."));
 
         if (owner.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException("이메일 전송 권한이 없습니다.");
+            throw new AuthorizationException("[OWNER] 권한이 없습니다.");
         }
     }
 
@@ -451,6 +445,26 @@ public class OwnerClubService {
         }
 
         return toList;
+    }
+
+    public byte[] downloadAcceptedMembersExcel(Long clubId, String studentId) {
+
+        validateOwnerAuthority(clubId, studentId);
+
+        // ROLE 이 MEMBER 이고 해당 클럽 지원한 지원자들 전부 불러옴
+        List<ClubMember> allMembers = clubMemberRepository.findAllByClubIdAndRoleWithMember(clubId, ClubRole.MEMBER);
+
+        List<ApplicantExcelDto> excelDtos = allMembers.stream()
+                .sorted(
+                        Comparator.comparing((ClubMember c) ->
+                                c.getStatus() == ClubMemberStatus.ACCEPTED ? 0 : 1)
+
+                                .thenComparing(c -> c.getMember().getName())
+                )
+                .map(ApplicantExcelDto::from)
+                .toList();
+
+        return excelService.createApplicantExcel(excelDtos);
     }
 }
 
