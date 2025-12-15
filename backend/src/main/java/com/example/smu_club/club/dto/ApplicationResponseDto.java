@@ -10,5 +10,5 @@ import java.util.List;
 @AllArgsConstructor
 public class ApplicationResponseDto {
     private final List<AnswerRequestDto> QuestionAndAnswer;
-    private final String fileUrl;
+    private final String fileKey;
 }
