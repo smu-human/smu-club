@@ -1,7 +1,8 @@
-package com.example.smu_club.util;
+package com.example.smu_club.util.oci;
 
 import com.example.smu_club.exception.custom.OciDeletionException;
 import com.example.smu_club.exception.custom.OciUploadException;
+import com.example.smu_club.util.PreSignedUrlResponse;
 import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;

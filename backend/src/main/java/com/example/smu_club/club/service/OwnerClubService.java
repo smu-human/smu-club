@@ -11,8 +11,8 @@ import com.example.smu_club.domain.*;
 import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.util.ExcelService;
-import com.example.smu_club.util.OCICleanupEvent;
-import com.example.smu_club.util.OciStorageService;
+import com.example.smu_club.util.oci.OCICleanupEvent;
+import com.example.smu_club.util.oci.OciStorageService;
 import jakarta.mail.SendFailedException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.validation.constraints.NotNull;
@@ -25,7 +25,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

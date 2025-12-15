@@ -1,4 +1,4 @@
-package com.example.smu_club.util;
+package com.example.smu_club.util.oci;
 
 
 import lombok.Getter;
