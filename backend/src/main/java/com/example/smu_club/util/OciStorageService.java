@@ -136,11 +136,20 @@ public class OciStorageService {
     }
 
     public void deleteUrls(List<String> urls) {
-        for (String url : urls) {
-            String objectName = extractObjectNameFromUrl(url);
+        int ssuccess = 0;
+        int fail = 0;
+        for(String url : urls){
+            try{
+                String objectName = extractObjectNameFromUrl(url);
+                deleteObject(objectName);
+                ssuccess++;
 
-            deleteObject(objectName);
+            } catch(Exception e){
+                log.error("OCI URL 삭제 중 오류 발생(건너 뜀): url = {}, cause = {}", url, e.getMessage());
+                fail++;
+            }
         }
+        log.info("OCI URL 삭제 완료: 성공 {}건, 실패 {}건", ssuccess, fail);
     }
 
     private String extractObjectNameFromUrl(String fullUrl) {
@@ -182,6 +191,7 @@ public class OciStorageService {
             throw new OciDeletionException("OCI 파일 삭제 요청 실패 " + objectName);
         }
     }
+
 
    /* public String upload(MultipartFile file) {
         try {

@@ -5,8 +5,11 @@ import com.example.smu_club.answer.dto.AnswerRequestDto;
 import com.example.smu_club.club.dto.ApplicationFormResponseDto;
 import com.example.smu_club.club.dto.ApplicationRequestDto;
 import com.example.smu_club.club.dto.ApplicationResponseDto;
+import com.example.smu_club.club.dto.UploadUrlRequest;
 import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.common.ApiResponseDto;
+import com.example.smu_club.util.OciStorageService;
+import com.example.smu_club.util.PreSignedUrlResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,12 +24,13 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/member")
+@RequestMapping("/api/v1/member/clubs")
 public class MemberClubController {
 
     private final MemberClubService memberClubService;
+    private final OciStorageService ociStorageService;
 
-    @GetMapping("/clubs/{clubId}/apply")
+    @GetMapping("/{clubId}/apply")
     public ResponseEntity<ApiResponseDto<ApplicationFormResponseDto>> getApplication(
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails
@@ -43,7 +47,7 @@ public class MemberClubController {
     }
 
 
-    @PostMapping("/clubs/{clubId}/apply")
+    @PostMapping("/{clubId}/apply")
     public ResponseEntity<ApiResponseDto<ApplicationResponseDto>> createApplication(
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails,
@@ -62,7 +66,19 @@ public class MemberClubController {
         return ResponseEntity.ok(apiResponseDto);
     }
 
+    @PostMapping("/application/upload-url")
+    public ResponseEntity<ApiResponseDto<PreSignedUrlResponse>> getUploadUrl(
+            @RequestBody UploadUrlRequest request
+    ) {
+        PreSignedUrlResponse urlResponse = ociStorageService.createUploadPreSignedUrl(
+                request.getOriginalFileName(),
+                request.getContentType()
+        );
 
+        ApiResponseDto<PreSignedUrlResponse> response =
+                ApiResponseDto.success(urlResponse, "[MEMBER] OCI 업로드 URL 생성 성공했습니다.");
 
+        return ResponseEntity.ok(response);
+    }
 
 }
