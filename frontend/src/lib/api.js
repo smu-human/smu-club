@@ -15,12 +15,17 @@ export function get_refresh_token() {
 }
 
 export function set_tokens(access_token, refresh_token) {
-  if (access_token) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
-  }
-  if (refresh_token) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
-  }
+  const norm = (t) => {
+    if (!t) return null;
+    const s = String(t).trim();
+    return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
+  };
+
+  const access = norm(access_token);
+  const refresh = norm(refresh_token);
+
+  if (access) localStorage.setItem(ACCESS_TOKEN_KEY, access);
+  if (refresh) localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
 }
 
 export function clear_tokens() {
@@ -28,7 +33,6 @@ export function clear_tokens() {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
-// 로그인 여부 헬퍼
 export function is_logged_in() {
   return !!get_access_token();
 }
@@ -41,32 +45,35 @@ function resolve_url(path) {
 }
 
 function make_init(init = {}, access_token) {
+  const merged_headers = {
+    ...(init.headers || {}),
+    ...(access_token ? { Authorization: `Bearer ${access_token}` } : {}),
+  };
+
+  const has_body = init.body !== undefined && init.body !== null;
+
   return {
     method: "GET",
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(access_token ? { Authorization: `Bearer ${access_token}` } : {}),
-      ...(init.headers || {}),
-    },
+    credentials: "include",
+    headers: has_body
+      ? { "Content-Type": "application/json", ...merged_headers }
+      : merged_headers,
   };
 }
 
-// ===== 자동 토큰 재발급 포함 fetch 래퍼 =====
+// ===== fetch 래퍼 (만료는 body의 EXPIRED_TOKEN일 때만 reissue) =====
 export async function apiFetch(path, init = {}) {
   let access_token = get_access_token();
   const doFetch = () => fetch(resolve_url(path), make_init(init, access_token));
 
-  // 1차 요청
   let res = await doFetch();
+
   let data = null;
   try {
     data = await res.clone().json();
-  } catch (_) {
-    /* json 아님 */
-  }
+  } catch (_) {}
 
-  // 토큰 만료 처리
   const expired =
     data?.status === "FAIL" && data?.errorCode === "EXPIRED_TOKEN";
 
@@ -81,9 +88,9 @@ export async function apiFetch(path, init = {}) {
       );
     }
 
-    // 토큰 재발급 요청: POST /api/v1/public/auth/reissue
     const re_res = await fetch(resolve_url("/public/auth/reissue"), {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         accessToken: access_token,
@@ -100,7 +107,6 @@ export async function apiFetch(path, init = {}) {
       set_tokens(new_access, new_refresh);
       access_token = new_access;
 
-      // 새 토큰으로 원래 요청 재시도
       res = await fetch(resolve_url(path), make_init(init, access_token));
     } else {
       clear_tokens();
@@ -123,16 +129,42 @@ export async function apiJson(path, init) {
     const msg = data?.message || "요청에 실패했습니다.";
     const code = data?.errorCode;
     const err = new Error(msg);
-    err.code = code;
+    err.code = code || (res.status === 401 ? "UNAUTHORIZED" : "ERROR");
     err.raw = data;
+    err.status = res.status;
     throw err;
   }
   return data;
 }
 
-// ===== 인증용 편의 함수 =====
+// ===== owner 전용 fetch (항상 Authorization 주입, credentials 제거) =====
+async function owner_fetch_json(path, init = {}) {
+  const access_token = get_access_token();
 
-// 로그인: POST /api/v1/public/auth/login
+  const res = await fetch(resolve_url(path), {
+    method: "GET",
+    ...init,
+    headers: {
+      ...(init.headers || {}),
+      ...(access_token ? { Authorization: `Bearer ${access_token}` } : {}),
+    },
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok || data?.status === "FAIL") {
+    const err = new Error(data?.message || "요청에 실패했습니다.");
+    err.code =
+      data?.errorCode || (res.status === 401 ? "UNAUTHORIZED" : "ERROR");
+    err.status = res.status;
+    err.raw = data;
+    throw err;
+  }
+
+  return data;
+}
+
+// ===== 인증 =====
 export async function apiLogin({ studentId, password }) {
   const data = await apiJson("/public/auth/login", {
     method: "POST",
@@ -146,7 +178,6 @@ export async function apiLogin({ studentId, password }) {
   return data;
 }
 
-// 회원가입(학생 인증): POST /api/v1/public/auth/signup
 export async function apiSignup({ studentId, password, phoneNumber }) {
   return apiJson("/public/auth/signup", {
     method: "POST",
@@ -154,34 +185,24 @@ export async function apiSignup({ studentId, password, phoneNumber }) {
   });
 }
 
-// 로그아웃: POST /api/v1/auth/logout
 export async function apiLogout() {
-  const res = await apiJson("/auth/logout", {
-    method: "POST",
-  });
+  const res = await apiJson("/auth/logout", { method: "POST" });
   clear_tokens();
   return res;
 }
 
-// ===== 클럽 공개 목록/상세 =====
-
-// 동아리 목록: GET /api/v1/public/clubs
+// ===== 공개 클럽 =====
 export async function fetch_public_clubs() {
-  const res = await apiJson("/public/clubs", {
-    method: "GET",
-  });
+  const res = await apiJson("/public/clubs", { method: "GET" });
   return res.data || [];
 }
 
-// 동아리 단건 조회: GET /api/v1/public/clubs/{clubId}
 export async function fetch_public_club(club_id) {
-  const res = await apiJson(`/public/clubs/${club_id}`, {
-    method: "GET",
-  });
+  const res = await apiJson(`/public/clubs/${club_id}`, { method: "GET" });
   return res.data;
 }
 
-// 동아리 지원 사전 정보 조회: GET /api/v1/member/clubs/{clubId}/apply
+// ===== 멤버 =====
 export async function fetch_member_club_apply(club_id) {
   const res = await apiJson(`/member/clubs/${club_id}/apply`, {
     method: "GET",
@@ -189,25 +210,16 @@ export async function fetch_member_club_apply(club_id) {
   return res.data;
 }
 
-// ===== 마이페이지 관련 =====
-
-// 내 이름 조회: GET /api/v1/member/mypage/name
 export async function fetch_mypage_name() {
-  const res = await apiJson("/member/mypage/name", {
-    method: "GET",
-  });
-  return res.data; // { name: string }
-}
-
-// 내 전체 정보 조회(수정 페이지용): GET /api/v1/member/mypage/update
-export async function fetch_mypage_profile() {
-  const res = await apiJson("/member/mypage/update", {
-    method: "GET",
-  });
+  const res = await apiJson("/member/mypage/name", { method: "GET" });
   return res.data;
 }
 
-// 전화번호 수정: PUT /api/v1/member/mypage/update/phone
+export async function fetch_mypage_profile() {
+  const res = await apiJson("/member/mypage/update", { method: "GET" });
+  return res.data;
+}
+
 export async function update_mypage_phone(newPhoneNumber) {
   const res = await apiJson("/member/mypage/update/phone", {
     method: "PUT",
@@ -216,7 +228,6 @@ export async function update_mypage_phone(newPhoneNumber) {
   return res.data;
 }
 
-// 이메일 수정: PUT /api/v1/member/mypage/update/email
 export async function update_mypage_email(newEmail) {
   const res = await apiJson("/member/mypage/update/email", {
     method: "PUT",
@@ -225,19 +236,190 @@ export async function update_mypage_email(newEmail) {
   return res.data;
 }
 
-// 내 지원 목록: GET /api/v1/member/mypage/applications
 export async function fetch_my_applications() {
-  const res = await apiJson("/member/mypage/applications", {
-    method: "GET",
-  });
-  return res.data || []; // [{ clubId, clubName, ... }, ...]
+  const res = await apiJson("/member/mypage/applications", { method: "GET" });
+  return res.data || [];
 }
 
-// 회원 탈퇴 (엔드포인트는 백엔드 스펙에 맞게 수정 필요할 수 있음)
-export async function api_member_withdraw() {
-  const res = await apiJson("/member/mypage/delete", {
+export async function fetch_application_result(club_id) {
+  const res = await apiJson(`/member/mypage/applications/${club_id}/result`, {
+    method: "GET",
+  });
+  return res.data;
+}
+
+export async function delete_application(club_id) {
+  const res = await apiJson(`/member/mypage/applications/${club_id}/delete`, {
     method: "POST",
   });
+  return res;
+}
+
+export async function fetch_application_for_update(club_id) {
+  const res = await apiJson(`/member/mypage/applications/${club_id}/update`, {
+    method: "GET",
+  });
+  return res.data;
+}
+
+export async function update_application(club_id, payload) {
+  const res = await apiJson(`/member/mypage/applications/${club_id}/update`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  return res;
+}
+
+export async function api_member_withdraw() {
+  const res = await apiJson("/member/mypage/delete", { method: "POST" });
   clear_tokens();
   return res;
+}
+
+// ✅ 오너: 내가 관리하는 동아리 목록 조회
+export async function fetch_owner_managed_clubs() {
+  const res = await apiJson("/owner/club/managed-clubs", { method: "GET" });
+  return res.data || [];
+}
+
+// ===== OWNER: 이미지 업로드 (Presigned URL) =====
+export async function owner_issue_upload_url({
+  originalFileName,
+  contentType,
+}) {
+  const res = await apiJson("/owner/club/upload-url", {
+    method: "POST",
+    body: JSON.stringify({ originalFileName, contentType }),
+  });
+  return res.data; // { fileName, preSignedUrl }
+}
+
+export async function owner_put_presigned_url(preSignedUrl, file) {
+  const putRes = await fetch(preSignedUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+    },
+    body: file,
+  });
+
+  if (!putRes.ok) {
+    const err = new Error("이미지 업로드에 실패했습니다.");
+    err.status = putRes.status;
+    throw err;
+  }
+  return true;
+}
+
+export async function owner_upload_images(files = []) {
+  const uploaded_names = [];
+
+  for (const file of files) {
+    const { fileName, preSignedUrl } = await owner_issue_upload_url({
+      originalFileName: file.name,
+      contentType: file.type || "application/octet-stream",
+    });
+
+    await owner_put_presigned_url(preSignedUrl, file);
+    uploaded_names.push(fileName);
+  }
+
+  return uploaded_names;
+}
+
+// ===== OWNER: 동아리 등록 (multipart) =====
+export async function owner_register_club(payload) {
+  const access_token = get_access_token();
+
+  const form = new FormData();
+
+  const uploaded = payload?.uploadedImageFileNames || [];
+  (uploaded || []).forEach((v) => form.append("uploadedImageFileNames", v));
+
+  if (payload?.name !== undefined) form.append("name", payload.name);
+  if (payload?.title !== undefined) form.append("title", payload.title);
+  if (payload?.president !== undefined)
+    form.append("president", payload.president);
+  if (payload?.contact !== undefined) form.append("contact", payload.contact);
+  if (payload?.recruitingEnd !== undefined)
+    form.append("recruitingEnd", payload.recruitingEnd);
+  if (payload?.clubRoom !== undefined)
+    form.append("clubRoom", payload.clubRoom);
+  if (payload?.description !== undefined)
+    form.append("description", payload.description);
+
+  const res = await fetch(resolve_url("/owner/club/register/club"), {
+    method: "POST",
+    headers: {
+      ...(access_token ? { Authorization: `Bearer ${access_token}` } : {}),
+    },
+    body: form,
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok || data?.status === "FAIL") {
+    const err = new Error(data?.message || "요청에 실패했습니다.");
+    err.code =
+      data?.errorCode || (res.status === 401 ? "UNAUTHORIZED" : "ERROR");
+    err.status = res.status;
+    err.raw = data;
+    throw err;
+  }
+
+  return data;
+}
+
+// ===== OWNER: 동아리 상세 조회 (GET) =====
+export async function fetch_owner_club_detail(club_id) {
+  const res = await owner_fetch_json(`/owner/club/club/${club_id}`, {
+    method: "GET",
+  });
+  return res.data || null;
+}
+
+// ===== OWNER: 동아리 수정 (PUT multipart) =====
+export async function owner_update_club(club_id, payload) {
+  const form = new FormData();
+
+  const uploaded = payload?.uploadedImageFileNames || [];
+  (uploaded || []).forEach((v) => form.append("uploadedImageFileNames", v));
+
+  if (payload?.name !== undefined) form.append("name", payload.name);
+  if (payload?.title !== undefined) form.append("title", payload.title);
+  if (payload?.president !== undefined)
+    form.append("president", payload.president);
+  if (payload?.contact !== undefined) form.append("contact", payload.contact);
+  if (payload?.recruitingEnd !== undefined)
+    form.append("recruitingEnd", payload.recruitingEnd);
+  if (payload?.clubRoom !== undefined)
+    form.append("clubRoom", payload.clubRoom);
+  if (payload?.description !== undefined)
+    form.append("description", payload.description);
+
+  return owner_fetch_json(`/owner/club/club/${club_id}`, {
+    method: "PUT",
+    body: form,
+  });
+}
+
+// ===== OWNER: 모집 시작/중지 =====
+export async function owner_start_recruitment(club_id) {
+  return apiJson(`/owner/club/${club_id}/start-recruitment`, {
+    method: "POST",
+  });
+}
+
+export async function owner_stop_recruitment(club_id) {
+  return apiJson(`/owner/club/${club_id}/stop-recruitment`, {
+    method: "POST",
+  });
+}
+
+// ===== OWNER: 지원자 목록 =====
+export async function fetch_owner_applicants(club_id) {
+  const res = await owner_fetch_json(`/owner/club/${club_id}/applicants`, {
+    method: "GET",
+  });
+  return res.data || [];
 }

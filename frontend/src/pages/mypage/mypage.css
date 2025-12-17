@@ -137,3 +137,21 @@
   background: #ff0000 !important; /* ✅ 강제 적용 */
   color: #ffffff !important;
 }
+.recruit_btn {
+  min-width: 92px;
+}
+
+.recruit_btn.start {
+  background: #5179ff; /* 파랑 */
+  color: #fff;
+}
+
+.recruit_btn.stop {
+  background: #b91c1c; /* 빨강 */
+  color: #fff;
+}
+
+.recruit_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

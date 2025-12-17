@@ -1,10 +1,11 @@
-// src/pages/club_edit/club_edit.jsx
+// src/pages/club_edit/club_edit.jsx (수정: navigate 경로 undefined 방지)
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/globals.css";
 import "./club_edit.css";
 import { Editor } from "@toast-ui/react-editor";
 import "@toast-ui/editor/dist/toastui-editor.css";
+import { owner_upload_images, owner_register_club } from "../../lib/api";
 
 export default function ClubEdit() {
   const navigate = useNavigate();
@@ -14,33 +15,42 @@ export default function ClubEdit() {
   const [clubOneLine, setClubOneLine] = useState("");
   const [leaderName, setLeaderName] = useState("");
   const [phone, setPhone] = useState("");
-  const [capacity, setCapacity] = useState("");
+  const [deadline, setDeadline] = useState("");
   const [images, setImages] = useState([]);
-  const [recruitOpen, setRecruitOpen] = useState(true); // 모집 상태
-  // (club_edit.jsx) 상태 추가
-  const [deadline, setDeadline] = useState(""); // 모집 마감일
+  const [is_saving, set_is_saving] = useState(false);
 
   const onPickImages = (e) => {
     const files = Array.from(e.target.files || []);
     setImages(files);
   };
 
-  const onSave = () => {
-    const introHtml = editorRef.current?.getInstance().getHTML();
-    const payload = {
-      club_name: clubName,
-      one_line: clubOneLine,
-      leader_name: leaderName,
-      phone,
-      capacity: Number(capacity || 0),
-      deadline, // ✅ 모집 마감일
+  const onSave = async () => {
+    if (is_saving) return;
+    set_is_saving(true);
 
-      intro_html: introHtml,
-      gallery_files: images,
-      recruit_open: recruitOpen,
-    };
-    console.log(payload);
-    alert("저장 로직 연결 예정 (콘솔 확인)");
+    try {
+      const introHtml = editorRef.current?.getInstance().getHTML() || "";
+
+      const uploadedImageFileNames = await owner_upload_images(images);
+
+      await owner_register_club({
+        uploadedImageFileNames,
+        name: clubName,
+        title: clubOneLine,
+        president: leaderName,
+        contact: phone,
+        recruitingEnd: deadline,
+        clubRoom: "",
+        description: introHtml,
+      });
+
+      alert("저장 완료");
+      navigate("/mypage");
+    } catch (err) {
+      alert(err?.message || "저장 실패");
+    } finally {
+      set_is_saving(false);
+    }
   };
 
   return (
@@ -64,13 +74,12 @@ export default function ClubEdit() {
                 <path d="M12 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1>동아리 관리</h1>
+            <h1>동아리 등록</h1>
           </div>
         </div>
       </div>
 
       <main className="page-main club_edit_main">
-        {/* 갤러리 이미지 */}
         <section className="club_section">
           <h2 className="club_title">갤러리 이미지</h2>
           <div className="club_card">
@@ -95,7 +104,6 @@ export default function ClubEdit() {
           </div>
         </section>
 
-        {/* 기본 정보 */}
         <section className="club_section">
           <h2 className="club_title">기본 정보</h2>
           <div className="club_card">
@@ -143,18 +151,6 @@ export default function ClubEdit() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
-            <label className="field_label" htmlFor="capacity">
-              인원수 대략
-            </label>
-            <input
-              id="capacity"
-              className="field_input"
-              type="number"
-              min="0"
-              placeholder="예) 25"
-              value={capacity}
-              onChange={(e) => setCapacity(e.target.value)}
-            />
             <label className="field_label" htmlFor="deadline">
               모집 마감일
             </label>
@@ -168,7 +164,6 @@ export default function ClubEdit() {
           </div>
         </section>
 
-        {/* 동아리 소개 + 모집 상태 토글 */}
         <section className="club_section">
           <h2 className="club_title">동아리 소개</h2>
           <div className="club_card">
@@ -183,10 +178,15 @@ export default function ClubEdit() {
           </div>
         </section>
 
-        <button className="primary_btn club_save_btn" onClick={onSave}>
-          저장하기
+        <button
+          className="primary_btn club_save_btn"
+          onClick={onSave}
+          disabled={is_saving}
+        >
+          {is_saving ? "저장 중..." : "저장하기"}
         </button>
       </main>
+
       <div className="page-footer">
         <p>© 2025 smu-club. 상명대학교 동아리 플랫폼</p>
         <p>
