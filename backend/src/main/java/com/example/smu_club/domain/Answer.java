@@ -33,15 +33,16 @@ public class Answer {
     @Column(name = "answer_content")
     private String answerContent; //텍스트 답변
 
-    @Column(name = "file_url")
-    private String fileUrl; //S3 매핑 주소
+    @Column(name = "file_key")
+    private String fileKey; // OCI Object Storage 에 업로드된 파일의 키 값
 
     public Answer(String answerContent, Question question){
         this.answerContent = answerContent;
         this.question = question;
     }
 
-    public void updateAnswerContent(String newAnswerContent) {
+    public void updateAnswerContent(String newAnswerContent, String newFileKey) {
         this.answerContent = newAnswerContent;
+        this.fileKey = newFileKey;
     }
 }

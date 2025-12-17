@@ -15,7 +15,7 @@ public class UpdateApplicationResponseDto {
     private String name;
     private String phone;
 
-    //질문, 답변, 파일
+    //질문, 답변, 파일 키
     private final List<AnswerResponseDto> QuestionAndAnswer;
-    private final String fileUrl;
+    private final String fileKey;
 }

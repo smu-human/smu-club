@@ -107,11 +107,10 @@ public class MemberService {
                 .filter(answer -> answer.getQuestion().getQuestionContentType() == FILE)
                 .findFirst();
 
-        //fileUrl 추출 (없다면 null)
-        String fileUrl = fileTypeAnswer
-                .map(Answer::getFileUrl)
-                .orElse(null);
-
+        //fileKey 추출 (없다면 null)
+        String fileKey = fileTypeAnswer
+                .map(Answer::getFileKey)
+                .orElse(null); // 저장 할 때 파일이 없으면 null로 저장 하도록 함.
 
         List<AnswerResponseDto> answerResponseDto = questions.stream()
                 .map(q -> new AnswerResponseDto(
@@ -128,7 +127,7 @@ public class MemberService {
                 member.getName(),
                 member.getPhoneNumber(),
                 answerResponseDto,
-                fileUrl
+                fileKey
         );
     }
 
@@ -170,6 +169,7 @@ public class MemberService {
 
 
     }
+
     @Transactional(readOnly = false)
     public void updateApplication(Long clubId, String studentId, UpdateApplicationRequestDto requestDto) {
         Member member = memberRepository.findByStudentId(studentId)
@@ -180,10 +180,10 @@ public class MemberService {
         Map<Long, String> answerContentsMap = requestDto.getAnswers().stream()
                 .collect(Collectors.toMap(
                         UpdateAnswerRequestDto::getQuestionId,
-                        dto -> dto.getAnswerContent() == null ? "" : dto.getAnswerContent() //dto -> getAnswer()의 answer 필드를 의미
+                        answers -> answers.getAnswerContent() == null ? "" : answers.getAnswerContent()
                 ));
 
-        //keySet() == key를 모아서 set으로 던진다.
+        //keySet(): key를 모아서 set으로 던진다.
         List<Answer> answerToUpdate = answerRepository.findAnswerForUpdateWithClubId
                 (
                 member,
@@ -193,9 +193,10 @@ public class MemberService {
 
         for(Answer target : answerToUpdate) {
             String newAnswerContent = answerContentsMap.get(target.getQuestion().getId());
-            target.updateAnswerContent(newAnswerContent);
+            String newFileKey = requestDto.getFileKey();
+            //답변, 파일키 업데이트 수행 (실제 파일 삭제는 스케줄러에서 처리한다)
+            target.updateAnswerContent(newAnswerContent, newFileKey);
         }
-
 
         //Dirty checking -> batch size(50) -> 네트워크 통신 2번만으로 벌크 연산(업데이트) 해결
     }

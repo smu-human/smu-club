@@ -10,5 +10,5 @@ public class UpdateApplicationRequestDto {
 
     //답변들, 파일
     private List<UpdateAnswerRequestDto> answers;
-    private String fileUrl;
+    private String fileKey;
 }
