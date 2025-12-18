@@ -107,11 +107,10 @@ public class MemberService {
                 .filter(answer -> answer.getQuestion().getQuestionContentType() == FILE)
                 .findFirst();
 
-        //fileUrl 추출 (없다면 null)
-        String fileUrl = fileTypeAnswer
-                .map(Answer::getFileUrl)
-                .orElse(null);
-
+        //fileKey 추출 (없다면 null)
+        String fileKey = fileTypeAnswer
+                .map(Answer::getFileKey)
+                .orElse(null); // 저장 할 때 파일이 없으면 null로 저장 하도록 함.
 
         List<AnswerResponseDto> answerResponseDto = questions.stream()
                 .map(q -> new AnswerResponseDto(
@@ -128,7 +127,7 @@ public class MemberService {
                 member.getName(),
                 member.getPhoneNumber(),
                 answerResponseDto,
-                fileUrl
+                fileKey
         );
     }
 
@@ -170,20 +169,22 @@ public class MemberService {
 
 
     }
+
     @Transactional(readOnly = false)
     public void updateApplication(Long clubId, String studentId, UpdateApplicationRequestDto requestDto) {
+
+        //1. studentId로 Member 객체 조회
         Member member = memberRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
 
-        //오랫만이라 까먹고 있었는데 n+1은 쿼리문제가 아니라 네트워크 통신 문제였음
-
+        //2. UpdateAnswerRequestDto 리스트를 Map<Long, String>으로 변환
         Map<Long, String> answerContentsMap = requestDto.getAnswers().stream()
                 .collect(Collectors.toMap(
                         UpdateAnswerRequestDto::getQuestionId,
-                        dto -> dto.getAnswerContent() == null ? "" : dto.getAnswerContent() //dto -> getAnswer()의 answer 필드를 의미
+                        answers -> answers.getAnswerContent() == null ? "" : answers.getAnswerContent()
                 ));
 
-        //keySet() == key를 모아서 set으로 던진다.
+        //3.
         List<Answer> answerToUpdate = answerRepository.findAnswerForUpdateWithClubId
                 (
                 member,
@@ -193,7 +194,14 @@ public class MemberService {
 
         for(Answer target : answerToUpdate) {
             String newAnswerContent = answerContentsMap.get(target.getQuestion().getId());
-            target.updateAnswerContent(newAnswerContent);
+            //답변 업데이트 수행
+            if(target.getQuestion().getQuestionContentType() == FILE){
+                target.setFileKey(requestDto.getFileKey());
+            }
+            else{
+                target.setAnswerContent(newAnswerContent);
+            }
+
         }
 
 

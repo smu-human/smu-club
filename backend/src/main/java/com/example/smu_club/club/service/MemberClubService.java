@@ -39,17 +39,26 @@ public class MemberClubService {
     private final AnswerRepository answerRepository;
 
     @Transactional(readOnly = false)
-    public ApplicationResponseDto saveApplication(Long clubId, String studentId, List<AnswerRequestDto> QuestionAndAnswer, String fileUrl) {
+    public ApplicationResponseDto saveApplication(Long clubId, String studentId, List<AnswerRequestDto> questionAndAnswer, String fileKey) {
         // 1. ClubMember 에 회원 등록 (Status 기본 값은 PENDING)
         Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +"에 해당하는 회원을 찾을 수 없습니다."));
+
         Club appliedClub = clubRepository.findById(clubId).orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +"에 해당하는 동아리를 찾을 수 없습니다."));
-        ClubMember clubMember = new ClubMember(myInfo, appliedClub, ClubRole.MEMBER, LocalDateTime.now(), ClubMemberStatus.PENDING);
+
+        ClubMember clubMember = ClubMember.builder()
+                .member(myInfo)
+                .club(appliedClub)
+                .clubRole(ClubRole.MEMBER)
+                .appliedAt(LocalDateTime.now())
+                .status(ClubMemberStatus.PENDING)
+                .build();
+
         clubMemberRepository.save(clubMember);
 
         // 2. 지원서 답변 및 파일 저장 (답변은 질문에 맞게 Mapping 한다.)
-        if(QuestionAndAnswer.isEmpty()) throw new QuestionNotFoundException("clubId = " + clubId + ": 해당 동아리에 등록된 질문을 찾을 수 없습니다.");
+        if(questionAndAnswer.isEmpty()) throw new QuestionNotFoundException("clubId = " + clubId + ": 해당 동아리에 등록된 질문을 찾을 수 없습니다.");
 
-        List<Long> questionIds = QuestionAndAnswer.stream()
+        List<Long> questionIds = questionAndAnswer.stream()
                 .map(AnswerRequestDto::getQuestionId)
                 .collect(toList()
                 );
@@ -58,7 +67,7 @@ public class MemberClubService {
                 .stream().collect(Collectors.toMap(Question::getId, Function.identity()));
 
         //답변 타입 "TEXT", "FILE"을 구분하여 저장한다.
-        for (AnswerRequestDto ard : QuestionAndAnswer){
+        for (AnswerRequestDto ard : questionAndAnswer){
             Question question = questionMap.get(ard.getQuestionId());
 
             Answer answer = new Answer();
@@ -67,7 +76,13 @@ public class MemberClubService {
             answer.setMember(myInfo);
 
             if(question.getQuestionContentType() == QuestionContentType.FILE){
-                answer.setFileUrl(fileUrl);
+                //Blank: 문자가 없거나 모든 문자가 공배인 경우 true 반환
+                if(fileKey != null && !fileKey.isBlank()){
+                    answer.setFileKey(fileKey);
+                }
+                else{
+                    answer.setFileKey(null);
+                }
             }
             else{
                 answer.setAnswerContent(ard.getAnswerContent());
@@ -75,7 +90,7 @@ public class MemberClubService {
             answerRepository.save(answer);
         }
 
-        return new ApplicationResponseDto(QuestionAndAnswer, fileUrl);
+        return new ApplicationResponseDto(questionAndAnswer, fileKey);
     }
 
     @Transactional

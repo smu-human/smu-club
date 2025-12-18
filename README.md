@@ -6,9 +6,12 @@ docker start <컨테이너 이름 or ID>
 
 ## 명령어로 프로세스, 이미지 한번에 삭제하는 법
 ```sh
-docker stop $(docker ps -q) # 모든 실행중인 컨테이너 중지
-docker rm $(docker ps -a -q) # 모든 컨테이너 삭제
-docker rmi -f $(docker images -a) # 모든 이미지 삭제
+# 모든 실행중인 컨테이너 중지
+# 모든 컨테이너 삭제
+# 모든 이미지 삭제
+docker stop $(docker ps -q) 
+docker rm $(docker ps -a -q)
+docker rmi -f $(docker images -a) 
 
 # 이후 볼륨 삭제 희망 시, 도커 데스크탑에서 직접 확인 후 삭제 요망
 ```
@@ -37,7 +40,7 @@ docker ps
 docker logs <컨테이너 이름 or ID> #id 사용시 앞 3~4자리만 입력해도 무방
 
 #2-2. 전체 서비스 실시간 로그 (추천)
-docker-compose -f docker-compose-dev.yml logs -f
+docker-compose -f docker-compose.yml logs -f
 
 ```
 
@@ -47,10 +50,10 @@ docker-compose -f docker-compose-dev.yml logs -f
 rm -rf./db/store
 
 # 2. 도커 컨테이너 + 볼륨 삭제
-docker-compose -f docker-compose-dev.yml down -v
+docker-compose -f docker-compose.yml down -v
 
 # 3. 도커 재시작
-docker-compose -f docker-compose-dev. yml up -d #  여기까지 하면 JPA가 테이블 자동 생성함
+docker-compose -f docker-compose.yml up -d #  여기까지 하면 JPA가 테이블 자동 생성함
 
 # 4. dump 파일 적용하기
 docker exec -i smu-club-db-1 mysql -u <username> -p'<password>' smu_db < dump.sql
@@ -61,31 +64,31 @@ docker exec -i smu-club-db-1 mysql -u <username> -p'<password>' smu_db < dump.sq
 ## 백그라운드(daemon, -d) 실행법 
 ```sh
 # 디렉토리 위치 확인
-docker-compose -f docker-compose-dev.yml up -d
+docker-compose -f docker-compose.yml up -d
 
 # 만약 수정사항이 존재한다면
-docker-compose -f docker-compose-dev.yml up -d --build 
+docker-compose -f docker-compose.yml up -d --build 
 ```
 
 ## 프로세스 중지[메모리 스왑 아웃] (평상 시 삭제 x 중지 o)
 ```sh
-docker-compose -f docker-compose-dev.yml stop
+docker-compose -f docker-compose.yml stop
 ```
 ## 프로세스 재시작[메모리 스왑 인]
 ```sh
-docker-compose -f docker-compose-dev.yml start
+docker-compose -f docker-compose.yml start
 ```
 
 
 ## 리소스 삭제 (볼륨 미포함)
 ```sh
 #볼륨 포함 시 -v 옵션 추가
-docker-compose -f docker-compose-dev.yml down 
+docker-compose -f docker-compose.yml down 
 ```
 
 ## 특정 서비스만 실행
 ```sh
-docker-compose -f docker-compose-dev.yml up -d [서비스명]
+docker-compose -f docker-compose.yml up -d [서비스명]
 
 #services:
 # db: <<< 서비스명

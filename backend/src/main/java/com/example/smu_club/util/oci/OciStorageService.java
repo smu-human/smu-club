@@ -87,7 +87,7 @@ public class OciStorageService {
 
         CreatePreauthenticatedRequestDetails details =
                 CreatePreauthenticatedRequestDetails.builder()
-                        .name("Upload-PAR-" + uniqueFileName.substring(0, 10)) // PAR의 이름 (관리 용도)
+                        .name("Upload-PAR-" + uniqueFileName.substring(0, 10)) // PAR(Pre Authenticated Request)의 이름 (관리 용도)
                         .accessType(CreatePreauthenticatedRequestDetails.AccessType.ObjectWrite) // 접근 유형: 객체 쓰기 (PUT 요청 허용)
                         .objectName(uniqueFileName) // PAR이 적용될 객체 이름
                         .timeExpires(expirationDate) // 만료 시간
