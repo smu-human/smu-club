@@ -86,7 +86,7 @@ public class OwnerClubController {
 
 
     // 동아리 상세정보 편집 PUT
-    @PutMapping( "/club/{clubId}")
+    @PutMapping( "/{clubId}")
     public ResponseEntity<ApiResponseDto<Void>> editClub(
             @PathVariable Long clubId,
             @RequestBody ClubInfoRequest request,
