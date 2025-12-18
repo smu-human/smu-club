@@ -76,7 +76,7 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
-// JAR 파일 생성 안함 -> Dockerfile-prod 사용 시 꼭 필요
+// JAR 파일 생성 안함 -> Dockerfile 사용 시 꼭 필요
 jar {
 
 	enabled = false

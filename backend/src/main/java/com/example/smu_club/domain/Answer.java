@@ -41,8 +41,4 @@ public class Answer {
         this.question = question;
     }
 
-    public void updateAnswerContent(String newAnswerContent, String newFileKey) {
-        this.answerContent = newAnswerContent;
-        this.fileKey = newFileKey;
-    }
 }

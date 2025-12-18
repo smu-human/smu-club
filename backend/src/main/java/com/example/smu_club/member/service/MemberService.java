@@ -172,18 +172,19 @@ public class MemberService {
 
     @Transactional(readOnly = false)
     public void updateApplication(Long clubId, String studentId, UpdateApplicationRequestDto requestDto) {
+
+        //1. studentId로 Member 객체 조회
         Member member = memberRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new MemberNotFoundException("학번: " + studentId + "에 해당하는 회원을 찾을 수 없습니다."));
 
-        //오랫만이라 까먹고 있었는데 n+1은 쿼리문제가 아니라 네트워크 통신 문제였음
-
+        //2. UpdateAnswerRequestDto 리스트를 Map<Long, String>으로 변환
         Map<Long, String> answerContentsMap = requestDto.getAnswers().stream()
                 .collect(Collectors.toMap(
                         UpdateAnswerRequestDto::getQuestionId,
                         answers -> answers.getAnswerContent() == null ? "" : answers.getAnswerContent()
                 ));
 
-        //keySet(): key를 모아서 set으로 던진다.
+        //3.
         List<Answer> answerToUpdate = answerRepository.findAnswerForUpdateWithClubId
                 (
                 member,
@@ -193,10 +194,16 @@ public class MemberService {
 
         for(Answer target : answerToUpdate) {
             String newAnswerContent = answerContentsMap.get(target.getQuestion().getId());
-            String newFileKey = requestDto.getFileKey();
-            //답변, 파일키 업데이트 수행 (실제 파일 삭제는 스케줄러에서 처리한다)
-            target.updateAnswerContent(newAnswerContent, newFileKey);
+            //답변 업데이트 수행
+            if(target.getQuestion().getQuestionContentType() == FILE){
+                target.setFileKey(requestDto.getFileKey());
+            }
+            else{
+                target.setAnswerContent(newAnswerContent);
+            }
+
         }
+
 
         //Dirty checking -> batch size(50) -> 네트워크 통신 2번만으로 벌크 연산(업데이트) 해결
     }

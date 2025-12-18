@@ -1,4 +1,4 @@
-# frontend/Dockerfile-dev
+# frontend/Dockerfile
 
 FROM node:20-alpine
 

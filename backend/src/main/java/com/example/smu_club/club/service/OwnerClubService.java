@@ -315,7 +315,7 @@ public class OwnerClubService {
                 .map(answer -> {
                     Question question = answer.getQuestion();
                     String content = (question.getQuestionContentType() == QuestionContentType.FILE)
-                            ? answer.getFileUrl()
+                            ? answer.getFileKey()
                             : answer.getAnswerContent();
 
                     return new AnswerResponseDto(
