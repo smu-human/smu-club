@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableRetry
 @EnableScheduling
+@EnableJpaAuditing
 @SpringBootApplication
 public class SmuClubApplication {
 

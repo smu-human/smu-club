@@ -15,7 +15,7 @@ import lombok.Setter;
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_answer", columnNames = {"member_id", "question_id"})
         })
-public class Answer {
+public class Answer extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,10 +35,5 @@ public class Answer {
 
     @Column(name = "file_key")
     private String fileKey; // OCI Object Storage 에 업로드된 파일의 키 값
-
-    public Answer(String answerContent, Question question){
-        this.answerContent = answerContent;
-        this.question = question;
-    }
 
 }
