@@ -9,7 +9,7 @@ import com.example.smu_club.domain.*;
 import com.example.smu_club.club.repository.ClubImageRepository;
 
 import com.example.smu_club.member.repository.MemberRepository;
-import com.example.smu_club.util.OciStorageService;
+import com.example.smu_club.util.oci.OciStorageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

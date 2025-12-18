@@ -10,6 +10,4 @@ public class PreSignedUrlResponse {
     private final String fileName;
     private final String preSignedUrl;
 
-
-
 }

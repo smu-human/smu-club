@@ -1,7 +1,7 @@
 package com.example.smu_club.club.listner;
 
-import com.example.smu_club.util.OCICleanupEvent;
-import com.example.smu_club.util.OciStorageService;
+import com.example.smu_club.util.oci.OCICleanupEvent;
+import com.example.smu_club.util.oci.OciStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
