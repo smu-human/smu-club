@@ -1,6 +1,7 @@
 package com.example.smu_club.util.oci;
 
 import com.example.smu_club.exception.custom.OciDeletionException;
+import com.example.smu_club.exception.custom.OciSearchException;
 import com.example.smu_club.exception.custom.OciUploadException;
 import com.example.smu_club.util.PreSignedUrlResponse;
 import com.oracle.bmc.Region;
@@ -10,7 +11,9 @@ import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.model.CreatePreauthenticatedRequestDetails;
 import com.oracle.bmc.objectstorage.requests.CreatePreauthenticatedRequestRequest;
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
+import com.oracle.bmc.objectstorage.requests.ListObjectsRequest;
 import com.oracle.bmc.objectstorage.responses.CreatePreauthenticatedRequestResponse;
+import com.oracle.bmc.objectstorage.responses.ListObjectsResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,9 @@ import java.io.InputStream;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -78,6 +84,7 @@ public class OciStorageService {
         this.bucketName = bucketName;
         this.region = region;
     }
+
 
     public PreSignedUrlResponse createUploadPreSignedUrl(String originalFileName, String contentType) {
 
@@ -137,11 +144,20 @@ public class OciStorageService {
     }
 
     public void deleteUrls(List<String> urls) {
-        for (String url : urls) {
-            String objectName = extractObjectNameFromUrl(url);
+        int ssuccess = 0;
+        int fail = 0;
+        for(String url : urls){
+            try{
+                String objectName = extractObjectNameFromUrl(url);
+                deleteObject(objectName);
+                ssuccess++;
 
-            deleteObject(objectName);
+            } catch(Exception e){
+                log.error("OCI URL 삭제 중 오류 발생(건너 뜀): url = {}, cause = {}", url, e.getMessage());
+                fail++;
+            }
         }
+        log.info("OCI URL 삭제 완료: 성공 {}건, 실패 {}건", ssuccess, fail);
     }
 
     private String extractObjectNameFromUrl(String fullUrl) {
@@ -184,37 +200,43 @@ public class OciStorageService {
         }
     }
 
-   /* public String upload(MultipartFile file) {
-        try {
-            String uniqueFileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+    public List<String> getOldFileKeys(int hours) {
+        List<String> oldFiles = new ArrayList<>();
 
 
-            try (InputStream inputStream = file.getInputStream()) {
-                PutObjectRequest request = PutObjectRequest.builder()
+        //현재 기준시간 - hours 이전 시간
+        Date timeThreshold = Date.from(Instant.now().minus(hours, ChronoUnit.HOURS));
+
+        String nextToken = null; // 페이지네이션용 토큰
+
+        try{
+            //파일 수가 많을 걸 대비하여 do-while로 모든 페이지 조회
+            do{
+                ListObjectsRequest request = ListObjectsRequest.builder()
                         .namespaceName(namespace)
                         .bucketName(bucketName)
-                        .objectName(uniqueFileName)
-                        .putObjectBody(inputStream)
-                        .contentType(file.getContentType())
+                        .fields("name,timeCreated") //필요한 필드만 조회 (최적화)
+                        .start(nextToken)
                         .build();
 
-                client.putObject(request);
-            }
+                ListObjectsResponse response = client.listObjects(request);
 
+                for(var obj : response.getListObjects().getObjects()) {
+                    if(obj.getTimeCreated().before(timeThreshold)) { //임계값 이전 파일이면
+                        oldFiles.add(obj.getName()); //파일명 추가
+                    }
+                }
+                //다음 페이지 토큰 갱신
+                nextToken = response.getListObjects().getNextStartWith();
 
-            String encodedFileName = URLEncoder.encode(uniqueFileName, StandardCharsets.UTF_8);
-
-            return String.format(
-                    "https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
-                    region,
-                    namespace,
-                    bucketName,
-                    encodedFileName
-            );
-
-        } catch (Exception e) {
-            log.error("OCI file upload failed. Cause: {}", e.getMessage(), e);
-            throw new OciUploadException("파일 업로드 중 서버 오류가 발생했습니다.");
+            } while(nextToken != null);
+        } catch(Exception e){
+            log.error("OCI 오래된 파일 조회 실패. Cause: {}", e.getMessage(), e);
+            throw new OciSearchException("OCI 오래된 파일 조회 중 서버 오류가 발생했습니다.");
         }
-    }*/
+
+        return oldFiles;
+
+    }
+
 }

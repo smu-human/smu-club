@@ -52,3 +52,6 @@ Thumbs.db
 
 # --- Spring Boot 로컬 DB 접속 시 각자 원하는 포트 번호 사용 가능---
 /backend/src/main/resources/application-dev.properties
+
+# --- OCI API Key pemFile ---
+/backend/src/main/resources/oci_api_key.pem
