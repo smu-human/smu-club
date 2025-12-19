@@ -36,4 +36,11 @@ public class Answer extends BaseTimeEntity {
     @Column(name = "file_key")
     private String fileKey; // OCI Object Storage 에 업로드된 파일의 키 값
 
+    public void update(String answerContent, String fileKey) {
+        if(this.question.getQuestionContentType() == QuestionContentType.FILE) {
+            this.fileKey = fileKey;
+        } else {
+            this.answerContent = answerContent;
+        }
+    }
 }
