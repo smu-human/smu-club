@@ -35,7 +35,8 @@ public class GuestClubService {
                         c.getName(),
                         c.getTitle(),
                         c.getRecruitingStatus(),
-                        c.getCreatedAt()
+                        c.getCreatedAt(),
+                        c.getThumbnailUrl()
                 ))
                 .collect(toList());
     }
