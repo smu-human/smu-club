@@ -364,11 +364,15 @@ public class OwnerClubService {
 
 
     @Async("mailExecutor") // 호출시 즉시 리턴, 실제 전송은 별도 스레드에서 처리
-    @Transactional(readOnly = false)
     public void sendEmailsAsync(Long clubId, List<Long> clubMemberIdList) {
         //1. 클럽 정보 검색
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+
+        //2. 상태를 담는 리스트 생성
+        List<Long> successIds = new ArrayList<>();
+        List<Long> failedIds = new ArrayList<>();
+
 
         //3. 이메일 전송 로직
         for(Long cmId : clubMemberIdList){
@@ -394,25 +398,32 @@ public class OwnerClubService {
                 sendEmail(toEmail, subject, body);
 
                 //전송 성공시 상태 업데이트
-                applicant.setEmailStatus(COMPLETE);
-                clubMemberRepository.save(applicant); // Async라 명시적 save 권장
+                successIds.add(applicant.getId());
 
                 Thread.sleep(100); // 0.1초 대기
             } catch(SendFailedException e){ //실패시 로그만 남기기
                 log.error("이메일 전송 실패: 잘못된 이메일 주소 {}", toEmail, e);
-                updateClubMemberEmailStatus(club, m, EmailStatus.FAILED);
+                failedIds.add(applicant.getId());
             } catch (Exception e) { //실패시 로그만 남기기
                 log.error("메일 전송 실패: {}", toEmail, e);
-                updateClubMemberEmailStatus(club, m, EmailStatus.FAILED);
+                failedIds.add(applicant.getId());
             }
+        }
+        updateEmailStatuses(successIds, COMPLETE);
+        updateEmailStatuses(failedIds, FAILED);
+
+    }
+
+    private void updateEmailStatuses(List<Long> clubMemberIds, EmailStatus emailStatus) {
+        clubMemberRepository.BulkUpdateEmailStatusByIds(clubMemberIds, emailStatus); //@Transactional 적용
+
+        if(emailStatus != FAILED) {
+            log.info("이메일 전송 실패 보장 트랜잭션 처리 : {} 건", clubMemberIds.size());
+
         }
     }
 
-    private void updateClubMemberEmailStatus(Club club, Member applicant, EmailStatus emailStatus) {
-        ClubMember clubMember = clubMemberRepository.findByClubAndMember(club, applicant)
-                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
 
-    }
 
     private void sendEmail(String toEmail, String subject, String body) throws Exception {
             MimeMessage message = javaMailSender.createMimeMessage();

@@ -1,4 +1,4 @@
-package com.example.smu_club.club.config;
+package com.example.smu_club.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

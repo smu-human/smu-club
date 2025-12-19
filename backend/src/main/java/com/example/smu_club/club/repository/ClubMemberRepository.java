@@ -4,9 +4,11 @@ import com.example.smu_club.domain.*;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -66,4 +68,10 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
             "WHERE cm.club.id = :clubId AND cm.clubRole = :role")
     List<ClubMember> findAllByClubIdAndRoleWithMember(@Param("clubId") Long clubId,
                                                       @Param("role") ClubRole role);
+
+
+    @Modifying(clearAutomatically = true) // 이게 있어야 UPDATE/DELETE 쿼리로 인식함 (영속성 컨텍스트(메모리 캐시) 초기화 옵션)
+    @Transactional
+    @Query("UPDATE ClubMember cm SET cm.emailStatus = :emailStatus WHERE cm.id IN :clubMemberIds")
+    void BulkUpdateEmailStatusByIds(List<Long> clubMemberIds, EmailStatus emailStatus);
 }
