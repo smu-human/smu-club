@@ -14,4 +14,5 @@ public class ClubsResponseDto {
     private String title;
     private RecruitingStatus recruitingStatus;
     private LocalDateTime createdAt;
+    private String thumbnailUrl;
 }
