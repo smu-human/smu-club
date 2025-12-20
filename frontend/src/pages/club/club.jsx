@@ -8,8 +8,15 @@ import {
   fetch_public_club,
   fetch_member_club_apply,
   is_logged_in,
-  fetch_owner_club_detail, // ✅ 이거 사용
 } from "../../lib/api";
+
+function fmt_date(v) {
+  if (!v) return "-";
+  const s = String(v);
+  // "2025-12-20T..." 형태면 날짜만
+  if (s.includes("T")) return s.split("T")[0];
+  return s;
+}
 
 export default function ClubPage() {
   const { id } = useParams();
@@ -22,41 +29,29 @@ export default function ClubPage() {
   const [error_msg, set_error_msg] = useState("");
   const carouselRef = useRef(null);
 
-  // ✅ 백엔드에서 동아리 상세 정보 가져오기
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       set_error_msg("");
 
       try {
-        let data;
-
-        // ✅ 로그인 상태면 owner 상세 우선 시도
-        if (is_logged_in()) {
-          try {
-            data = await fetch_owner_club_detail(id);
-          } catch {
-            // 오너 아니면 public fallback
-            data = await fetch_public_club(id);
-          }
-        } else {
-          data = await fetch_public_club(id);
-        }
-
+        const data = await fetch_public_club(id);
         setClub(data);
 
-        // ✅ owner API 기준 필드명
         const urls = Array.isArray(data?.clubImageUrls)
-          ? data.clubImageUrls.filter(Boolean)
+          ? data.clubImageUrls.filter(
+              (v) => v && String(v).trim() && v !== "string"
+            )
           : [];
 
-        if (urls.length > 0) {
-          setImages(urls);
-        } else if (data?.thumbnailUrl) {
+        if (urls.length > 0) setImages(urls);
+        else if (
+          data?.thumbnailUrl &&
+          String(data.thumbnailUrl).trim() &&
+          data.thumbnailUrl !== "string"
+        )
           setImages([data.thumbnailUrl]);
-        } else {
-          setImages([]);
-        }
+        else setImages([]);
 
         setActiveIndex(0);
         carouselRef.current?.scrollTo({ left: 0 });
@@ -122,7 +117,6 @@ export default function ClubPage() {
 
   return (
     <div className="club_page">
-      {/* 페이지 헤더 */}
       <header className="page-header sticky-header safe-area-top page-header--club">
         <div className="container">
           <div className="page-header-content">
@@ -166,7 +160,6 @@ export default function ClubPage() {
             <div className="club-empty">동아리 정보를 찾을 수 없습니다.</div>
           ) : (
             <>
-              {/* ===== 갤러리 ===== */}
               <section className="gallery card">
                 {images.length === 0 ? (
                   <div className="no_image">등록된 이미지가 없습니다.</div>
@@ -217,23 +210,29 @@ export default function ClubPage() {
                 )}
               </section>
 
-              {/* ===== 메타 ===== */}
               <section className="club_meta card">
                 <ul className="info_list">
                   <li>
                     <span className="label">회장</span>
-                    <span className="val">{club.president}</span>
+                    <span className="val">{club.president || "-"}</span>
                   </li>
                   <li>
                     <span className="label">연락처</span>
-                    <span className="val">{club.contact}</span>
+                    <span className="val">{club.contact || "-"}</span>
                   </li>
+
+                  {/* ✅ 모집 시작/마감 둘 다 표시 */}
                   <li>
-                    <span className="label">모집 기간</span>
+                    <span className="label">모집 시작</span>
                     <span className="val">
-                      {club.recruitingStart} ~ {club.recruitingEnd}
+                      {fmt_date(club.recruitingStart)}
                     </span>
                   </li>
+                  <li>
+                    <span className="label">모집 마감</span>
+                    <span className="val">{fmt_date(club.recruitingEnd)}</span>
+                  </li>
+
                   <li>
                     <span className="label">상태</span>
                     <span className="val badge">
@@ -242,12 +241,11 @@ export default function ClubPage() {
                   </li>
                   <li>
                     <span className="label">동아리방</span>
-                    <span className="val">{club.clubRoom}</span>
+                    <span className="val">{club.clubRoom || "-"}</span>
                   </li>
                 </ul>
               </section>
 
-              {/* ===== 소개 ===== */}
               <section className="intro card">
                 <h2 className="section_title">동아리 소개</h2>
 

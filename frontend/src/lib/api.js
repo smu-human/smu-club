@@ -137,30 +137,10 @@ export async function apiJson(path, init) {
   return data;
 }
 
-// ===== owner 전용 fetch (Authorization 주입) =====
+// ===== owner 전용 fetch (apiFetch 기반) - 토큰 reissue 포함 =====
 async function owner_fetch_json(path, init = {}) {
-  const access_token = get_access_token();
-
-  const res = await fetch(resolve_url(path), {
-    method: "GET",
-    credentials: "include",
-    ...init,
-    headers: {
-      ...(init.headers || {}),
-      ...(access_token ? { Authorization: `Bearer ${access_token}` } : {}),
-    },
-  });
-
-  const text = await res.text().catch(() => "");
-  const data = text
-    ? (() => {
-        try {
-          return JSON.parse(text);
-        } catch {
-          return null;
-        }
-      })()
-    : null;
+  const res = await apiFetch(path, init);
+  const data = await res.json().catch(() => null);
 
   if (!res.ok || data?.status === "FAIL") {
     const err = new Error(data?.message || "요청에 실패했습니다.");
@@ -201,7 +181,7 @@ export async function apiLogout() {
   return res;
 }
 
-// ===== 공개 클럽 =====
+// ===== 공개 클럽 (guest / member 공용) =====
 export async function fetch_public_clubs() {
   const res = await apiJson("/public/clubs", { method: "GET" });
   return res.data || [];
@@ -292,23 +272,26 @@ export async function fetch_owner_managed_clubs() {
   return res.data || [];
 }
 
-// ===== OWNER: 이미지 업로드 (Presigned URL) =====
-export async function owner_issue_upload_url({
-  originalFileName,
-  contentType,
-}) {
-  const res = await apiJson("/owner/club/upload-url", {
+// ===== OWNER: 이미지 업로드 (배치 Presigned URL) =====
+export async function owner_issue_upload_urls(files = []) {
+  const payload_files = files.map((file) => ({
+    fileName: file?.name || "file",
+    contentType: file?.type || "application/octet-stream",
+  }));
+
+  const res = await apiJson("/owner/club/upload-urls", {
     method: "POST",
-    body: JSON.stringify({ originalFileName, contentType }),
+    body: JSON.stringify({ files: payload_files }),
   });
-  return res.data; // { fileName, preSignedUrl }
+
+  return Array.isArray(res?.data) ? res.data : []; // [{ fileName, preSignedUrl }]
 }
 
 export async function owner_put_presigned_url(preSignedUrl, file) {
   const putRes = await fetch(preSignedUrl, {
     method: "PUT",
     headers: {
-      "Content-Type": file.type || "application/octet-stream",
+      "Content-Type": file?.type || "application/octet-stream",
     },
     body: file,
   });
@@ -322,16 +305,26 @@ export async function owner_put_presigned_url(preSignedUrl, file) {
 }
 
 export async function owner_upload_images(files = []) {
+  if (!Array.isArray(files) || files.length === 0) return [];
+
+  const issued = await owner_issue_upload_urls(files);
+
+  if (issued.length !== files.length) {
+    throw new Error("업로드 URL 개수가 파일 개수와 다릅니다.");
+  }
+
   const uploaded_names = [];
 
-  for (const file of files) {
-    const { fileName, preSignedUrl } = await owner_issue_upload_url({
-      originalFileName: file.name,
-      contentType: file.type || "application/octet-stream",
-    });
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const issued_item = issued[i];
 
-    await owner_put_presigned_url(preSignedUrl, file);
-    uploaded_names.push(fileName);
+    if (!issued_item?.preSignedUrl || !issued_item?.fileName) {
+      throw new Error(`업로드 URL 응답이 올바르지 않습니다 (index ${i})`);
+    }
+
+    await owner_put_presigned_url(issued_item.preSignedUrl, file);
+    uploaded_names.push(issued_item.fileName);
   }
 
   return uploaded_names;
@@ -339,7 +332,6 @@ export async function owner_upload_images(files = []) {
 
 // ===== OWNER: 동아리 등록 (JSON) =====
 export async function owner_register_club(payload) {
-  // 스웨거: POST /api/v1/owner/club/register/club (application/json)
   const res = await owner_fetch_json("/owner/club/register/club", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -358,7 +350,7 @@ export async function owner_register_club(payload) {
   return res;
 }
 
-// ===== OWNER: 동아리 상세 조회 (GET) - 스웨거: /owner/club/{clubId} =====
+// ===== OWNER: 동아리 상세 조회 (GET) =====
 export async function fetch_owner_club_detail(club_id) {
   const res = await owner_fetch_json(`/owner/club/${club_id}`, {
     method: "GET",
@@ -366,10 +358,9 @@ export async function fetch_owner_club_detail(club_id) {
   return res.data || null;
 }
 
-// mypage에서 쓰기 편하게 alias
 export const owner_get_club = fetch_owner_club_detail;
 
-// ===== OWNER: 동아리 수정 (PUT) - 스웨거 예시: JSON body =====
+// ===== OWNER: 동아리 수정 (PUT) =====
 export async function owner_update_club(club_id, payload) {
   const res = await owner_fetch_json(`/owner/club/${club_id}`, {
     method: "PUT",
@@ -386,13 +377,6 @@ export async function owner_start_recruitment(club_id) {
   });
 }
 
-// 보류: 현재 스웨거에 없음 + 백에서 start를 토글로 쓴다 했으니 mypage에서는 사용하지 말기
-// export async function owner_stop_recruitment(club_id) {
-//   return apiJson(`/owner/club/${club_id}/stop-recruitment`, {
-//     method: "POST",
-//   });
-// }
-
 // ===== OWNER: 지원자 목록 =====
 export async function fetch_owner_applicants(club_id) {
   const res = await owner_fetch_json(`/owner/club/${club_id}/applicants`, {
@@ -400,11 +384,8 @@ export async function fetch_owner_applicants(club_id) {
   });
   return res.data || [];
 }
-// ===== OWNER: 지원서 질문(커스텀 질문) 조회/저장 =====
-// swagger:
-// GET  /api/v1/owner/clubs/{clubId}/questions
-// PUT  /api/v1/owner/clubs/{clubId}/questions  body: [{ orderNum, content }]
 
+// ===== OWNER: 지원서 질문(커스텀 질문) 조회/저장 =====
 export async function fetch_owner_club_questions(club_id) {
   const res = await apiJson(`/owner/clubs/${club_id}/questions`, {
     method: "GET",
@@ -413,12 +394,12 @@ export async function fetch_owner_club_questions(club_id) {
 }
 
 export async function owner_update_club_questions(club_id, questions = []) {
-  // questions: [{ orderNum: number, content: string }]
   return apiJson(`/owner/clubs/${club_id}/questions`, {
     method: "PUT",
     body: JSON.stringify(questions),
   });
 }
+
 // ===== OWNER: 지원자 상세 조회 =====
 export async function fetch_owner_applicant_detail(club_id, club_member_id) {
   const res = await apiJson(
@@ -445,7 +426,6 @@ export async function owner_update_applicant_status(
 }
 
 // ===== OWNER: 결과 메일 발송 =====
-// (엔드포인트가 다르면 여기만 수정)
 export async function owner_send_result_email(club_id) {
   const res = await apiJson(`/owner/club/${club_id}/applicants/excel`, {
     method: "GET",
