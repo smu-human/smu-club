@@ -8,21 +8,15 @@ import {
   fetch_public_club,
   fetch_member_club_apply,
   is_logged_in,
+  fetch_owner_club_detail, // ✅ 이거 사용
 } from "../../lib/api";
 
 export default function ClubPage() {
   const { id } = useParams();
   const nav = useNavigate();
 
-  const default_images = [
-    "/images/justdoit.jpg",
-    "/images/sori.jpg",
-    "/images/tornado.jpg",
-    "/images/trip.jpg",
-  ];
-
   const [club, setClub] = useState(null);
-  const [images, setImages] = useState(default_images);
+  const [images, setImages] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error_msg, set_error_msg] = useState("");
@@ -33,13 +27,39 @@ export default function ClubPage() {
     const load = async () => {
       setLoading(true);
       set_error_msg("");
+
       try {
-        const data = await fetch_public_club(id);
+        let data;
+
+        // ✅ 로그인 상태면 owner 상세 우선 시도
+        if (is_logged_in()) {
+          try {
+            data = await fetch_owner_club_detail(id);
+          } catch {
+            // 오너 아니면 public fallback
+            data = await fetch_public_club(id);
+          }
+        } else {
+          data = await fetch_public_club(id);
+        }
+
         setClub(data);
 
-        if (data?.thumbnailUrl) {
-          setImages([data.thumbnailUrl, ...default_images]);
+        // ✅ owner API 기준 필드명
+        const urls = Array.isArray(data?.clubImageUrls)
+          ? data.clubImageUrls.filter(Boolean)
+          : [];
+
+        if (urls.length > 0) {
+          setImages(urls);
+        } else if (data?.thumbnailUrl) {
+          setImages([data.thumbnailUrl]);
+        } else {
+          setImages([]);
         }
+
+        setActiveIndex(0);
+        carouselRef.current?.scrollTo({ left: 0 });
       } catch (err) {
         set_error_msg(err.message || "동아리 정보를 불러오지 못했습니다.");
       } finally {
@@ -148,41 +168,51 @@ export default function ClubPage() {
             <>
               {/* ===== 갤러리 ===== */}
               <section className="gallery card">
-                <div className="carousel" ref={carouselRef} onScroll={onScroll}>
-                  {images.map((src, i) => (
-                    <div className="slide" key={i}>
-                      <img src={src} alt={`클럽 이미지 ${i + 1}`} />
-                    </div>
-                  ))}
-                </div>
-
-                {images.length > 1 && (
+                {images.length === 0 ? (
+                  <div className="no_image">등록된 이미지가 없습니다.</div>
+                ) : (
                   <>
-                    <button
-                      className="nav prev"
-                      onClick={onPrev}
-                      aria-label="이전 이미지"
+                    <div
+                      className="carousel"
+                      ref={carouselRef}
+                      onScroll={onScroll}
                     >
-                      ‹
-                    </button>
-                    <button
-                      className="nav next"
-                      onClick={onNext}
-                      aria-label="다음 이미지"
-                    >
-                      ›
-                    </button>
-
-                    <div className="dots">
-                      {images.map((_, i) => (
-                        <button
-                          key={i}
-                          className={i === activeIndex ? "is_active" : ""}
-                          aria-label={`${i + 1}번째 이미지로 이동`}
-                          onClick={() => goTo(i)}
-                        />
+                      {images.map((src, i) => (
+                        <div className="slide" key={i}>
+                          <img src={src} alt={`클럽 이미지 ${i + 1}`} />
+                        </div>
                       ))}
                     </div>
+
+                    {images.length > 1 && (
+                      <>
+                        <button
+                          className="nav prev"
+                          onClick={onPrev}
+                          aria-label="이전 이미지"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          className="nav next"
+                          onClick={onNext}
+                          aria-label="다음 이미지"
+                        >
+                          ›
+                        </button>
+
+                        <div className="dots">
+                          {images.map((_, i) => (
+                            <button
+                              key={i}
+                              className={i === activeIndex ? "is_active" : ""}
+                              aria-label={`${i + 1}번째 이미지로 이동`}
+                              onClick={() => goTo(i)}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </section>
@@ -220,10 +250,17 @@ export default function ClubPage() {
               {/* ===== 소개 ===== */}
               <section className="intro card">
                 <h2 className="section_title">동아리 소개</h2>
-                <p className="desc">
-                  {club.description ||
-                    `이곳에 클럽 ${id}의 소개글을 넣어주세요. 활동 목적, 주요 활동, 성과 등을 적을 수 있습니다.`}
-                </p>
+
+                {club?.description ? (
+                  <div
+                    className="desc rich_desc"
+                    dangerouslySetInnerHTML={{ __html: club.description }}
+                  />
+                ) : (
+                  <p className="desc">
+                    {`이곳에 클럽 ${id}의 소개글을 넣어주세요. 활동 목적, 주요 활동, 성과 등을 적을 수 있습니다.`}
+                  </p>
+                )}
               </section>
             </>
           )}

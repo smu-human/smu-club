@@ -6,17 +6,6 @@ import "../../styles/globals.css";
 import "./home.css";
 import { fetch_public_clubs, is_logged_in } from "../../lib/api";
 
-/**
- * 요구사항
- * - 로고 클릭 새로고침
- * - 로그인/회원가입 이동
- * - 로그인 시 → "마이페이지" 버튼 노출
- * - 검색 + 정렬 + 신청가능 토글
- * - 카드 클릭 → /club/:id
- * - D-day 색상 강약 (현재는 백엔드 스펙상 d-day 정보가 없어 null 처리)
- * - 모바일 390 레이아웃 / 데스크톱 카드 3열
- */
-
 function ddayClass(d) {
   if (d == null) return "dday-neutral";
   if (d <= 0) return "dday-passed";
@@ -32,10 +21,46 @@ function ddayLabel(d) {
   return `D-${d}`;
 }
 
+const DEFAULT_LOGO = "/images/2.png";
+
+// ✅ 썸네일 URL 정규화 (http(s)면 그대로, /로 시작하면 그대로, 그 외는 그대로 두되 확인용)
+function normalize_img_url(url) {
+  if (!url) return null;
+  const s = String(url).trim();
+  if (!s) return null;
+
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.startsWith("/")) return s;
+
+  // 백이 S3 key만 내려주는 케이스면 여기서 베이스를 붙여야 함.
+  // 지금은 베이스를 모르니 일단 그대로 두고(콘솔로 확인) 필요하면 VITE_S3_BASE_URL로 붙이면 됨.
+  return s;
+}
+
+// ✅ 썸네일 후보를 최대한 넓게 잡기
+function pick_thumbnail(item) {
+  const candidates = [
+    item?.thumbnailUrl,
+    item?.thumbnail_url,
+    item?.clubThumbnailUrl,
+    item?.clubThumbnail,
+    item?.thumbnail,
+    item?.thumbUrl,
+    item?.thumb_url,
+    Array.isArray(item?.clubImageUrls) ? item.clubImageUrls[0] : null,
+    Array.isArray(item?.club_image_urls) ? item.club_image_urls[0] : null,
+    Array.isArray(item?.imageUrls) ? item.imageUrls[0] : null,
+    Array.isArray(item?.images) ? item.images[0] : null,
+  ];
+
+  const raw = candidates.find((v) => v != null && String(v).trim() !== "");
+  return normalize_img_url(raw);
+}
+
 export default function HomePage() {
   const nav = useNavigate();
   const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState("name"); // name | members | dday
+  const [sortKey, setSortKey] = useState("name");
   const [onlyOpen, setOnlyOpen] = useState(false);
 
   const [clubs, setClubs] = useState([]);
@@ -43,12 +68,10 @@ export default function HomePage() {
   const [error_msg, set_error_msg] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
 
-  // 로그인 여부 확인
   useEffect(() => {
     setLoggedIn(is_logged_in());
   }, []);
 
-  // ✅ 백엔드에서 동아리 목록 불러오기
   useEffect(() => {
     const load = async () => {
       set_is_loading(true);
@@ -56,18 +79,32 @@ export default function HomePage() {
 
       try {
         const data = await fetch_public_clubs();
-        // data: [{ id, name, title, recruitingStatus, createdAt, ... }]
-        const mapped = data.map((item) => ({
-          id: item.id,
-          name: item.name,
-          status: (item.recruitingStatus || "").toLowerCase(), // open | upcoming | closed
-          members: null, // 백엔드 스펙에 없음 → 추후 필드 생기면 교체
-          dday: null, // 모집 종료일 정보가 없어서 일단 null
-          deadline: null,
-          desc: item.title,
-          logo: "/images/2.png",
-        }));
-        setClubs(mapped);
+
+        // ✅ 디버그: 실제로 썸네일 필드가 오는지 확인
+        console.log(
+          "[public/clubs] raw first item:",
+          Array.isArray(data) ? data[0] : data
+        );
+
+        const mapped = (Array.isArray(data) ? data : []).map((item) => {
+          const thumb = pick_thumbnail(item);
+
+          // ✅ 디버그: 각 아이템별로 최종 썸네일이 무엇인지 확인
+          console.log("[club]", item?.id, item?.name, "thumb:", thumb);
+
+          return {
+            id: item?.id,
+            name: item?.name || "",
+            status: (item?.recruitingStatus || "").toLowerCase(),
+            members: null,
+            dday: null,
+            deadline: null,
+            desc: item?.title || "",
+            logo: thumb || DEFAULT_LOGO,
+          };
+        });
+
+        setClubs(mapped.filter((c) => c.id != null));
       } catch (err) {
         set_error_msg(err.message || "동아리 목록을 불러오지 못했습니다.");
       } finally {
@@ -83,26 +120,25 @@ export default function HomePage() {
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
-      list = list.filter((c) => c.name.toLowerCase().includes(q));
+      list = list.filter((c) => (c.name || "").toLowerCase().includes(q));
     }
     if (onlyOpen) {
       list = list.filter((c) => c.status === "open");
     }
 
     list.sort((a, b) => {
-      if (sortKey === "name") return a.name.localeCompare(b.name);
+      if (sortKey === "name") return (a.name || "").localeCompare(b.name || "");
       if (sortKey === "members") return (b.members ?? 0) - (a.members ?? 0);
       if (sortKey === "dday") return (a.dday ?? 9999) - (b.dday ?? 9999);
       return 0;
     });
+
     return list;
   }, [query, onlyOpen, sortKey, clubs]);
 
   return (
     <div className="home_page">
-      {/* 헤더(390 고정) */}
       <header className="page-header">
-        {/* 1) 로고 + 액션 한 줄 */}
         <div className="brand_row">
           <button
             type="button"
@@ -110,7 +146,7 @@ export default function HomePage() {
             onClick={() => window.location.reload()}
             aria-label="SMU club 홈 새로고침"
           >
-            <img src="/images/2.png" alt="SMU club 로고" className="logo_img" />
+            <img src={DEFAULT_LOGO} alt="SMU club 로고" className="logo_img" />
           </button>
 
           <div className="header_actions">
@@ -135,7 +171,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 2) 검색 */}
         <div className="search_row">
           <svg
             className="icon"
@@ -154,7 +189,6 @@ export default function HomePage() {
           />
         </div>
 
-        {/* 3) 통계/정렬/토글 */}
         <div className="toolbar">
           <div className="stat">총 {clubs.length}개의 동아리</div>
 
@@ -181,7 +215,6 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* 리스트(모바일: 1열 / 데스크톱: 3열) */}
       <main className="home_main">
         {error_msg && <div className="error_msg">{error_msg}</div>}
 
@@ -200,6 +233,11 @@ export default function HomePage() {
                     className="club_logo"
                     src={c.logo}
                     alt={`${c.name} 로고`}
+                    onError={(e) => {
+                      // 이미지 로드 실패하면 기본 이미지로 교체 (404/403/혼합콘텐츠 등)
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = DEFAULT_LOGO;
+                    }}
                   />
                   <div className="club_head_left">
                     <h3 className="club_name">{c.name}</h3>
@@ -248,7 +286,6 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* 푸터 */}
       <footer className="page-footer">
         <p>© 2025 smu-club. 상명대학교 동아리 통합 플랫폼</p>
         <p>

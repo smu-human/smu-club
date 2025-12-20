@@ -3,6 +3,7 @@ package com.example.smu_club.util.oci;
 import com.example.smu_club.club.dto.UploadUrlListRequest;
 import com.example.smu_club.common.fileMetaData.FileMetaDataService;
 import com.example.smu_club.exception.custom.OciDeletionException;
+import com.example.smu_club.exception.custom.OciSearchException;
 import com.example.smu_club.exception.custom.OciUploadException;
 import com.example.smu_club.util.PreSignedUrlResponse;
 import com.oracle.bmc.Region;
@@ -12,8 +13,10 @@ import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.model.CreatePreauthenticatedRequestDetails;
 import com.oracle.bmc.objectstorage.requests.CreatePreauthenticatedRequestRequest;
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
+import com.oracle.bmc.objectstorage.requests.ListObjectsRequest;
 import com.oracle.bmc.objectstorage.responses.CreatePreauthenticatedRequestResponse;
 import lombok.RequiredArgsConstructor;
+import com.oracle.bmc.objectstorage.responses.ListObjectsResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -137,6 +143,42 @@ public class OciStorageService {
         }
     }
 
+    public void deleteUrls(List<String> urls) {
+        int ssuccess = 0;
+        int fail = 0;
+        for(String url : urls){
+            try{
+                String objectName = extractObjectNameFromUrl(url);
+                deleteObject(objectName);
+                ssuccess++;
+
+            } catch(Exception e){
+                log.error("OCI URL 삭제 중 오류 발생(건너 뜀): url = {}, cause = {}", url, e.getMessage());
+                fail++;
+            }
+        }
+        log.info("OCI URL 삭제 완료: 성공 {}건, 실패 {}건", ssuccess, fail);
+    }
+
+    private String extractObjectNameFromUrl(String fullUrl) {
+        final String OBJECT_PATH_DELIMITER = "/o/";
+        int startIndex = fullUrl.indexOf(OBJECT_PATH_DELIMITER);
+
+        if (startIndex == -1) {
+            log.error("Invalid OCI URL format for deletion: {}", fullUrl);
+            throw new IllegalArgumentException("OCI URL 형식이 잘못되었습니다: /o/ 구분이 없습니다.");
+        }
+
+        String encodedFileName = fullUrl.substring(startIndex + OBJECT_PATH_DELIMITER.length());
+
+        try {
+            return URLDecoder.decode(encodedFileName, StandardCharsets.UTF_8.name());
+        } catch (Exception e) {
+            log.error("URL Decode failed for: {}", encodedFileName, e);
+            throw new IllegalArgumentException("OCI 파일명 디코딩 실패: " + encodedFileName);
+        }
+    }
+
     @Retryable(
             value = {OciDeletionException.class},
             maxAttempts = 3,
@@ -157,4 +199,44 @@ public class OciStorageService {
             throw new OciDeletionException("OCI 파일 삭제 요청 실패 " + objectName);
         }
     }
+
+    public List<String> getOldFileKeys(int hours) {
+        List<String> oldFiles = new ArrayList<>();
+
+
+        //현재 기준시간 - hours 이전 시간
+        Date timeThreshold = Date.from(Instant.now().minus(hours, ChronoUnit.HOURS));
+
+        String nextToken = null; // 페이지네이션용 토큰
+
+        try{
+            //파일 수가 많을 걸 대비하여 do-while로 모든 페이지 조회
+            do{
+                ListObjectsRequest request = ListObjectsRequest.builder()
+                        .namespaceName(namespace)
+                        .bucketName(bucketName)
+                        .fields("name,timeCreated") //필요한 필드만 조회 (최적화)
+                        .start(nextToken)
+                        .build();
+
+                ListObjectsResponse response = client.listObjects(request);
+
+                for(var obj : response.getListObjects().getObjects()) {
+                    if(obj.getTimeCreated().before(timeThreshold)) { //임계값 이전 파일이면
+                        oldFiles.add(obj.getName()); //파일명 추가
+                    }
+                }
+                //다음 페이지 토큰 갱신
+                nextToken = response.getListObjects().getNextStartWith();
+
+            } while(nextToken != null);
+        } catch(Exception e){
+            log.error("OCI 오래된 파일 조회 실패. Cause: {}", e.getMessage(), e);
+            throw new OciSearchException("OCI 오래된 파일 조회 중 서버 오류가 발생했습니다.");
+        }
+
+        return oldFiles;
+
+    }
+
 }

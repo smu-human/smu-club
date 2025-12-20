@@ -50,4 +50,6 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
     @Query("DELETE FROM Answer a WHERE a.member = :member AND a.question IN :questions")
     void deleteByMemberAndQuestionId(Member member, List<Question> questions);
 
+    @Query("SELECT a.fileKey FROM Answer a WHERE a.fileKey IS NOT NULL")
+    List<String> findAllFileKeys();
 }

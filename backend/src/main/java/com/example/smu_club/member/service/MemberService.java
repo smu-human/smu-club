@@ -195,13 +195,7 @@ public class MemberService {
         for(Answer target : answerToUpdate) {
             String newAnswerContent = answerContentsMap.get(target.getQuestion().getId());
             //답변 업데이트 수행
-            if(target.getQuestion().getQuestionContentType() == FILE){
-                target.setFileKey(requestDto.getFileKey());
-            }
-            else{
-                target.setAnswerContent(newAnswerContent);
-            }
-
+            target.update(newAnswerContent, requestDto.getFileKey());
         }
 
 

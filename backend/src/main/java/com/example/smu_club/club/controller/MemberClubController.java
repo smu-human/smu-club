@@ -24,13 +24,13 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/member")
+@RequestMapping("/api/v1/member/clubs")
 public class MemberClubController {
 
     private final MemberClubService memberClubService;
     private final OciStorageService ociStorageService;
 
-    @GetMapping("/clubs/{clubId}/apply")
+    @GetMapping("/{clubId}/apply")
     public ResponseEntity<ApiResponseDto<ApplicationFormResponseDto>> getApplication(
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails
@@ -47,7 +47,7 @@ public class MemberClubController {
     }
 
 
-    @PostMapping("/clubs/{clubId}/apply")
+    @PostMapping("/{clubId}/apply")
     public ResponseEntity<ApiResponseDto<ApplicationResponseDto>> createApplication(
             @PathVariable Long clubId,
             @AuthenticationPrincipal UserDetails userDetails,
@@ -66,7 +66,6 @@ public class MemberClubController {
         return ResponseEntity.ok(apiResponseDto);
     }
 
-
     @PostMapping("/application/upload-url")
     public ResponseEntity<ApiResponseDto<PreSignedUrlResponse>> getUploadUrl(
             @RequestBody UploadUrlRequest request
@@ -81,6 +80,5 @@ public class MemberClubController {
 
         return ResponseEntity.ok(response);
     }
-
 
 }

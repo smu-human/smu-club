@@ -137,12 +137,13 @@ export async function apiJson(path, init) {
   return data;
 }
 
-// ===== owner 전용 fetch (항상 Authorization 주입, credentials 제거) =====
+// ===== owner 전용 fetch (Authorization 주입) =====
 async function owner_fetch_json(path, init = {}) {
   const access_token = get_access_token();
 
   const res = await fetch(resolve_url(path), {
     method: "GET",
+    credentials: "include",
     ...init,
     headers: {
       ...(init.headers || {}),
@@ -150,7 +151,16 @@ async function owner_fetch_json(path, init = {}) {
     },
   });
 
-  const data = await res.json().catch(() => null);
+  const text = await res.text().catch(() => "");
+  const data = text
+    ? (() => {
+        try {
+          return JSON.parse(text);
+        } catch {
+          return null;
+        }
+      })()
+    : null;
 
   if (!res.ok || data?.status === "FAIL") {
     const err = new Error(data?.message || "요청에 실패했습니다.");
@@ -327,94 +337,61 @@ export async function owner_upload_images(files = []) {
   return uploaded_names;
 }
 
-// ===== OWNER: 동아리 등록 (multipart) =====
+// ===== OWNER: 동아리 등록 (JSON) =====
 export async function owner_register_club(payload) {
-  const access_token = get_access_token();
-
-  const form = new FormData();
-
-  const uploaded = payload?.uploadedImageFileNames || [];
-  (uploaded || []).forEach((v) => form.append("uploadedImageFileNames", v));
-
-  if (payload?.name !== undefined) form.append("name", payload.name);
-  if (payload?.title !== undefined) form.append("title", payload.title);
-  if (payload?.president !== undefined)
-    form.append("president", payload.president);
-  if (payload?.contact !== undefined) form.append("contact", payload.contact);
-  if (payload?.recruitingEnd !== undefined)
-    form.append("recruitingEnd", payload.recruitingEnd);
-  if (payload?.clubRoom !== undefined)
-    form.append("clubRoom", payload.clubRoom);
-  if (payload?.description !== undefined)
-    form.append("description", payload.description);
-
-  const res = await fetch(resolve_url("/owner/club/register/club"), {
+  // 스웨거: POST /api/v1/owner/club/register/club (application/json)
+  const res = await owner_fetch_json("/owner/club/register/club", {
     method: "POST",
-    headers: {
-      ...(access_token ? { Authorization: `Bearer ${access_token}` } : {}),
-    },
-    body: form,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      uploadedImageFileNames: payload?.uploadedImageFileNames || [],
+      name: payload?.name ?? "",
+      title: payload?.title ?? "",
+      president: payload?.president ?? "",
+      contact: payload?.contact ?? "",
+      recruitingEnd: payload?.recruitingEnd ?? null,
+      clubRoom: payload?.clubRoom ?? "",
+      description: payload?.description ?? "",
+    }),
   });
 
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok || data?.status === "FAIL") {
-    const err = new Error(data?.message || "요청에 실패했습니다.");
-    err.code =
-      data?.errorCode || (res.status === 401 ? "UNAUTHORIZED" : "ERROR");
-    err.status = res.status;
-    err.raw = data;
-    throw err;
-  }
-
-  return data;
+  return res;
 }
 
-// ===== OWNER: 동아리 상세 조회 (GET) =====
+// ===== OWNER: 동아리 상세 조회 (GET) - 스웨거: /owner/club/{clubId} =====
 export async function fetch_owner_club_detail(club_id) {
-  const res = await owner_fetch_json(`/owner/club/club/${club_id}`, {
+  const res = await owner_fetch_json(`/owner/club/${club_id}`, {
     method: "GET",
   });
   return res.data || null;
 }
 
-// ===== OWNER: 동아리 수정 (PUT multipart) =====
+// mypage에서 쓰기 편하게 alias
+export const owner_get_club = fetch_owner_club_detail;
+
+// ===== OWNER: 동아리 수정 (PUT) - 스웨거 예시: JSON body =====
 export async function owner_update_club(club_id, payload) {
-  const form = new FormData();
-
-  const uploaded = payload?.uploadedImageFileNames || [];
-  (uploaded || []).forEach((v) => form.append("uploadedImageFileNames", v));
-
-  if (payload?.name !== undefined) form.append("name", payload.name);
-  if (payload?.title !== undefined) form.append("title", payload.title);
-  if (payload?.president !== undefined)
-    form.append("president", payload.president);
-  if (payload?.contact !== undefined) form.append("contact", payload.contact);
-  if (payload?.recruitingEnd !== undefined)
-    form.append("recruitingEnd", payload.recruitingEnd);
-  if (payload?.clubRoom !== undefined)
-    form.append("clubRoom", payload.clubRoom);
-  if (payload?.description !== undefined)
-    form.append("description", payload.description);
-
-  return owner_fetch_json(`/owner/club/club/${club_id}`, {
+  const res = await owner_fetch_json(`/owner/club/${club_id}`, {
     method: "PUT",
-    body: form,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
+  return res.data || null;
 }
 
-// ===== OWNER: 모집 시작/중지 =====
+// ===== OWNER: 모집 시작(토글) =====
 export async function owner_start_recruitment(club_id) {
   return apiJson(`/owner/club/${club_id}/start-recruitment`, {
     method: "POST",
   });
 }
 
-export async function owner_stop_recruitment(club_id) {
-  return apiJson(`/owner/club/${club_id}/stop-recruitment`, {
-    method: "POST",
-  });
-}
+// 보류: 현재 스웨거에 없음 + 백에서 start를 토글로 쓴다 했으니 mypage에서는 사용하지 말기
+// export async function owner_stop_recruitment(club_id) {
+//   return apiJson(`/owner/club/${club_id}/stop-recruitment`, {
+//     method: "POST",
+//   });
+// }
 
 // ===== OWNER: 지원자 목록 =====
 export async function fetch_owner_applicants(club_id) {
@@ -422,4 +399,56 @@ export async function fetch_owner_applicants(club_id) {
     method: "GET",
   });
   return res.data || [];
+}
+// ===== OWNER: 지원서 질문(커스텀 질문) 조회/저장 =====
+// swagger:
+// GET  /api/v1/owner/clubs/{clubId}/questions
+// PUT  /api/v1/owner/clubs/{clubId}/questions  body: [{ orderNum, content }]
+
+export async function fetch_owner_club_questions(club_id) {
+  const res = await apiJson(`/owner/clubs/${club_id}/questions`, {
+    method: "GET",
+  });
+  return res.data || [];
+}
+
+export async function owner_update_club_questions(club_id, questions = []) {
+  // questions: [{ orderNum: number, content: string }]
+  return apiJson(`/owner/clubs/${club_id}/questions`, {
+    method: "PUT",
+    body: JSON.stringify(questions),
+  });
+}
+// ===== OWNER: 지원자 상세 조회 =====
+export async function fetch_owner_applicant_detail(club_id, club_member_id) {
+  const res = await apiJson(
+    `/owner/club/${club_id}/applicants/${club_member_id}`,
+    { method: "GET" }
+  );
+  return res.data;
+}
+
+// ===== OWNER: 지원자 상태 변경 =====
+export async function owner_update_applicant_status(
+  club_id,
+  club_member_id,
+  new_status
+) {
+  const res = await apiJson(
+    `/owner/club/${club_id}/applicants/${club_member_id}/status`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ newStatus: new_status }),
+    }
+  );
+  return res;
+}
+
+// ===== OWNER: 결과 메일 발송 =====
+// (엔드포인트가 다르면 여기만 수정)
+export async function owner_send_result_email(club_id) {
+  const res = await apiJson(`/owner/club/${club_id}/applicants/excel`, {
+    method: "GET",
+  });
+  return res;
 }
