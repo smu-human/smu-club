@@ -5,6 +5,7 @@ import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.common.ApiResponseDto;
+import com.example.smu_club.common.file.FileUploadService;
 import com.example.smu_club.exception.custom.EmptyEmailListException;
 import com.example.smu_club.util.oci.OciStorageService;
 import com.example.smu_club.util.PreSignedUrlResponse;
@@ -28,7 +29,7 @@ public class OwnerClubController {
 
     private final OwnerClubService ownerClubService;
     private final MemberClubService memberClubService;
-    private final OciStorageService ociStorageService;
+    private final FileUploadService fileUploadService;
 
     // (owner) 동아리 목록 조회  MyPage 기준으로 들어오면 동아리 정보 나옴
     @GetMapping("/managed-clubs")
@@ -57,17 +58,19 @@ public class OwnerClubController {
     }
 
     // preSignedUrl 받는 API
-    @PostMapping("/upload-url")
-    public ResponseEntity<ApiResponseDto<PreSignedUrlResponse>> getUploadUrl(
-            @RequestBody UploadUrlRequest request
+    @PostMapping("/upload-urls")
+    public ResponseEntity<ApiResponseDto<List<PreSignedUrlResponse>>> getUploadUrl(
+            @RequestBody UploadUrlListRequest request
     ) {
-        PreSignedUrlResponse urlResponse = ociStorageService.createUploadPreSignedUrl(
-                request.getOriginalFileName(),
-                request.getContentType()
-        );
 
-        ApiResponseDto<PreSignedUrlResponse> response =
-                ApiResponseDto.success(urlResponse, "[OWNER] OCI 업로드 URL 생성 성공했습니다.");
+        if (request.getFiles() == null || request.getFiles().isEmpty()) {
+            throw new IllegalArgumentException("업로드할 파일 정보가 없습니다.");
+        }
+
+        List<PreSignedUrlResponse> urlResponses = fileUploadService.prepareUploads(request.getFiles());
+
+        ApiResponseDto<List<PreSignedUrlResponse>> response =
+                ApiResponseDto.success(urlResponses, "[OWNER] OCI 업로드 URL 생성 성공했습니다.");
 
         return ResponseEntity.ok(response);
     }
@@ -86,7 +89,7 @@ public class OwnerClubController {
 
 
     // 동아리 상세정보 편집 PUT
-    @PutMapping( "/club/{clubId}")
+    @PutMapping( "/{clubId}")
     public ResponseEntity<ApiResponseDto<Void>> editClub(
             @PathVariable Long clubId,
             @RequestBody ClubInfoRequest request,
@@ -173,7 +176,7 @@ public class OwnerClubController {
     ) {
 
         //[동기] 실제 권한 확인 (Database)
-        ownerClubService.validateOwnerAuthority(clubId, userDetail.getUsername());
+        ownerClubService.getValidatedClubAsOwner(clubId, userDetail.getUsername());
 
         //[동기] 이메일 리스트 존재 확인 => LOCK & 상태 변경
         List<Long> clubMemberIdList = ownerClubService.fetchPendingAndMarkAsProcessing(clubId); // clubMemberId list

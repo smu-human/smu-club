@@ -9,6 +9,7 @@ import lombok.Getter;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Getter
@@ -26,11 +27,11 @@ public class ClubInfoResponse {
 
     private List<String> clubImageUrls;
 
-    public static ClubInfoResponse from(Club club) {
+    public static ClubInfoResponse from(Club club, Function<String, String> urlConverter) {
 
         List<String> imageUrls = club.getClubImages().stream()
                 .sorted(Comparator.comparingInt(ClubImage::getDisplayOrder))
-                .map(ClubImage::getImageUrl)
+                .map(image -> urlConverter.apply(image.getImageFileKey()))
                 .toList();
 
         return ClubInfoResponse.builder()
