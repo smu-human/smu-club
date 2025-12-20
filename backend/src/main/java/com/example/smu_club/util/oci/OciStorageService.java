@@ -1,7 +1,5 @@
 package com.example.smu_club.util.oci;
 
-import com.example.smu_club.club.dto.UploadUrlListRequest;
-import com.example.smu_club.common.fileMetaData.FileMetaDataService;
 import com.example.smu_club.exception.custom.OciDeletionException;
 import com.example.smu_club.exception.custom.OciSearchException;
 import com.example.smu_club.exception.custom.OciUploadException;
@@ -15,7 +13,6 @@ import com.oracle.bmc.objectstorage.requests.CreatePreauthenticatedRequestReques
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
 import com.oracle.bmc.objectstorage.requests.ListObjectsRequest;
 import com.oracle.bmc.objectstorage.responses.CreatePreauthenticatedRequestResponse;
-import lombok.RequiredArgsConstructor;
 import com.oracle.bmc.objectstorage.responses.ListObjectsResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +22,7 @@ import org.springframework.retry.annotation.Retryable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
