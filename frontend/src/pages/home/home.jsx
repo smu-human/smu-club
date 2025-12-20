@@ -23,38 +23,31 @@ function ddayLabel(d) {
 
 const DEFAULT_LOGO = "/images/2.png";
 
-// ✅ 썸네일 URL 정규화 (http(s)면 그대로, /로 시작하면 그대로, 그 외는 그대로 두되 확인용)
+const THUMB_BASE_URL =
+  import.meta.env.VITE_THUMBNAIL_BASE_URL ||
+  import.meta.env.VITE_S3_BASE_URL ||
+  "";
+
 function normalize_img_url(url) {
   if (!url) return null;
   const s = String(url).trim();
   if (!s) return null;
+  if (s === "string") return null;
 
   if (s.startsWith("http://") || s.startsWith("https://")) return s;
   if (s.startsWith("/")) return s;
 
-  // 백이 S3 key만 내려주는 케이스면 여기서 베이스를 붙여야 함.
-  // 지금은 베이스를 모르니 일단 그대로 두고(콘솔로 확인) 필요하면 VITE_S3_BASE_URL로 붙이면 됨.
+  if (THUMB_BASE_URL) {
+    const base = String(THUMB_BASE_URL).replace(/\/+$/, "");
+    const key = s.replace(/^\/+/, "");
+    return `${base}/${key}`;
+  }
+
   return s;
 }
 
-// ✅ 썸네일 후보를 최대한 넓게 잡기
 function pick_thumbnail(item) {
-  const candidates = [
-    item?.thumbnailUrl,
-    item?.thumbnail_url,
-    item?.clubThumbnailUrl,
-    item?.clubThumbnail,
-    item?.thumbnail,
-    item?.thumbUrl,
-    item?.thumb_url,
-    Array.isArray(item?.clubImageUrls) ? item.clubImageUrls[0] : null,
-    Array.isArray(item?.club_image_urls) ? item.club_image_urls[0] : null,
-    Array.isArray(item?.imageUrls) ? item.imageUrls[0] : null,
-    Array.isArray(item?.images) ? item.images[0] : null,
-  ];
-
-  const raw = candidates.find((v) => v != null && String(v).trim() !== "");
-  return normalize_img_url(raw);
+  return normalize_img_url(item?.thumbnailUrl);
 }
 
 export default function HomePage() {
@@ -80,17 +73,8 @@ export default function HomePage() {
       try {
         const data = await fetch_public_clubs();
 
-        // ✅ 디버그: 실제로 썸네일 필드가 오는지 확인
-        console.log(
-          "[public/clubs] raw first item:",
-          Array.isArray(data) ? data[0] : data
-        );
-
         const mapped = (Array.isArray(data) ? data : []).map((item) => {
           const thumb = pick_thumbnail(item);
-
-          // ✅ 디버그: 각 아이템별로 최종 썸네일이 무엇인지 확인
-          console.log("[club]", item?.id, item?.name, "thumb:", thumb);
 
           return {
             id: item?.id,
@@ -234,7 +218,6 @@ export default function HomePage() {
                     src={c.logo}
                     alt={`${c.name} 로고`}
                     onError={(e) => {
-                      // 이미지 로드 실패하면 기본 이미지로 교체 (404/403/혼합콘텐츠 등)
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = DEFAULT_LOGO;
                     }}

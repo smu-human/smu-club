@@ -21,7 +21,11 @@ export default function ClubManage() {
   const [club_one_line, set_club_one_line] = useState("");
   const [leader_name, set_leader_name] = useState("");
   const [phone, set_phone] = useState("");
+
+  // ✅ 모집 시작/마감일
+  const [start_date, set_start_date] = useState("");
   const [deadline, set_deadline] = useState("");
+
   const [club_room, set_club_room] = useState("");
 
   const [existing_images, set_existing_images] = useState([]); // string[]
@@ -36,7 +40,10 @@ export default function ClubManage() {
     set_club_one_line(detail?.title ?? "");
     set_leader_name(detail?.president ?? "");
     set_phone(detail?.contact ?? "");
+
+    set_start_date((detail?.recruitingStart ?? "").slice(0, 10));
     set_deadline((detail?.recruitingEnd ?? "").slice(0, 10));
+
     set_club_room(detail?.clubRoom ?? "");
 
     const imgs = detail?.uploadedImageFileNames ?? detail?.images ?? [];
@@ -82,6 +89,11 @@ export default function ClubManage() {
     set_is_saving(true);
 
     try {
+      if (start_date && deadline && start_date > deadline) {
+        alert("모집 시작일은 모집 마감일보다 늦을 수 없습니다.");
+        return;
+      }
+
       const intro_html = editorRef.current?.getInstance().getHTML() || "";
 
       const uploaded_new = new_images.length
@@ -99,7 +111,11 @@ export default function ClubManage() {
         title: club_one_line,
         president: leader_name,
         contact: phone,
-        recruitingEnd: deadline,
+
+        // ✅ 추가: 모집 시작일
+        recruitingStart: start_date || null,
+
+        recruitingEnd: deadline || null,
         clubRoom: club_room,
         description: intro_html,
       });
@@ -238,6 +254,18 @@ export default function ClubManage() {
               type="tel"
               value={phone}
               onChange={(e) => set_phone(e.target.value)}
+            />
+
+            {/* ✅ 추가: 모집 시작일 */}
+            <label className="field_label" htmlFor="start_date">
+              모집 시작일
+            </label>
+            <input
+              id="start_date"
+              className="field_input"
+              type="date"
+              value={start_date}
+              onChange={(e) => set_start_date(e.target.value)}
             />
 
             <label className="field_label" htmlFor="deadline">
