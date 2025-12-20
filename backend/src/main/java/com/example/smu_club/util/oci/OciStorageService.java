@@ -1,5 +1,7 @@
 package com.example.smu_club.util.oci;
 
+import com.example.smu_club.club.dto.UploadUrlListRequest;
+import com.example.smu_club.common.fileMetaData.FileMetaDataService;
 import com.example.smu_club.exception.custom.OciDeletionException;
 import com.example.smu_club.exception.custom.OciSearchException;
 import com.example.smu_club.exception.custom.OciUploadException;
@@ -13,6 +15,7 @@ import com.oracle.bmc.objectstorage.requests.CreatePreauthenticatedRequestReques
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
 import com.oracle.bmc.objectstorage.requests.ListObjectsRequest;
 import com.oracle.bmc.objectstorage.responses.CreatePreauthenticatedRequestResponse;
+import lombok.RequiredArgsConstructor;
 import com.oracle.bmc.objectstorage.responses.ListObjectsResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +25,6 @@ import org.springframework.retry.annotation.Retryable;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -42,7 +44,6 @@ public class OciStorageService {
     private final String namespace;
     private final String bucketName;
     private final String region;
-
 
 
     public OciStorageService(
@@ -85,11 +86,9 @@ public class OciStorageService {
         this.region = region;
     }
 
+    public PreSignedUrlResponse createUploadPreSignedUrl(String uniqueFileName, String contentType) {
 
-    public PreSignedUrlResponse createUploadPreSignedUrl(String originalFileName, String contentType) {
-
-        String uniqueFileName = UUID.randomUUID() + "_" + originalFileName;
-
+        // 한시간 만료 설정
         Date expirationDate = new Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
 
         CreatePreauthenticatedRequestDetails details =
@@ -126,6 +125,7 @@ public class OciStorageService {
         }
     }
 
+    // 파일을 다운로드 하거나 사진을 조회할 때 쓰여야할듯
     public String createFinalOciUrl(String uniqueFileName) {
         try {
             String encodedFileName = URLEncoder.encode(uniqueFileName, StandardCharsets.UTF_8);

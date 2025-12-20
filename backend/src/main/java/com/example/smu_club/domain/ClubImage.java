@@ -24,15 +24,15 @@ public class ClubImage {
     private Club club;
 
     @Column(nullable = false, length = 512)
-    private String imageUrl;
+    private String imageFileKey;
 
     @Column(nullable = false)
     private int displayOrder;
 
     @Builder
-    public ClubImage(Club club, String imageUrl, int displayOrder) {
+    public ClubImage(Club club, String imageFileKey, int displayOrder) {
         this.club = club;
-        this.imageUrl = imageUrl;
+        this.imageFileKey = imageFileKey;
         this.displayOrder = displayOrder;
     }
 

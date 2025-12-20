@@ -10,7 +10,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OCICleanupEvent {
 
-    private final List<String> urlsToDelete;
+    private final List<String> fileKeysToDelete;
 
 
 }
