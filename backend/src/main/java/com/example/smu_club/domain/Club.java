@@ -112,6 +112,7 @@ public class Club {
         this.contact = request.getContact();
         this.clubRoom = request.getClubRoom();
         this.thumbnailUrl = newThumbnailUrl;
+        this.recruitingStart = request.getRecruitingStart();
         this.recruitingEnd = request.getRecruitingEnd();
 
     }
