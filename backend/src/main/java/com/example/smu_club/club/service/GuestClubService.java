@@ -37,7 +37,7 @@ public class GuestClubService {
 
         return findClubs.stream()
                 .map(c -> {
-                    String thumbnailUrl = ociStorageService.createFinalOciUrl(c.getThumbnailUrl());
+                    String thumbnailUrl = ociStorageService.createFinalOciUrl(c.getThumbnailFileKey());
 
                     return new ClubsResponseDto(
                             c.getId(),

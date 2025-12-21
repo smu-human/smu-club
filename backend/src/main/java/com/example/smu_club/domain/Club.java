@@ -58,8 +58,8 @@ public class Club {
 
     private String clubRoom;
 
-    @Column(name = "thumbnail_url", length = 1024)
-    private String thumbnailUrl;
+    @Column(name = "thumbnail_filekey")
+    private String thumbnailFileKey;
 
     @OneToMany (mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default // 빌더를 사용하면 빌더가 컬렉션에 대해서 다 null로 바꾸는데 이거를 막기 위해서
@@ -103,7 +103,7 @@ public class Club {
     }
 
     //  [OWNER] 클럽 편집 기능
-    public void updateInfo(ClubInfoRequest request, String newThumbnailUrl) {
+    public void updateInfo(ClubInfoRequest request, String newThumbnailFileKey) {
 
         this.name = request.getName();
         this.title = request.getTitle();
@@ -111,7 +111,7 @@ public class Club {
         this.president = request.getPresident();
         this.contact = request.getContact();
         this.clubRoom = request.getClubRoom();
-        this.thumbnailUrl = newThumbnailUrl;
+        this.thumbnailFileKey = newThumbnailFileKey;
         this.recruitingStart = request.getRecruitingStart();
         this.recruitingEnd = request.getRecruitingEnd();
 

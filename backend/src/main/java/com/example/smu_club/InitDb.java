@@ -140,7 +140,7 @@ public class InitDb {
             club.setPresident("유승준");
             club.setContact("010-4130-1904");
             club.setClubRoom("G308");
-            club.setThumbnailUrl(null);
+            club.setThumbnailFileKey(null);
         }
 
         //동아리 모집 예정 (UPCOMING)
@@ -154,7 +154,7 @@ public class InitDb {
             club.setPresident("이윤표");
             club.setContact("010-1234-5678");
             club.setClubRoom("R301");
-            club.setThumbnailUrl(null);
+            club.setThumbnailFileKey(null);
         }
 
         //동아리 비 모집중 (CLOSED)
@@ -168,7 +168,7 @@ public class InitDb {
             club.setPresident("차준규");
             club.setContact("010-9876-5432");
             club.setClubRoom("Y808");
-            club.setThumbnailUrl(null);
+            club.setThumbnailFileKey(null);
         }
 
     }
