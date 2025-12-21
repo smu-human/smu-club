@@ -125,6 +125,11 @@ public class OciStorageService {
 
     // 파일을 다운로드 하거나 사진을 조회할 때 쓰여야할듯
     public String createFinalOciUrl(String uniqueFileName) {
+
+        if (uniqueFileName == null || uniqueFileName.isBlank()) {
+            return null;
+        }
+
         try {
             String encodedFileName = URLEncoder.encode(uniqueFileName, StandardCharsets.UTF_8);
 
