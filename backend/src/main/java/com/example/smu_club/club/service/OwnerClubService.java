@@ -7,17 +7,16 @@ import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.repository.ClubImageRepository;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
+import com.example.smu_club.common.fileMetaData.FileMetaDataService;
 import com.example.smu_club.domain.*;
 import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.util.ExcelService;
-import com.example.smu_club.util.oci.OCICleanupEvent;
 import com.example.smu_club.util.oci.OciStorageService;
 import jakarta.mail.SendFailedException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -35,7 +34,7 @@ import java.util.stream.Collectors;
 import static com.example.smu_club.domain.EmailStatus.*;
 import static com.example.smu_club.domain.RecruitingStatus.*;
 
-@Slf4j // <-- 이거 하나면 끝! (private static final Logger log = ... 자동 생성됨)
+@Slf4j
 @EnableAsync
 @Service
 @RequiredArgsConstructor
@@ -47,39 +46,43 @@ public class OwnerClubService {
     private final AnswerRepository answerRepository;
     private final OciStorageService ociStorageService;
     private final ClubImageRepository clubImageRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final ExcelService excelService;
+    private final FileMetaDataService fileMetadataService;
 
     private final JavaMailSender javaMailSender;
 
     @Transactional
     public void register(String studentId, ClubInfoRequest request) {
-
+        // 1. 유효성 검증 및 기본 정보 조회
         Member ownerMember = memberRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new MemberNotFoundException("[OWNER] 학번 :  " + studentId + "를 찾을 수 없습니다."));
+                .orElseThrow(() -> new MemberNotFoundException("[OWNER] 학번 : " + studentId + "를 찾을 수 없습니다."));
 
         if (clubRepository.existsByName(request.getName())) {
             throw new DuplicateClubNameException("[OWNER] 이미 존재하는 동아리 이름입니다.");
         }
 
-
+        // 2. 이미지 데이터 준비
         List<String> uploadedImageFileNames = request.getUploadedImageFileNames();
-
-        String thumbnailUrl = null;
-        List<String> clubImagerUrls = new ArrayList<>();
+        String thumbnailKey = "default_thumbnail.png"; // 기본값 설정
+        List<ClubImage> imagesToSave = new ArrayList<>();
 
         if (uploadedImageFileNames != null && !uploadedImageFileNames.isEmpty()) {
-            for (String uniqueFileName : uploadedImageFileNames) {
-                String finalImageUrl = ociStorageService.createFinalOciUrl(uniqueFileName);
-                clubImagerUrls.add(finalImageUrl);
+
+            // 상태를 ACTIVE 로 저장 (나중에 배치처리를 위해)
+            fileMetadataService.updateStatus(uploadedImageFileNames, FileStatus.ACTIVE);
+            // 첫 번째 사진을 썸네일로 지정
+            thumbnailKey = uploadedImageFileNames.get(0);
+
+            // 상세 이미지 객체 생성
+            for (int i = 0; i < uploadedImageFileNames.size(); i++) {
+                imagesToSave.add(ClubImage.builder()
+                        .imageFileKey(uploadedImageFileNames.get(i))
+                        .displayOrder(i)
+                        .build());
             }
-
-            thumbnailUrl = clubImagerUrls.get(0);
-        } else { //  기본 썸네일 설정하는거 필요할듯 (사진 받으면 )
-
         }
 
-        // 1. 클럽 정보 등록
+        // 3. Club 엔티티 생성 및 저장
         Club newClub = Club.builder()
                 .name(request.getName())
                 .title(request.getTitle())
@@ -88,35 +91,20 @@ public class OwnerClubService {
                 .contact(request.getContact())
                 .clubRoom(request.getClubRoom())
                 .recruitingEnd(request.getRecruitingEnd())
-                .recruitingStart(null)
                 .recruitingStatus(RecruitingStatus.UPCOMING)
                 .createdAt(LocalDateTime.now())
-                .thumbnailUrl(thumbnailUrl)
+                .thumbnailUrl(thumbnailKey)
                 .build();
 
-        clubRepository.save(newClub);
+        clubRepository.save(newClub); // 연관 관계 설정을 위해 먼저 저장
 
-        List<ClubImage> imagesToSave = new ArrayList<>();
-
-        int order = 0;
-        for (String imageUrl : clubImagerUrls) {
-
-            ClubImage clubImage = ClubImage.builder()
-                    .club(newClub)
-                    .imageUrl(imageUrl)
-                    .displayOrder(order++)
-                    .build();
-
-            imagesToSave.add(clubImage);
-        }
-
+        // 4. 상세 이미지 연관 관계 설정 및 저장
         if (!imagesToSave.isEmpty()) {
+            imagesToSave.forEach(image -> image.setClub(newClub)); // Club 연결
             clubImageRepository.saveAll(imagesToSave);
         }
 
-
-        // 2. ClubMember 관계 만들어주기
-
+        // 5. ClubMember(Owner) 권한 등록
         ClubMember clubMember = new ClubMember(
                 ownerMember,
                 newClub,
@@ -124,26 +112,14 @@ public class OwnerClubService {
                 LocalDateTime.now(),
                 ClubMemberStatus.ACCEPTED
         );
-
         clubMemberRepository.save(clubMember);
     }
 
     @Transactional
     public void updateClub(Long clubId, String studentId, ClubInfoRequest request) {
 
-        // 예외 먼저 처리 (검증하기)
-        Member member = memberRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new MemberNotFoundException("[OWNER] 힉번 : " + studentId + " 를 찾을 수 없습니다. "));
-
-        Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
-
-        ClubMember clubMember = clubMemberRepository.findByClubAndMember(club, member)
-                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
-
-        if (clubMember.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException ("[OWNER] 동아리 수정/삭제 권한이 없습니다.");
-        }
+        // 1. 권한 검증 및 Club
+        Club club = getValidatedClubAsOwner(clubId, studentId);
 
         // Club 이름 중복 확인 (이름이 변경된 경우에만)
         if (!club.getName().equals(request.getName()) && clubRepository.existsByName(request.getName())) {
@@ -151,49 +127,42 @@ public class OwnerClubService {
         }
 
         // 새로운 이미지 URL 목록 생성
-        List<String> newUniqueFileNames = request.getUploadedImageFileNames();
-        List<String> newImagesUrls = newUniqueFileNames.stream()
-                .map(ociStorageService::createFinalOciUrl)
-                .toList();
+        List<String> newFileKeys = request.getUploadedImageFileNames();
+        String newThumbnailKey = newFileKeys.isEmpty() ? null : newFileKeys.getFirst();
 
-        // 썸네일 결정
-        String newThumbnailUrl = newImagesUrls.isEmpty() ? null : newImagesUrls.getFirst();
-
-        // 기존 DB 이미지 URL 조회 및 리스트로만들어두기
         List<ClubImage> existingImages = clubImageRepository.findAllByClubId(clubId);
-        List<String> existingUrls = existingImages.stream()
-                .map(ClubImage::getImageUrl)
+        List<String> existingFileKeys = existingImages.stream()
+                .map(ClubImage::getImageFileKey)
                 .toList();
 
-        // 삭제할 URL  (OciStorage 에서 삭제해야돼서)
-        List<String> urlsToDeleteFromOci = existingUrls.stream()
-                .filter(url -> !newImagesUrls.contains(url))
+        List<String> keysToDelete = existingFileKeys.stream()
+                .filter(key -> !newFileKeys.contains(key))
                 .toList();
 
-        club.updateInfo(request, newThumbnailUrl);
+        // 새로 추가된 파일들에 대해서 PENDING -> ACTIVE
+        if (!newFileKeys.isEmpty()) {
+            fileMetadataService.updateStatus(newFileKeys, FileStatus.ACTIVE);
+        }
+        // 버려진 기존 파일들에 대해서 ACTIVE -> DELETED
+        if (!keysToDelete.isEmpty()) {
+            fileMetadataService.updateStatus(newFileKeys, FileStatus.DELETED);
+        }
 
-        // 다 삭제 시키고 이제 다시 만들어줌
+        club.updateInfo(request, newThumbnailKey);
+
         clubImageRepository.deleteAll(existingImages);
 
-        List<ClubImage> imageToSave = new ArrayList<>();
-        int order = 0;
-        for (String newImagesUrl : newImagesUrls) {
-            ClubImage newImage = ClubImage.builder()
+        // 새로운 연결 정보 생성
+        List<ClubImage> imagesToSave = new ArrayList<>();
+        for (int i = 0; i < newFileKeys.size(); i++) {
+            imagesToSave.add(ClubImage.builder()
                     .club(club)
-                    .imageUrl(newImagesUrl)
-                    .displayOrder(order)
-                    .build();
-            imageToSave.add(newImage);
-        }
-        // 여기서 이제 DB 트랜잭션 종료
-        if (!imageToSave.isEmpty()) {
-            clubImageRepository.saveAll(imageToSave);
+                    .imageFileKey(newFileKeys.get(i))
+                    .displayOrder(i)
+                    .build());
         }
 
-        if (!urlsToDeleteFromOci.isEmpty()) {
-            eventPublisher.publishEvent(new OCICleanupEvent(urlsToDeleteFromOci));
-        }
-
+        clubImageRepository.saveAll(imagesToSave);
     }
 
 
@@ -218,53 +187,23 @@ public class OwnerClubService {
     @Transactional
     public void startRecruitment(Long clubId, String studentId) {
 
-        Member member = memberRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new MemberNotFoundException("[OWNER] 힉번 : " + studentId + " 를 찾을 수 없습니다. "));
-
-        Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
-
-        ClubMember clubMember = clubMemberRepository.findByClubAndMember(club, member)
-                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
-
-        if (clubMember.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException("[OWNER] 동아리 모집을 시작할 권한이 없습니다. ");
-        }
+        Club club = getValidatedClubAsOwner(clubId, studentId);
 
         club.updateRecruitment(OPEN);
-
-
     }
 
     @Transactional(readOnly = true)
     public ClubInfoResponse getClubInfo(Long clubId, String studentId) {
 
-        Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubNotFoundException("[OWNER] 존재하지 않는 동아리입니다."));
+        Club club = getValidatedClubAsOwner(clubId, studentId);
 
-
-        ClubMember clubMember = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
-                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
-
-        if (clubMember.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException("[OWNER] 동아리를 조회할 권한이 없습니다.. ");
-        }
-
-        return ClubInfoResponse.from(club);
+        return ClubInfoResponse.from(club, ociStorageService::createFinalOciUrl);
     }
 
     @Transactional(readOnly = true)
     public List<ApplicantResponse> getApplicantList(Long clubId, String studentId) {
 
-        Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 존재하지 않는 동아리입니다."));
-
-        ClubMember clubMember = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
-                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아닙니다. "));
-
-        if (clubMember.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException("[OWNER] 지원자 목록을 조회할 권한이 없습니다.");
-        }
+        Club club = getValidatedClubAsOwner(clubId, studentId);
 
         List<ClubMember> applicants = clubMemberRepository.findByClubAndStatus(club, ClubMemberStatus.PENDING);
 
@@ -276,16 +215,7 @@ public class OwnerClubService {
     @Transactional(readOnly = true)
     public ApplicantDetailViewResponse getApplicantDetails(Long clubMemberId, String studentId, Long clubId) {
 
-        // 1. 권한 검증
-        Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubNotFoundException("존재하지 않는 동아리 입니다. "));
-
-        ClubMember owner = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
-                .orElseThrow(() -> new ClubMemberNotFoundException("해당 동아리 소속이 아닙니다."));
-
-        if (owner.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException("지원자 상세 정보를 조회할 권한이 없습니다.");
-        }
+        Club club = getValidatedClubAsOwner(clubId, studentId);
 
         // 2. 데이터 조회
         ClubMember application = clubMemberRepository.findById(clubMemberId)
@@ -337,7 +267,7 @@ public class OwnerClubService {
     @Transactional
     public void updateApplicantStatus(Long clubId, Long clubMemberId, String studentId, @NotNull(message = "변경할 상태를 입력해주세요.") ClubMemberStatus newStatus) {
 
-        validateOwnerAuthority(clubId, studentId);
+        getValidatedClubAsOwner(clubId, studentId);
 
         // 2. 대상 지원서 조회
         ClubMember application = clubMemberRepository.findById(clubMemberId)
@@ -350,16 +280,19 @@ public class OwnerClubService {
         application.setStatus(newStatus);
     }
 
-    public void validateOwnerAuthority(Long clubId, String studentId) {
+    public Club getValidatedClubAsOwner(Long clubId, String studentId) {
+
         Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubNotFoundException("ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
 
         ClubMember owner = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
-                .orElseThrow(() -> new ClubMemberNotFoundException("해당 동아리 소속이 아닙니다."));
+                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
 
         if (owner.getClubRole() != ClubRole.OWNER) {
-            throw new AuthorizationException("[OWNER] 권한이 없습니다.");
+            throw new AuthorizationException("[OWNER] 해당 권한이 없습니다.");
         }
+
+        return club;
     }
 
 
@@ -459,7 +392,7 @@ public class OwnerClubService {
 
     public byte[] downloadAcceptedMembersExcel(Long clubId, String studentId) {
 
-        validateOwnerAuthority(clubId, studentId);
+        getValidatedClubAsOwner(clubId, studentId);
 
         // ROLE 이 MEMBER 이고 해당 클럽 지원한 지원자들 전부 불러옴
         List<ClubMember> allMembers = clubMemberRepository.findAllByClubIdAndRoleWithMember(clubId, ClubRole.MEMBER);

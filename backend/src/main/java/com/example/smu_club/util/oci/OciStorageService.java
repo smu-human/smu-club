@@ -44,7 +44,6 @@ public class OciStorageService {
     private final String region;
 
 
-
     public OciStorageService(
             @Value("${oci.config.tenancy-id}") String tenancyId,
             @Value("${oci.config.user-id}") String userId,
@@ -85,11 +84,9 @@ public class OciStorageService {
         this.region = region;
     }
 
+    public PreSignedUrlResponse createUploadPreSignedUrl(String uniqueFileName, String contentType) {
 
-    public PreSignedUrlResponse createUploadPreSignedUrl(String originalFileName, String contentType) {
-
-        String uniqueFileName = UUID.randomUUID() + "_" + originalFileName;
-
+        // 한시간 만료 설정
         Date expirationDate = new Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
 
         CreatePreauthenticatedRequestDetails details =
@@ -126,6 +123,7 @@ public class OciStorageService {
         }
     }
 
+    // 파일을 다운로드 하거나 사진을 조회할 때 쓰여야할듯
     public String createFinalOciUrl(String uniqueFileName) {
         try {
             String encodedFileName = URLEncoder.encode(uniqueFileName, StandardCharsets.UTF_8);

@@ -1,4 +1,4 @@
-// src/pages/club_edit/club_edit.jsx (수정: navigate 경로 undefined 방지)
+// src/pages/club_edit/club_edit.jsx
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/globals.css";
@@ -15,7 +15,11 @@ export default function ClubEdit() {
   const [clubOneLine, setClubOneLine] = useState("");
   const [leaderName, setLeaderName] = useState("");
   const [phone, setPhone] = useState("");
+
+  // ✅ 모집 시작/마감일
+  const [start_date, set_start_date] = useState("");
   const [deadline, setDeadline] = useState("");
+
   const [images, setImages] = useState([]);
   const [is_saving, set_is_saving] = useState(false);
 
@@ -29,8 +33,13 @@ export default function ClubEdit() {
     set_is_saving(true);
 
     try {
-      const introHtml = editorRef.current?.getInstance().getHTML() || "";
+      // (선택) 간단 검증
+      if (start_date && deadline && start_date > deadline) {
+        alert("모집 시작일은 모집 마감일보다 늦을 수 없습니다.");
+        return;
+      }
 
+      const introHtml = editorRef.current?.getInstance().getHTML() || "";
       const uploadedImageFileNames = await owner_upload_images(images);
 
       await owner_register_club({
@@ -39,7 +48,13 @@ export default function ClubEdit() {
         title: clubOneLine,
         president: leaderName,
         contact: phone,
-        recruitingEnd: deadline,
+
+        // ✅ 추가: 모집 시작일
+        recruitingStart: start_date || null,
+
+        // 기존: 모집 마감일
+        recruitingEnd: deadline || null,
+
         clubRoom: "",
         description: introHtml,
       });
@@ -118,6 +133,7 @@ export default function ClubEdit() {
               value={clubName}
               onChange={(e) => setClubName(e.target.value)}
             />
+
             <label className="field_label" htmlFor="clubOneLine">
               동아리 한줄 소개
             </label>
@@ -129,6 +145,7 @@ export default function ClubEdit() {
               value={clubOneLine}
               onChange={(e) => setClubOneLine(e.target.value)}
             />
+
             <label className="field_label" htmlFor="leaderName">
               회장
             </label>
@@ -140,6 +157,7 @@ export default function ClubEdit() {
               value={leaderName}
               onChange={(e) => setLeaderName(e.target.value)}
             />
+
             <label className="field_label" htmlFor="phone">
               연락처
             </label>
@@ -151,6 +169,19 @@ export default function ClubEdit() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
+
+            {/* ✅ 추가: 모집 시작일 */}
+            <label className="field_label" htmlFor="start_date">
+              모집 시작일
+            </label>
+            <input
+              id="start_date"
+              className="field_input"
+              type="date"
+              value={start_date}
+              onChange={(e) => set_start_date(e.target.value)}
+            />
+
             <label className="field_label" htmlFor="deadline">
               모집 마감일
             </label>
