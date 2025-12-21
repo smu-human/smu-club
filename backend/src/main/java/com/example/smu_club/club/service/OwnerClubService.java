@@ -195,7 +195,7 @@ public class OwnerClubService {
     @Transactional(readOnly = true)
     public ClubInfoResponse getClubInfo(Long clubId, String studentId) {
 
-        Club club = getValidatedClubAsOwner(clubId, studentId);
+        Club club = getValidatedClubWithClubImagesAsOwner(clubId, studentId);
 
         return ClubInfoResponse.from(club, ociStorageService::createFinalOciUrl);
     }
@@ -283,6 +283,20 @@ public class OwnerClubService {
     public Club getValidatedClubAsOwner(Long clubId, String studentId) {
 
         Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+
+        ClubMember owner = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
+                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
+
+        if (owner.getClubRole() != ClubRole.OWNER) {
+            throw new AuthorizationException("[OWNER] 해당 권한이 없습니다.");
+        }
+
+        return club;
+    }
+    public Club getValidatedClubWithClubImagesAsOwner(Long clubId, String studentId) {
+
+        Club club = clubRepository.findByIdWithClubImages(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
 
         ClubMember owner = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)

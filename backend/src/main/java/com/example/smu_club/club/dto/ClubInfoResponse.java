@@ -25,13 +25,17 @@ public class ClubInfoResponse {
     private String clubRoom;
     private String description;
 
-    private List<String> clubImageUrls;
+    private List<ClubImagesResponseDto> clubImages;
 
     public static ClubInfoResponse from(Club club, Function<String, String> urlConverter) {
 
-        List<String> imageUrls = club.getClubImages().stream()
-                .sorted(Comparator.comparingInt(ClubImage::getDisplayOrder))
-                .map(image -> urlConverter.apply(image.getImageFileKey()))
+        List<ClubImagesResponseDto> clubImages = club.getClubImages().stream()
+                .sorted(Comparator.comparingInt(ClubImage::getDisplayOrder)) // 순서 정렬
+                .map(image -> new ClubImagesResponseDto(
+                        image.getId(),                                // Long id
+                        urlConverter.apply(image.getImageFileKey()),  // String imageUrl (키 -> URL 변환)
+                        image.getDisplayOrder()                       // int orderNumber
+                ))
                 .toList();
 
         return ClubInfoResponse.builder()
@@ -42,7 +46,7 @@ public class ClubInfoResponse {
                 .recruitingEnd(club.getRecruitingEnd())
                 .clubRoom(club.getClubRoom())
                 .description(club.getDescription())
-                .clubImageUrls(imageUrls)
+                .clubImages(clubImages)
                 .build();
     }
 }

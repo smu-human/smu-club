@@ -59,32 +59,6 @@ public class GuestClubService {
         Club findClub = clubRepository.findByIdWithClubImages(clubId)
                     .orElseThrow(() -> new ClubNotFoundException("clubId: "+ clubId +" 를 찾지 못했습니다."));
 
-
-        List<ClubImagesResponseDto> clubImages = findClub.getClubImages().stream()
-                .sorted(Comparator.comparingInt(ClubImage::getDisplayOrder))
-                .map(ci -> new ClubImagesResponseDto(
-                        ci.getId(),
-                        ociStorageService.createFinalOciUrl(ci.getImageFileKey()),
-                        ci.getDisplayOrder()
-                )).collect(toList());
-
-        String thumbnailUrl = ociStorageService.createFinalOciUrl(findClub.getThumbnailUrl());
-
-
-        return new ClubResponseDto(
-                findClub.getId(),
-                findClub.getName(),
-                findClub.getCreatedAt(),
-                findClub.getRecruitingStatus(),
-                findClub.getRecruitingStart(),
-                findClub.getRecruitingEnd(),
-                findClub.getPresident(),
-                findClub.getTitle(),
-                findClub.getContact(),
-                findClub.getClubRoom(),
-                thumbnailUrl,
-                findClub.getDescription(),
-                clubImages
-        );
+        return  ClubResponseDto.from(findClub, ociStorageService::createFinalOciUrl);
     }
 }
