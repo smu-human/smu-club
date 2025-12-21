@@ -1,6 +1,7 @@
 package com.example.smu_club.club.dto;
 
 import com.example.smu_club.domain.Club;
+import com.example.smu_club.domain.ClubImage;
 import com.example.smu_club.domain.RecruitingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Setter
 @Getter
@@ -26,20 +28,6 @@ public class ClubResponseDto {
     private String thumbnailUrl;
     //toast UI
     private String description;
-
-    public ClubResponseDto(Club club) {
-        this.id = club.getId();
-        this.name = club.getName();
-        this.createdAt = club.getCreatedAt();
-        this.recruitingStatus = club.getRecruitingStatus();
-        this.recruitingStart = club.getRecruitingStart();
-        this.recruitingEnd = club.getRecruitingEnd();
-        this.president = club.getPresident();
-        this.title = club.getTitle();
-        this.contact = club.getContact();
-        this.clubRoom = club.getClubRoom();
-        this.thumbnailUrl = club.getThumbnailUrl();
-
-        this.description = club.getDescription();
-    }
+    //club Images
+    private List<ClubImagesResponseDto> clubImages;
 }
