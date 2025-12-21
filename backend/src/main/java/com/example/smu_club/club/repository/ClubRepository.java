@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ClubRepository extends JpaRepository<Club, Long> {
 
@@ -13,5 +14,8 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
     List<Club> findAllSortedByRecruitment();
 
     boolean existsByName(String name);
+
+    @Query("SELECT c FROM Club c LEFT JOIN FETCH c.clubImages WHERE c.id = :clubId")
+    Optional<Club> findByIdWithClubImages(Long clubId);
 }
 

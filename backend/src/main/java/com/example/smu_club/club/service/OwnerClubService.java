@@ -25,7 +25,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -90,6 +92,7 @@ public class OwnerClubService {
                 .president(request.getPresident())
                 .contact(request.getContact())
                 .clubRoom(request.getClubRoom())
+                .recruitingStart(request.getRecruitingStart())
                 .recruitingEnd(request.getRecruitingEnd())
                 .recruitingStatus(RecruitingStatus.UPCOMING)
                 .createdAt(LocalDateTime.now())
@@ -188,6 +191,26 @@ public class OwnerClubService {
     public void startRecruitment(Long clubId, String studentId) {
 
         Club club = getValidatedClubAsOwner(clubId, studentId);
+        LocalDate recruitingStartDate = club.getRecruitingStart();
+        LocalDate recruitingEndDate = club.getRecruitingEnd();
+
+        // 1. 날짜 설정 여부 검증
+        if (recruitingStartDate == null || recruitingEndDate == null) {
+            throw new IllegalClubStateException("동아리 모집 시작일과 종료일이 설정되어 있어야 합니다.");
+        }
+
+        // 2. 한국 시간 기준으로 오늘 날짜 가져오기 (배포 환경 대비)
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
+        // 3. 기간 검증 (시작일 < 오늘 < 종료일 범위 밖이면 에러)
+        if (today.isBefore(recruitingStartDate) || today.isAfter(recruitingEndDate)) {
+            throw new IllegalClubStateException("현재 날짜가 모집 기간 내에 있어야 모집을 시작할 수 있습니다.");
+        }
+
+        // 4. (선택) 이미 모집 중인지 확인하는 로직이 있으면 더 좋음
+        if (club.getRecruitingStatus() == OPEN) {
+            throw new IllegalClubStateException("이미 모집 중인 동아리입니다.");
+        }
 
         club.updateRecruitment(OPEN);
     }
@@ -195,7 +218,7 @@ public class OwnerClubService {
     @Transactional(readOnly = true)
     public ClubInfoResponse getClubInfo(Long clubId, String studentId) {
 
-        Club club = getValidatedClubAsOwner(clubId, studentId);
+        Club club = getValidatedClubWithClubImagesAsOwner(clubId, studentId);
 
         return ClubInfoResponse.from(club, ociStorageService::createFinalOciUrl);
     }
@@ -294,14 +317,32 @@ public class OwnerClubService {
 
         return club;
     }
+    public Club getValidatedClubWithClubImagesAsOwner(Long clubId, String studentId) {
+
+        Club club = clubRepository.findByIdWithClubImages(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+
+        ClubMember owner = clubMemberRepository.findByClubAndMember_StudentId(club, studentId)
+                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
+
+        if (owner.getClubRole() != ClubRole.OWNER) {
+            throw new AuthorizationException("[OWNER] 해당 권한이 없습니다.");
+        }
+
+        return club;
+    }
 
 
     @Async("mailExecutor") // 호출시 즉시 리턴, 실제 전송은 별도 스레드에서 처리
-    @Transactional(readOnly = false)
     public void sendEmailsAsync(Long clubId, List<Long> clubMemberIdList) {
         //1. 클럽 정보 검색
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
+
+        //2. 상태를 담는 리스트 생성
+        List<Long> successIds = new ArrayList<>();
+        List<Long> failedIds = new ArrayList<>();
+
 
         //3. 이메일 전송 로직
         for(Long cmId : clubMemberIdList){
@@ -327,25 +368,32 @@ public class OwnerClubService {
                 sendEmail(toEmail, subject, body);
 
                 //전송 성공시 상태 업데이트
-                applicant.setEmailStatus(COMPLETE);
-                clubMemberRepository.save(applicant); // Async라 명시적 save 권장
+                successIds.add(applicant.getId());
 
                 Thread.sleep(100); // 0.1초 대기
             } catch(SendFailedException e){ //실패시 로그만 남기기
                 log.error("이메일 전송 실패: 잘못된 이메일 주소 {}", toEmail, e);
-                updateClubMemberEmailStatus(club, m, EmailStatus.FAILED);
+                failedIds.add(applicant.getId());
             } catch (Exception e) { //실패시 로그만 남기기
                 log.error("메일 전송 실패: {}", toEmail, e);
-                updateClubMemberEmailStatus(club, m, EmailStatus.FAILED);
+                failedIds.add(applicant.getId());
             }
+        }
+        updateEmailStatuses(successIds, COMPLETE);
+        updateEmailStatuses(failedIds, FAILED);
+
+    }
+
+    private void updateEmailStatuses(List<Long> clubMemberIds, EmailStatus emailStatus) {
+        clubMemberRepository.BulkUpdateEmailStatusByIds(clubMemberIds, emailStatus); //@Transactional 적용
+
+        if(emailStatus != FAILED) {
+            log.info("이메일 전송 실패 보장 트랜잭션 처리 : {} 건", clubMemberIds.size());
+
         }
     }
 
-    private void updateClubMemberEmailStatus(Club club, Member applicant, EmailStatus emailStatus) {
-        ClubMember clubMember = clubMemberRepository.findByClubAndMember(club, applicant)
-                .orElseThrow(() -> new ClubMemberNotFoundException("[OWNER] 해당 동아리 소속이 아니거나 존재하지 않는 회원입니다."));
 
-    }
 
     private void sendEmail(String toEmail, String subject, String body) throws Exception {
             MimeMessage message = javaMailSender.createMimeMessage();

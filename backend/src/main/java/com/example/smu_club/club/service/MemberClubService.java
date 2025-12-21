@@ -51,6 +51,7 @@ public class MemberClubService {
                 .clubRole(ClubRole.MEMBER)
                 .appliedAt(LocalDateTime.now())
                 .status(ClubMemberStatus.PENDING)
+                .emailStatus(EmailStatus.READY)
                 .build();
 
         clubMemberRepository.save(clubMember);
