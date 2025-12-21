@@ -65,7 +65,7 @@ public class OwnerClubService {
 
         // 2. 이미지 데이터 준비
         List<String> uploadedImageFileNames = request.getUploadedImageFileNames();
-        String thumbnailKey = "default_thumbnail.png"; // 기본값 설정
+        String thumbnailFileKey = "default_thumbnail.png"; // 기본값 설정
         List<ClubImage> imagesToSave = new ArrayList<>();
 
         if (uploadedImageFileNames != null && !uploadedImageFileNames.isEmpty()) {
@@ -73,7 +73,7 @@ public class OwnerClubService {
             // 상태를 ACTIVE 로 저장 (나중에 배치처리를 위해)
             fileMetadataService.updateStatus(uploadedImageFileNames, FileStatus.ACTIVE);
             // 첫 번째 사진을 썸네일로 지정
-            thumbnailKey = uploadedImageFileNames.get(0);
+            thumbnailFileKey = uploadedImageFileNames.getFirst();
 
             // 상세 이미지 객체 생성
             for (int i = 0; i < uploadedImageFileNames.size(); i++) {
@@ -96,7 +96,7 @@ public class OwnerClubService {
                 .recruitingEnd(request.getRecruitingEnd())
                 .recruitingStatus(RecruitingStatus.UPCOMING)
                 .createdAt(LocalDateTime.now())
-                .thumbnailUrl(thumbnailKey)
+                .thumbnailFileKey(thumbnailFileKey)
                 .build();
 
         clubRepository.save(newClub); // 연관 관계 설정을 위해 먼저 저장

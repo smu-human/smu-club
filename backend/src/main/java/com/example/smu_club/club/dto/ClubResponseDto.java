@@ -58,7 +58,7 @@ public class ClubResponseDto {
                 .title(findClub.getTitle())
                 .contact(findClub.getContact())
                 .clubRoom(findClub.getClubRoom())
-                .thumbnailUrl(createFinalOciUrl.apply(findClub.getThumbnailUrl()))
+                .thumbnailUrl(createFinalOciUrl.apply(findClub.getThumbnailFileKey()))
                 .description(findClub.getDescription())
                 .clubImages(clubImages)
                 .build();
