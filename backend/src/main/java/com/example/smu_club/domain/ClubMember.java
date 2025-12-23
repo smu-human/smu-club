@@ -47,6 +47,8 @@ public class ClubMember {
 
     private String memo;
 
+    private int retryCount;
+
     public ClubMember(Member member, Club club, ClubRole clubRole, LocalDateTime appliedAt, ClubMemberStatus status) {
         this.member = member;
         this.club = club;
@@ -54,6 +56,7 @@ public class ClubMember {
         this.appliedAt = appliedAt;
         this.status = status;
         this.emailStatus = EmailStatus.READY;
+        this.retryCount = 0;
     }
 
 

@@ -2,12 +2,10 @@ package com.example.smu_club.club.controller;
 
 
 import com.example.smu_club.club.dto.*;
-import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.common.ApiResponseDto;
 import com.example.smu_club.common.file.FileUploadService;
 import com.example.smu_club.exception.custom.EmptyEmailListException;
-import com.example.smu_club.util.oci.OciStorageService;
 import com.example.smu_club.util.PreSignedUrlResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +26,6 @@ import java.util.List;
 public class OwnerClubController {
 
     private final OwnerClubService ownerClubService;
-    private final MemberClubService memberClubService;
     private final FileUploadService fileUploadService;
 
     // (owner) 동아리 목록 조회  MyPage 기준으로 들어오면 동아리 정보 나옴

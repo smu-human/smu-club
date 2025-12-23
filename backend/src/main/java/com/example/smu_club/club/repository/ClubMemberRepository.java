@@ -74,4 +74,8 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     @Transactional
     @Query("UPDATE ClubMember cm SET cm.emailStatus = :emailStatus WHERE cm.id IN :clubMemberIds")
     void BulkUpdateEmailStatusByIds(List<Long> clubMemberIds, EmailStatus emailStatus);
+
+    @Modifying(clearAutomatically = true) // 이게 있어야 UPDATE/DELETE 쿼리로 인식함 (영속성 컨텍스트(메모리 캐시) 초기화 옵션)
+    @Query("UPDATE ClubMember cm SET cm.emailStatus = :emailStatus WHERE cm.id = :clubMemberId")
+    void updateEmailStatus(Long clubMemberId, EmailStatus emailStatus);
 }

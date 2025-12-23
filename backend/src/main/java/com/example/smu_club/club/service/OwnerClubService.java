@@ -9,11 +9,11 @@ import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.common.fileMetaData.FileMetaDataService;
 import com.example.smu_club.domain.*;
+import com.example.smu_club.email.repository.EmailRetryQueueRepository;
 import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.util.ExcelService;
 import com.example.smu_club.util.oci.OciStorageService;
-import jakarta.mail.SendFailedException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +50,7 @@ public class OwnerClubService {
     private final ClubImageRepository clubImageRepository;
     private final ExcelService excelService;
     private final FileMetaDataService fileMetadataService;
-
+    private final EmailRetryQueueRepository emailRetryQueueRepository;
     private final JavaMailSender javaMailSender;
 
     @Transactional
@@ -339,10 +339,10 @@ public class OwnerClubService {
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
 
-        //2. 상태를 담는 리스트 생성
+        //2. 상태를 담는 리스트 & 이메일 재전송 큐 리스트 생성
         List<Long> successIds = new ArrayList<>();
         List<Long> failedIds = new ArrayList<>();
-
+        List<EmailRetryQueue> retryQueueList = new ArrayList<>();
 
         //3. 이메일 전송 로직
         for(Long cmId : clubMemberIdList){
@@ -371,16 +371,28 @@ public class OwnerClubService {
                 successIds.add(applicant.getId());
 
                 Thread.sleep(100); // 0.1초 대기
-            } catch(SendFailedException e){ //실패시 로그만 남기기
-                log.error("이메일 전송 실패: 잘못된 이메일 주소 {}", toEmail, e);
-                failedIds.add(applicant.getId());
-            } catch (Exception e) { //실패시 로그만 남기기
+            } catch (Exception e) {
+                //실패 시 로그 남기고, 재전송 큐 리스트에 추가
                 log.error("메일 전송 실패: {}", toEmail, e);
                 failedIds.add(applicant.getId());
+
+                retryQueueList.add(EmailRetryQueue.builder()
+                        .clubMemberId(applicant.getId())
+                        .email(toEmail)
+                        .subject(subject)
+                        .body(body)
+                        .build()
+                );
             }
         }
         updateEmailStatuses(successIds, COMPLETE);
         updateEmailStatuses(failedIds, FAILED);
+
+        //4. 재전송 큐에 실패한 이메일들 저장
+        if(!retryQueueList.isEmpty()){
+            emailRetryQueueRepository.saveAll(retryQueueList);
+            log.info("이메일 재전송 큐에 {} 건 저장되었습니다.", retryQueueList.size());
+        }
 
     }
 
@@ -405,7 +417,7 @@ public class OwnerClubService {
             javaMailSender.send(message);
     }
 
-    @Transactional(readOnly = false)
+    @Transactional
     public List<Long> fetchPendingAndMarkAsProcessing(Long clubId) {
         //1. clubId 로 Club 찾기
         Club club = clubRepository.findById(clubId)
