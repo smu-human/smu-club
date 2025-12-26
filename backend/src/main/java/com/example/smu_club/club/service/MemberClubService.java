@@ -31,7 +31,6 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MemberClubService {
-
     private final ClubRepository clubRepository;
     private final MemberRepository memberRepository;
     private final ClubMemberRepository clubMemberRepository;

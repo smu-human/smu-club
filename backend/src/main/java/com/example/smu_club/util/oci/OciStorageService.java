@@ -1,5 +1,7 @@
 package com.example.smu_club.util.oci;
 
+import com.example.smu_club.domain.AllowedFileType;
+import com.example.smu_club.exception.custom.NotAllowedFileType;
 import com.example.smu_club.exception.custom.OciDeletionException;
 import com.example.smu_club.exception.custom.OciSearchException;
 import com.example.smu_club.exception.custom.OciUploadException;
@@ -85,6 +87,22 @@ public class OciStorageService {
     }
 
     public PreSignedUrlResponse createUploadPreSignedUrl(String uniqueFileName, String contentType) {
+
+        // uniqueFileName & contentType 검증 로직
+        String extension;
+        int lastDotIndex = uniqueFileName.lastIndexOf('.');
+        if (lastDotIndex > 0 ){
+            extension = uniqueFileName.substring(lastDotIndex + 1).toLowerCase();
+        } else {
+            log.error("파일 확장자 검증 실패: 파일명 = {}", uniqueFileName);
+            throw new OciUploadException("파일 확장자 추출에 실패했습니다.");
+        }
+        if(!AllowedFileType.isMatched(extension, contentType)){
+            log.error("파일 확장자와 MIME 타입 불일치: 확장자 = {}, MIME 타입 = {}", extension, contentType);
+            throw new NotAllowedFileType("파일 확장자와 MIME 타입이 일치하지 않습니다.");
+        }
+
+
 
         // 한시간 만료 설정
         Date expirationDate = new Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));

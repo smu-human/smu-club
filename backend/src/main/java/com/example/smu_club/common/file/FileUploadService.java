@@ -21,6 +21,7 @@ public class FileUploadService {
 
     @Transactional
     public List<PreSignedUrlResponse> prepareUploads(List<UploadUrlListRequest.FileDetail> fileDetails) {
+
         return fileDetails.stream()
                 .map(this::createPendingFileAndUrl)
                 .toList();
