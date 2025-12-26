@@ -43,8 +43,7 @@ public class MemberService {
 
         //1. 내가 가진 정보는 학번 뿐이다. -> 넘겨줄 데이터는 클럽의 아이디와 클럽의 이름
         // [ClubMember에서 Member엔티티 중 학번과 일치하는 Member 엔티티만 조회함.]
-        List<ClubMember> clubMember = clubMemberRepository.findAllWithMemberAndClubByStudentId(studentId);
-
+        List<ClubMember> clubMember = clubMemberRepository.findAllByStudentIdAndRoleNot(studentId, ClubRole.OWNER);
         //3.필요한 ClubMember만 List로 저장되었으니 Dto로 변환한다.
         //중요한점은 아무것도 없는 상태여도 인 List여도 상관없다는 것이다.
         //데이터가 없을 경우 ResponseEntity.ok에 감싸진 ApiResponseDto의 success 메소드에서 메세지가 구분된다.
