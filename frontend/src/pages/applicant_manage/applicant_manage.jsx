@@ -7,6 +7,7 @@ import {
   fetch_owner_applicants,
   fetch_owner_applicant_detail,
   owner_update_applicant_status,
+  owner_download_applicants_excel,
   owner_send_result_email,
 } from "../../lib/api";
 
@@ -25,34 +26,39 @@ function status_label(s) {
   return "미정";
 }
 
-function status_chip_class(s) {
-  if (s === "accepted") return "accepted";
-  if (s === "rejected") return "rejected";
+function status_to_card_class(s) {
+  if (s === "accepted") return "pass";
+  if (s === "rejected") return "fail";
   return "pending";
-}
-
-function safe(v) {
-  return v == null ? "" : String(v);
 }
 
 export default function ApplicantManage() {
   const navigate = useNavigate();
-  const { id } = useParams(); // route: /applicant_manage/:id
-  const club_id = useMemo(() => (id == null ? null : String(id)), [id]);
+  const { clubId } = useParams();
+
+  const club_id = useMemo(
+    () => (clubId == null ? null : String(clubId)),
+    [clubId]
+  );
 
   const [applicants, set_applicants] = useState([]);
   const [loading, set_loading] = useState(true);
   const [error_msg, set_error_msg] = useState("");
 
-  const [selected, set_selected] = useState(null);
-  const [detail_loading, set_detail_loading] = useState(false);
-  const [detail_error, set_detail_error] = useState("");
-
   const [status_loading_map, set_status_loading_map] = useState({});
+  const [excel_loading, set_excel_loading] = useState(false);
   const [email_loading, set_email_loading] = useState(false);
 
+  const [status_map, set_status_map] = useState({});
+  const [status_checking, set_status_checking] = useState(false);
+
   const load_list = async () => {
-    if (!club_id) return;
+    if (!club_id) {
+      set_loading(false);
+      set_applicants([]);
+      set_error_msg("club id가 없습니다. (라우트 파라미터 확인 필요)");
+      return;
+    }
 
     set_loading(true);
     set_error_msg("");
@@ -61,20 +67,79 @@ export default function ApplicantManage() {
       const res = await fetch_owner_applicants(club_id);
       const list = Array.isArray(res) ? res : [];
 
-      const mapped = list.map((a) => ({
-        clubMemberId: a?.clubMemberId ?? a?.club_member_id ?? a?.id ?? null,
-        memberId: a?.memberId ?? a?.member_id ?? null,
-        name: a?.name ?? "",
-        studentId: a?.studentId ?? a?.student_id ?? "",
-        appliedAt: a?.appliedAt ?? a?.applied_at ?? null,
-      }));
+      const mapped = list
+        .map((a) => ({
+          clubMemberId: a?.clubMemberId ?? a?.club_member_id ?? a?.id ?? null,
+          memberId: a?.memberId ?? a?.member_id ?? null,
+          name: a?.name ?? "",
+          studentId: a?.studentId ?? a?.student_id ?? "",
+          appliedAt: a?.appliedAt ?? a?.applied_at ?? null,
+          status: a?.status ? normalize_status(a.status) : null,
+        }))
+        .filter((x) => x.clubMemberId != null);
 
-      set_applicants(mapped.filter((x) => x.clubMemberId != null));
+      set_applicants(mapped);
+
+      const next_status_map = {};
+      for (const a of mapped) {
+        if (a.status) next_status_map[String(a.clubMemberId)] = a.status;
+      }
+      if (Object.keys(next_status_map).length) {
+        set_status_map((prev) => ({ ...prev, ...next_status_map }));
+      }
     } catch (e) {
       set_error_msg(e?.message || "지원자 목록을 불러오지 못했습니다.");
       set_applicants([]);
+      set_status_map({});
     } finally {
       set_loading(false);
+    }
+  };
+
+  const check_all_statuses = async (list) => {
+    if (!club_id) return;
+
+    const arr = Array.isArray(list) ? list : [];
+    if (!arr.length) return;
+
+    set_status_checking(true);
+    try {
+      const results = await Promise.allSettled(
+        arr.map(async (a) => {
+          const club_member_id = a?.clubMemberId;
+          if (!club_member_id) return null;
+
+          const known = status_map[String(club_member_id)] || a?.status;
+          if (known) return { clubMemberId: club_member_id, status: known };
+
+          const data = await fetch_owner_applicant_detail(
+            club_id,
+            club_member_id
+          );
+          const applicant =
+            data?.applicantInfo ??
+            data?.applicant ??
+            data?.applicant_info ??
+            null;
+
+          return {
+            clubMemberId: club_member_id,
+            status: normalize_status(applicant?.status),
+          };
+        })
+      );
+
+      const next = {};
+      for (const r of results) {
+        if (r.status !== "fulfilled") continue;
+        const v = r.value;
+        if (!v?.clubMemberId) continue;
+        next[String(v.clubMemberId)] = normalize_status(v.status);
+      }
+
+      set_status_map((prev) => ({ ...prev, ...next }));
+    } finally {
+      set_status_checking(false);
     }
   };
 
@@ -83,56 +148,20 @@ export default function ApplicantManage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [club_id]);
 
-  const open_detail = async (club_member_id) => {
-    if (!club_id || !club_member_id) return;
+  useEffect(() => {
+    if (loading) return;
+    if (error_msg) return;
+    if (!applicants?.length) return;
 
-    set_selected(null);
-    set_detail_error("");
-    set_detail_loading(true);
+    const all_known = applicants.every((a) => {
+      const cid = String(a.clubMemberId);
+      return !!(a.status || status_map[cid]);
+    });
+    if (all_known) return;
 
-    try {
-      const data = await fetch_owner_applicant_detail(club_id, club_member_id);
-
-      const applicant =
-        data?.applicantInfo ?? data?.applicant ?? data?.applicant_info ?? null;
-      const form =
-        data?.applicationForm ?? data?.application_form ?? data?.form ?? [];
-
-      const normalized = {
-        clubMemberId: applicant?.clubMemberId ?? club_member_id,
-        memberId: applicant?.memberId ?? null,
-        name: applicant?.name ?? "",
-        studentId: applicant?.studentId ?? "",
-        department: applicant?.department ?? "",
-        phoneNumber: applicant?.phoneNumber ?? "",
-        email: applicant?.email ?? "",
-        appliedAt: applicant?.appliedAt ?? null,
-        status: normalize_status(applicant?.status),
-        applicationForm: Array.isArray(form)
-          ? form
-              .map((q) => ({
-                questionId: q?.questionId ?? null,
-                orderNum: q?.orderNum ?? 0,
-                questionContent: q?.questionContent ?? "",
-                answerContent: q?.answerContent ?? "",
-              }))
-              .sort((a, b) => (a.orderNum ?? 0) - (b.orderNum ?? 0))
-          : [],
-      };
-
-      set_selected(normalized);
-    } catch (e) {
-      set_detail_error(e?.message || "지원자 상세를 불러오지 못했습니다.");
-    } finally {
-      set_detail_loading(false);
-    }
-  };
-
-  const close_detail = () => {
-    set_selected(null);
-    set_detail_error("");
-    set_detail_loading(false);
-  };
+    check_all_statuses(applicants);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, error_msg, applicants]);
 
   const update_status = async (club_member_id, next_status) => {
     if (!club_id || !club_member_id) return;
@@ -142,10 +171,19 @@ export default function ApplicantManage() {
     try {
       await owner_update_applicant_status(club_id, club_member_id, next_status);
 
-      set_selected((prev) =>
-        prev && String(prev.clubMemberId) === String(club_member_id)
-          ? { ...prev, status: normalize_status(next_status) }
-          : prev
+      const normalized = normalize_status(next_status);
+
+      set_status_map((prev) => ({
+        ...prev,
+        [String(club_member_id)]: normalized,
+      }));
+
+      set_applicants((prev) =>
+        (prev || []).map((a) =>
+          String(a.clubMemberId) === String(club_member_id)
+            ? { ...a, status: normalized }
+            : a
+        )
       );
 
       alert("상태가 변경되었습니다.");
@@ -156,18 +194,50 @@ export default function ApplicantManage() {
     }
   };
 
+  const download_excel = async () => {
+    if (!club_id) return;
+    set_excel_loading(true);
+    try {
+      await owner_download_applicants_excel(club_id);
+    } catch (e) {
+      alert(e?.message || "엑셀 다운로드에 실패했습니다.");
+    } finally {
+      set_excel_loading(false);
+    }
+  };
+
+  const all_decided = useMemo(() => {
+    if (!applicants?.length) return false;
+
+    return applicants.every((a) => {
+      const cid = String(a.clubMemberId);
+      const s = a.status || status_map[cid] || "pending";
+      return s === "accepted" || s === "rejected";
+    });
+  }, [applicants, status_map]);
+
   const send_result_email = async () => {
     if (!club_id) return;
+
+    if (!all_decided) {
+      alert("모든 지원자의 합/불이 결정된 후에 메일을 발송할 수 있습니다.");
+      return;
+    }
 
     set_email_loading(true);
     try {
       await owner_send_result_email(club_id);
-      alert("결과 메일 발송 요청 완료");
+      alert("합불 결과 메일 발송 요청 완료");
     } catch (e) {
       alert(e?.message || "메일 발송에 실패했습니다.");
     } finally {
       set_email_loading(false);
     }
+  };
+
+  const go_apply_form = (club_member_id) => {
+    if (!club_id || !club_member_id) return;
+    navigate(`/apply_form/${club_id}/${String(club_member_id)}`);
   };
 
   return (
@@ -201,15 +271,39 @@ export default function ApplicantManage() {
           <h2 className="applicant_title">지원자</h2>
 
           <div className="applicant_footer">
-            <p className="hint_text">지원자를 클릭해서 자세히 보기</p>
-            <button
-              className="mail_btn"
-              type="button"
-              onClick={send_result_email}
-              disabled={email_loading}
-            >
-              {email_loading ? "발송중..." : "결과 메일 발송하기"}
-            </button>
+            <p className="hint_text">
+              지원자를 클릭해서 지원서 보기
+              <br />
+              {status_checking ? "상태 확인중..." : ""}
+            </p>
+
+            <div className="applicant_actions">
+              <button
+                className="mail_btn"
+                type="button"
+                onClick={download_excel}
+                disabled={excel_loading}
+              >
+                {excel_loading ? "다운로드 중..." : "지원자 엑셀 다운로드"}
+              </button>
+
+              <button
+                className="mail_btn"
+                type="button"
+                onClick={send_result_email}
+                disabled={email_loading}
+                style={{
+                  opacity: email_loading ? 0.6 : all_decided ? 1 : 0.35,
+                }}
+                title={
+                  all_decided
+                    ? "합불 결과 메일 발송"
+                    : "모든 지원자의 합/불을 결정해야 발송할 수 있습니다."
+                }
+              >
+                {email_loading ? "발송중..." : "합불결과 메일 발송하기"}
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -226,143 +320,38 @@ export default function ApplicantManage() {
             </div>
           ) : (
             <div className="applicant_list">
-              {applicants.map((a) => (
-                <button
-                  key={`${a.clubMemberId}`}
-                  type="button"
-                  className="applicant_card applicant_card_btn"
-                  onClick={() => open_detail(a.clubMemberId)}
-                >
-                  <span className="applicant_info">
-                    {a.name} {a.studentId}
-                  </span>
-                  <span className="applicant_date">
-                    {safe(a.appliedAt).slice(0, 10)}
-                  </span>
-                </button>
-              ))}
+              {applicants.map((a) => {
+                const cid = String(a.clubMemberId);
+                const s = status_map[cid] ?? a.status ?? "pending";
+
+                return (
+                  <button
+                    key={cid}
+                    type="button"
+                    className="applicant_card applicant_card_btn"
+                    onClick={() => go_apply_form(a.clubMemberId)}
+                  >
+                    <span className="applicant_info">
+                      {a.name} {a.studentId}
+                    </span>
+
+                    <span
+                      className={`applicant_status ${status_to_card_class(s)}`}
+                    >
+                      {status_label(s)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </section>
 
-        {/* ===== 상세 모달 ===== */}
-        {(detail_loading || detail_error || selected) && (
-          <div className="result_overlay" role="dialog" aria-modal="true">
-            <div className="result_modal">
-              <div className="result_head">
-                <h3 className="result_title">지원자 상세</h3>
-                <button
-                  type="button"
-                  className="result_close"
-                  onClick={close_detail}
-                >
-                  닫기
-                </button>
-              </div>
-
-              {detail_loading ? (
-                <div className="result_body">불러오는 중...</div>
-              ) : detail_error ? (
-                <div className="result_body">{detail_error}</div>
-              ) : (
-                <div className="result_body">
-                  <div className="applicant_detail_box">
-                    <div className="row">
-                      <span className="k">이름</span>
-                      <span className="v">{selected?.name}</span>
-                    </div>
-                    <div className="row">
-                      <span className="k">학번</span>
-                      <span className="v">{selected?.studentId}</span>
-                    </div>
-                    <div className="row">
-                      <span className="k">학과</span>
-                      <span className="v">{selected?.department}</span>
-                    </div>
-                    <div className="row">
-                      <span className="k">전화</span>
-                      <span className="v">{selected?.phoneNumber}</span>
-                    </div>
-                    <div className="row">
-                      <span className="k">이메일</span>
-                      <span className="v">{selected?.email}</span>
-                    </div>
-                    <div className="row">
-                      <span className="k">지원일</span>
-                      <span className="v">{safe(selected?.appliedAt)}</span>
-                    </div>
-
-                    <div className="row">
-                      <span className="k">상태</span>
-                      <span
-                        className={`v badge ${status_chip_class(
-                          selected?.status
-                        )}`}
-                      >
-                        {status_label(selected?.status)}
-                      </span>
-                    </div>
-
-                    <div className="status_actions">
-                      <button
-                        type="button"
-                        className="outline_btn sm"
-                        disabled={!!status_loading_map[selected.clubMemberId]}
-                        onClick={() =>
-                          update_status(selected.clubMemberId, "PENDING")
-                        }
-                      >
-                        미정
-                      </button>
-                      <button
-                        type="button"
-                        className="outline_btn sm"
-                        disabled={!!status_loading_map[selected.clubMemberId]}
-                        onClick={() =>
-                          update_status(selected.clubMemberId, "ACCEPTED")
-                        }
-                      >
-                        합격
-                      </button>
-                      <button
-                        type="button"
-                        className="outline_btn sm"
-                        disabled={!!status_loading_map[selected.clubMemberId]}
-                        onClick={() =>
-                          update_status(selected.clubMemberId, "REJECTED")
-                        }
-                      >
-                        불합격
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="application_form_box">
-                    <h4 className="sub_title">지원서 답변</h4>
-
-                    {selected?.applicationForm?.length ? (
-                      <div className="qa_list">
-                        {selected.applicationForm.map((q) => (
-                          <div
-                            key={`${q.questionId}-${q.orderNum}`}
-                            className="qa_item"
-                          >
-                            <div className="q">
-                              {q.orderNum + 1}. {q.questionContent}
-                            </div>
-                            <div className="a">{q.answerContent || "-"}</div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="empty">지원서 답변이 없습니다.</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* 선택 상세 모달 제거 대신, 아래 상태 변경 기능을 유지하려면 별도 UI가 필요함.
+            현재는 카드 클릭 시 apply_form으로 이동하므로, 아래 버튼들은 apply_form에서 처리하는 구조를 권장. */}
+        <div style={{ display: "none" }}>
+          <button onClick={() => update_status("0", "PENDING")} />
+        </div>
       </main>
 
       <div className="page-footer">

@@ -15,27 +15,32 @@ function normalize_content(s) {
     .trim();
 }
 
-function dedupe_contents(contents) {
-  const out = [];
-  const seen = new Set();
-  for (const c of contents) {
-    const normalized = normalize_content(c);
-    if (!normalized) continue;
-    const key = normalized.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(normalized);
-  }
-  return out;
+function is_file_question_content(content) {
+  return normalize_content(content).toLowerCase() === "파일추가";
 }
 
-function dedupe_questions_by_content(list) {
+function dedupe_questions(list) {
   const out = [];
   const seen = new Set();
+  let has_file = false;
 
-  for (const q of list) {
+  for (const q of list || []) {
     const content = normalize_content(q?.content);
+
     if (!content) continue;
+
+    if (is_file_question_content(content)) {
+      if (has_file) continue;
+      has_file = true;
+      out.push({
+        questionId: q?.questionId ?? q?.id ?? `q-${crypto.randomUUID()}`,
+        orderNum: out.length,
+        content: "파일추가",
+        type: "file",
+      });
+      continue;
+    }
+
     const key = content.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -44,26 +49,26 @@ function dedupe_questions_by_content(list) {
       questionId: q?.questionId ?? q?.id ?? `q-${crypto.randomUUID()}`,
       orderNum: out.length,
       content,
+      type: "text",
     });
   }
 
-  return out;
+  return out.map((q, idx) => ({ ...q, orderNum: idx }));
 }
 
 export default function ApplyFormEdit() {
   const navigate = useNavigate();
-  const { id } = useParams(); // /apply_form_edit/:id (clubId)
+  const { id } = useParams();
   const club_id = useMemo(() => (id == null ? null : String(id)), [id]);
 
-  // 고정 기본 항목(UI 유지용)
   const [dept, setDept] = useState("");
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState("male");
 
-  // 커스텀 질문
-  const [questions, setQuestions] = useState([]); // [{ questionId, orderNum, content }]
+  const [questions, setQuestions] = useState([]); // text only in UI
+  const [has_file_upload, set_has_file_upload] = useState(false); // file fixed item
   const [adding, setAdding] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
 
@@ -99,13 +104,18 @@ export default function ApplyFormEdit() {
           }))
           .sort((a, b) => (a.orderNum ?? 0) - (b.orderNum ?? 0));
 
-        // ✅ GET 결과도 중복 제거 + orderNum 재정렬
-        const deduped = dedupe_questions_by_content(normalized);
+        const deduped = dedupe_questions(normalized);
 
-        setQuestions(deduped);
+        // ✅ 파일추가는 "질문 리스트"에서 빼고, 별도 섹션으로만 보이게
+        const file_item = deduped.find((q) => q.type === "file");
+        set_has_file_upload(!!file_item);
+
+        const only_text = deduped.filter((q) => q.type !== "file");
+        setQuestions(only_text);
       } catch (e) {
         set_error_msg(e?.message || "질문 목록을 불러오지 못했습니다.");
         setQuestions([]);
+        set_has_file_upload(false);
       } finally {
         setLoading(false);
       }
@@ -118,17 +128,34 @@ export default function ApplyFormEdit() {
     const content = normalize_content(newQuestion);
     if (!content) return;
 
-    setQuestions((prev) => {
-      const contents = dedupe_contents([
-        ...(prev || []).map((q) => q.content),
-        content,
-      ]);
+    if (is_file_question_content(content)) {
+      alert("파일 업로드 항목은 기본으로 제공됩니다.");
+      return;
+    }
 
-      return contents.map((c, idx) => ({
-        questionId: prev?.[idx]?.questionId ?? `local-${crypto.randomUUID()}`,
-        orderNum: idx,
-        content: c,
-      }));
+    setQuestions((prev) => {
+      const merged = [
+        ...(prev || []),
+        {
+          questionId: `local-${crypto.randomUUID()}`,
+          orderNum: prev?.length ?? 0,
+          content,
+          type: "text",
+        },
+      ];
+
+      // text 중복 제거 + orderNum 재정렬
+      const out = [];
+      const seen = new Set();
+      for (const q of merged) {
+        const c = normalize_content(q.content);
+        if (!c) continue;
+        const key = c.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ ...q, content: c });
+      }
+      return out.map((q, idx) => ({ ...q, orderNum: idx }));
     });
 
     setNewQuestion("");
@@ -140,25 +167,16 @@ export default function ApplyFormEdit() {
       const filtered = (prev || []).filter(
         (q) => String(q.questionId) !== String(qid)
       );
-
-      // ✅ content 기반 중복 제거 + orderNum 재정렬
-      const deduped = dedupe_questions_by_content(
-        filtered.map((q, idx) => ({ ...q, orderNum: idx }))
-      );
-
-      return deduped.map((q, idx) => ({ ...q, orderNum: idx }));
+      return filtered.map((q, idx) => ({ ...q, orderNum: idx }));
     });
   };
 
   const updateQuestionContent = (qid, content) => {
     setQuestions((prev) => {
-      const updated = (prev || []).map((q) =>
-        String(q.questionId) === String(qid) ? { ...q, content } : { ...q }
+      const next = (prev || []).map((q) =>
+        String(q.questionId) === String(qid) ? { ...q, content } : q
       );
-
-      // ✅ 편집 중엔 즉시 중복 제거하면 UX가 불편할 수 있어서
-      // 저장 시에만 강하게 dedupe. 여기선 orderNum만 유지.
-      return updated.map((q, idx) => ({ ...q, orderNum: idx }));
+      return next.map((q, idx) => ({ ...q, orderNum: idx }));
     });
   };
 
@@ -169,37 +187,44 @@ export default function ApplyFormEdit() {
     set_error_msg("");
 
     try {
-      // 1) content 정리
+      // text 질문 정리 + 중복 제거
       const cleaned = (questions || [])
         .map((q) => normalize_content(q.content))
         .filter((c) => c.length > 0);
 
-      // 2) ✅ 중복 제거 (같은 문구가 여러개면 1개만)
-      const unique = dedupe_contents(cleaned);
+      const seen = new Set();
+      const unique_texts = [];
+      for (const c of cleaned) {
+        const key = c.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        unique_texts.push(c);
+      }
 
-      // 3) swagger 형식 payload 만들기
-      const payload = unique.map((content, idx) => ({
-        orderNum: idx,
-        content,
-      }));
+      // ✅ 백엔드 요구: 파일추가를 마지막에 항상 포함
+      const payload = [
+        ...unique_texts.map((content, idx) => ({ orderNum: idx, content })),
+        ...(has_file_upload
+          ? [{ orderNum: unique_texts.length, content: "파일추가" }]
+          : []),
+      ];
 
-      console.log("[save payload]", payload);
-
-      // ✅ 질문이 0개면 PUT을 안 때림 (백이 기본 질문 만들 가능성 방지)
+      // 질문이 0개 + 파일추가만 있는 경우도 저장 허용(원하면 막아도 됨)
       if (payload.length === 0) {
-        alert("저장할 질문이 없습니다. 질문 추가 후 저장하세요.");
+        alert("저장할 항목이 없습니다.");
         return;
       }
 
       await owner_update_club_questions(club_id, payload);
       alert("저장되었습니다.");
 
-      // ✅ 저장 성공 후 화면도 payload 기준으로 동기화(중복/누적 방지)
+      // 화면 동기화
       setQuestions(
-        payload.map((p) => ({
-          questionId: `saved-${p.orderNum}-${crypto.randomUUID()}`,
-          orderNum: p.orderNum,
-          content: p.content,
+        unique_texts.map((c, idx) => ({
+          questionId: `saved-${idx}-${crypto.randomUUID()}`,
+          orderNum: idx,
+          content: c,
+          type: "text",
         }))
       );
     } catch (e) {
@@ -329,7 +354,7 @@ export default function ApplyFormEdit() {
                   </label>
                 </fieldset>
 
-                {/* 커스텀 질문 리스트 */}
+                {/* ✅ 커스텀 텍스트 질문만 렌더 */}
                 {questions.length > 0 && (
                   <div className="custom_list">
                     {questions
@@ -363,7 +388,6 @@ export default function ApplyFormEdit() {
                   </div>
                 )}
 
-                {/* 질문 추가 */}
                 {!adding ? (
                   <button
                     type="button"
@@ -401,7 +425,15 @@ export default function ApplyFormEdit() {
                     </div>
                   </div>
                 )}
-
+                {/* ✅ 파일 업로드 섹션(질문 리스트 밖으로 분리) */}
+                {has_file_upload && (
+                  <div className="file_upload_section">
+                    <label className="field_label"></label>
+                    <button type="button" className="outline_btn" disabled>
+                      파일 업로드 버튼
+                    </button>
+                  </div>
+                )}
                 <div className="form_actions">
                   <button
                     className="primary_btn save_btn"

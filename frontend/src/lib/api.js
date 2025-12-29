@@ -181,12 +181,13 @@ export async function apiLogout() {
   return res;
 }
 
-// ===== 공개 클럽 (guest / member 공용) =====
+// ===== 공개 클럽 (guest / member / owner 공용) =====
 export async function fetch_public_clubs() {
   const res = await apiJson("/public/clubs", { method: "GET" });
   return res.data || [];
 }
 
+// ✅ 스웨거 기준: /public/clubs/{clubId} 응답 data 안에 clubImages 포함 + recruitingStart 포함
 export async function fetch_public_club(club_id) {
   const res = await apiJson(`/public/clubs/${club_id}`, { method: "GET" });
   return res.data;
@@ -344,6 +345,7 @@ export async function owner_register_club(payload) {
       recruitingEnd: payload?.recruitingEnd ?? null,
       clubRoom: payload?.clubRoom ?? "",
       description: payload?.description ?? "",
+      // recruitingStart: payload?.recruitingStart ?? null,
     }),
   });
 
@@ -425,10 +427,146 @@ export async function owner_update_applicant_status(
   return res;
 }
 
-// ===== OWNER: 결과 메일 발송 =====
-export async function owner_send_result_email(club_id) {
-  const res = await apiJson(`/owner/club/${club_id}/applicants/excel`, {
+// ===== OWNER: 지원자 엑셀 다운로드 =====
+export async function owner_download_applicants_excel(club_id) {
+  const res = await apiFetch(`/owner/club/${club_id}/applicants/excel`, {
     method: "GET",
   });
-  return res;
+
+  const content_type = (res.headers.get("content-type") || "").toLowerCase();
+
+  // json으로 오는 경우(스웨거 example: string)
+  if (content_type.includes("application/json")) {
+    const json = await res.json().catch(() => null);
+
+    if (!res.ok || json?.status === "FAIL") {
+      const err = new Error(json?.message || "엑셀 다운로드에 실패했습니다.");
+      err.code =
+        json?.errorCode || (res.status === 401 ? "UNAUTHORIZED" : "ERROR");
+      err.status = res.status;
+      err.raw = json;
+      throw err;
+    }
+
+    const maybe_string = json?.data;
+
+    // url이면 새창
+    if (typeof maybe_string === "string" && /^https?:\/\//.test(maybe_string)) {
+      window.open(maybe_string, "_blank", "noopener,noreferrer");
+      return true;
+    }
+
+    // 그냥 string이면 파일로 저장 fallback
+    const blob = new Blob([maybe_string ?? ""], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `applicants_${club_id}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return true;
+  }
+
+  // 바이너리로 오는 경우
+  if (!res.ok) {
+    let msg = "엑셀 다운로드에 실패했습니다.";
+    try {
+      const txt = await res.text();
+      if (txt) msg = txt;
+    } catch {}
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+
+  const cd = res.headers.get("content-disposition") || "";
+  const match =
+    /filename\*=utf-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd) || [];
+  const filename = decodeURIComponent(
+    match[1] || match[2] || `applicants_${club_id}.xlsx`
+  );
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  return true;
+}
+
+// ===== OWNER: 합불 결과 메일 발송 =====
+// ✅ 백엔드 실제 엔드포인트가 확실치 않아서, 흔한 후보 2~3개를 순차로 시도
+export async function owner_send_result_email(club_id) {
+  const candidates = [
+    `/owner/club/${club_id}/applicants/send-result-email`,
+    `/owner/club/${club_id}/applicants/result-email`,
+    `/owner/club/${club_id}/applicants/send-email`,
+  ];
+
+  let last_error = null;
+
+  for (const path of candidates) {
+    try {
+      const res = await apiJson(path, { method: "POST" });
+      return res;
+    } catch (e) {
+      last_error = e;
+      const code = String(e?.code || "").toUpperCase();
+      const status = Number(e?.status || 0);
+
+      // 404/405 계열은 다음 후보로 시도
+      if (status === 404 || status === 405 || code === "NOT_FOUND") continue;
+
+      // 그 외 에러는 즉시 throw
+      throw e;
+    }
+  }
+
+  throw last_error || new Error("메일 발송 API를 찾지 못했습니다.");
+}
+
+// ===== MEMBER: 지원서 파일 업로드용 presigned url 발급 =====
+export async function member_issue_application_upload_url(file) {
+  const res = await apiJson("/member/clubs/application/upload-url", {
+    method: "POST",
+    body: JSON.stringify({
+      originalFileName: file?.name || "file",
+      contentType: file?.type || "application/octet-stream",
+    }),
+  });
+  return res?.data || null; // { fileName, preSignedUrl }
+}
+
+export async function member_put_presigned_url(preSignedUrl, file) {
+  const putRes = await fetch(preSignedUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file?.type || "application/octet-stream" },
+    body: file,
+  });
+
+  if (!putRes.ok) {
+    const err = new Error("파일 업로드에 실패했습니다.");
+    err.status = putRes.status;
+    throw err;
+  }
+  return true;
+}
+
+// ===== MEMBER: 동아리 지원서 제출 =====
+export async function member_apply_club(club_id, payload) {
+  const res = await apiJson(`/member/clubs/${club_id}/apply`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return res?.data || null;
 }
