@@ -164,5 +164,10 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-
+    // 동아리 모집이 종료 및 확정되지 않았을 때 발생하는 예외
+    @ExceptionHandler(NotClosedRecruitment.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleNotClosedRecruitment(NotClosedRecruitment e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("NOT_CLOSED_RECRUITMENT", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }
