@@ -228,7 +228,7 @@ public class OwnerClubService {
 
         Club club = getValidatedClubAsOwner(clubId, studentId);
 
-        List<ClubMember> applicants = clubMemberRepository.findByClubAndStatus(club, ClubMemberStatus.PENDING);
+        List<ClubMember> applicants = clubMemberRepository.findAllByClubAndClubRoleOrderByAppliedAtDesc(club, ClubRole.MEMBER);
 
         return applicants.stream()
                 .map(ApplicantResponse::from)
