@@ -12,6 +12,55 @@ import {
   owner_upload_images,
 } from "../../lib/api";
 
+function extract_object_key(v) {
+  const s = String(v || "").trim();
+  if (!s) return null;
+
+  // 이미 object key 형태면 그대로 사용
+  if (!s.startsWith("http")) return s;
+
+  // .../o/<objectKey>
+  const idx = s.indexOf("/o/");
+  if (idx >= 0) return s.slice(idx + 3);
+
+  return s;
+}
+
+function normalize_existing_images(detail) {
+  const club_images = Array.isArray(detail?.clubImages)
+    ? detail.clubImages
+    : [];
+
+  const keys = club_images
+    .slice()
+    .sort((a, b) => (a?.orderNumber ?? 0) - (b?.orderNumber ?? 0))
+    .map((it) => extract_object_key(it?.imageUrl))
+    .filter((v) => v && String(v).trim() && v !== "string");
+
+  if (keys.length > 0) return keys;
+
+  const fallback = Array.isArray(detail?.uploadedImageFileNames)
+    ? detail.uploadedImageFileNames
+    : [];
+
+  return fallback
+    .map((it) => extract_object_key(it))
+    .filter((v) => v && String(v).trim() && v !== "string");
+}
+
+function to_display_name(v) {
+  const s = String(v || "");
+  // 화면에는 보기 좋게 마지막 파일명만 보여주기
+  try {
+    const decoded = decodeURIComponent(s);
+    const last = decoded.split("/").pop();
+    return last || decoded;
+  } catch {
+    const last = s.split("/").pop();
+    return last || s;
+  }
+}
+
 export default function ClubManage() {
   const navigate = useNavigate();
   const { clubId } = useParams();
@@ -22,13 +71,12 @@ export default function ClubManage() {
   const [leader_name, set_leader_name] = useState("");
   const [phone, set_phone] = useState("");
 
-  // ✅ 모집 시작/마감일
   const [start_date, set_start_date] = useState("");
   const [deadline, set_deadline] = useState("");
 
   const [club_room, set_club_room] = useState("");
 
-  const [existing_images, set_existing_images] = useState([]); // string[]
+  const [existing_images, set_existing_images] = useState([]); // object key string[]
   const [new_images, set_new_images] = useState([]); // File[]
   const [is_loading, set_is_loading] = useState(true);
   const [is_saving, set_is_saving] = useState(false);
@@ -46,8 +94,8 @@ export default function ClubManage() {
 
     set_club_room(detail?.clubRoom ?? "");
 
-    const imgs = detail?.uploadedImageFileNames ?? detail?.images ?? [];
-    set_existing_images(Array.isArray(imgs) ? imgs : []);
+    // ✅ 반드시 "object key"로만 보관 (업데이트 시 그대로 전송)
+    set_existing_images(normalize_existing_images(detail));
 
     const html = detail?.description ?? "";
     const inst = editorRef.current?.getInstance();
@@ -77,7 +125,22 @@ export default function ClubManage() {
 
   const on_pick_new_images = (e) => {
     const files = Array.from(e.target.files || []);
-    set_new_images(files);
+    const remaining = 5 - existing_images.length;
+
+    if (remaining <= 0) {
+      alert("이미지는 최대 5장까지 등록할 수 있습니다.");
+      e.target.value = "";
+      return;
+    }
+
+    if (files.length > remaining) {
+      alert(`이미지는 최대 ${remaining}장까지만 추가할 수 있습니다.`);
+      set_new_images(files.slice(0, remaining));
+    } else {
+      set_new_images(files);
+    }
+
+    e.target.value = "";
   };
 
   const remove_existing_image = (idx) => {
@@ -100,21 +163,28 @@ export default function ClubManage() {
         ? await owner_upload_images(new_images)
         : [];
 
-      const merged_images = [...existing_images, ...(uploaded_new || [])].slice(
-        0,
-        5
-      );
+      // ✅ 업로드 결과도 object key로 정규화 (혹시 URL로 와도 안전)
+      const uploaded_new_keys = (uploaded_new || [])
+        .map((it) => extract_object_key(it))
+        .filter(Boolean);
+
+      const merged_images = [
+        ...existing_images.map((it) => extract_object_key(it)).filter(Boolean),
+        ...uploaded_new_keys,
+      ];
+
+      if (merged_images.length > 5) {
+        alert("이미지는 최대 5장까지만 저장할 수 있습니다.");
+        return;
+      }
 
       await owner_update_club(clubId, {
-        uploadedImageFileNames: merged_images,
+        uploadedImageFileNames: merged_images, // ✅ object key만 전송
         name: club_name,
         title: club_one_line,
         president: leader_name,
         contact: phone,
-
-        // ✅ 추가: 모집 시작일
         recruitingStart: start_date || null,
-
         recruitingEnd: deadline || null,
         clubRoom: club_room,
         description: intro_html,
@@ -138,6 +208,8 @@ export default function ClubManage() {
       </div>
     );
   }
+
+  const remaining_count = Math.max(0, 5 - existing_images.length);
 
   return (
     <div className="page-root">
@@ -174,11 +246,13 @@ export default function ClubManage() {
               5장)
             </p>
 
+            <p className="hint_text">{`현재 ${existing_images.length}장 / 최대 5장`}</p>
+
             {existing_images.length > 0 && (
               <div className="image_list">
                 {existing_images.map((img, idx) => (
                   <div className="image_item" key={`${img}-${idx}`}>
-                    <span className="image_name">{img}</span>
+                    <span className="image_name">{to_display_name(img)}</span>
                     <button
                       type="button"
                       className="image_remove_btn"
@@ -191,7 +265,11 @@ export default function ClubManage() {
               </div>
             )}
 
-            <label className="outline_btn" htmlFor="clubGalleryNew">
+            <label
+              className="outline_btn"
+              htmlFor="clubGalleryNew"
+              style={{ opacity: remaining_count === 0 ? 0.5 : 1 }}
+            >
               이미지 추가
             </label>
             <input
@@ -200,11 +278,14 @@ export default function ClubManage() {
               accept="image/png, image/jpeg"
               multiple
               onChange={on_pick_new_images}
+              disabled={remaining_count === 0}
               style={{ display: "none" }}
             />
 
             {new_images.length > 0 && (
-              <p className="hint_text">추가 선택: {new_images.length}개</p>
+              <p className="hint_text">
+                {`추가 선택: ${new_images.length}개 (최대 ${remaining_count}개 가능)`}
+              </p>
             )}
           </div>
         </section>
@@ -256,7 +337,6 @@ export default function ClubManage() {
               onChange={(e) => set_phone(e.target.value)}
             />
 
-            {/* ✅ 추가: 모집 시작일 */}
             <label className="field_label" htmlFor="start_date">
               모집 시작일
             </label>
