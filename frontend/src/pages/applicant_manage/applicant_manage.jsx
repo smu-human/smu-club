@@ -1,6 +1,5 @@
 // src/pages/applicant_manage/applicant_manage.jsx
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "../../styles/globals.css";
 import "./applicant_manage.css";
 import {
@@ -268,8 +267,7 @@ export default function ApplicantManage() {
 
       <main className="page-main applicant_main">
         <section className="applicant_section">
-          <h2 className="applicant_title">지원자</h2>
-
+          <h2 className="applicant_title">러닝클럽 지원자</h2>
           <div className="applicant_footer">
             <p className="hint_text">
               지원자를 클릭해서 지원서 보기
