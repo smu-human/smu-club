@@ -5,8 +5,7 @@ import lombok.Getter;
 @Getter
 public enum RecruitingStatus {
     OPEN(1),
-    UPCOMING(2),
-    CLOSED(3);
+    CLOSED(2);
 
     private final int priority;
 

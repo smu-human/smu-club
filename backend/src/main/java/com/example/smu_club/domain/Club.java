@@ -92,7 +92,7 @@ public class Club {
     //recruitingStatus를 변경할 때 recruitPriority도 같이 변경
     public void updateRecruitment(RecruitingStatus status) {
         if (status == RecruitingStatus.OPEN) {
-            if (this.recruitingStatus != RecruitingStatus.UPCOMING) {
+            if (this.recruitingStatus != RecruitingStatus.CLOSED) {
                 throw new IllegalClubStateException("모집 예정 상태인 동아리만 모집을 시작 할 수 있습니다.");
             }
             this.recruitingStart = LocalDate.now();

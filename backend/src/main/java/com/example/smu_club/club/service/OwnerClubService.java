@@ -94,7 +94,7 @@ public class OwnerClubService {
                 .clubRoom(request.getClubRoom())
                 .recruitingStart(request.getRecruitingStart())
                 .recruitingEnd(request.getRecruitingEnd())
-                .recruitingStatus(RecruitingStatus.UPCOMING)
+                .recruitingStatus(RecruitingStatus.CLOSED)
                 .createdAt(LocalDateTime.now())
                 .thumbnailFileKey(thumbnailFileKey)
                 .build();
@@ -428,6 +428,12 @@ public class OwnerClubService {
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("[OWNER] ID: " + clubId + "인 동아리를 찾을 수 없습니다."));
 
+        boolean status = isClosedAndConfirmed(club);
+        if(!status){
+            throw new NotClosedRecruitment("동아리 모집이 종료된 상태여야 이메일을 보낼 수 있습니다.");
+        }
+
+
         //2. clubMember WHERE Club = :club,  status = :findByClubAndEmailStatus.READY 인 사람들 조회
         //여기서 락 걸림.
         List<ClubMember> targets = clubMemberRepository.findByClubAndEmailStatus(club, READY);
@@ -442,6 +448,12 @@ public class OwnerClubService {
         }
 
         return toList;
+    }
+
+    private boolean isClosedAndConfirmed(Club club) {
+        RecruitingStatus recruitingStatus = club.getRecruitingStatus();
+        List<ClubMember> pendingApplicants = clubMemberRepository.findByClubAndStatus(club, ClubMemberStatus.PENDING);
+        return recruitingStatus == CLOSED && pendingApplicants.isEmpty();
     }
 
     public byte[] downloadAcceptedMembersExcel(Long clubId, String studentId) {
