@@ -96,6 +96,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.CONFLICT); // 409
     }
 
+    // [OWNER] 동아리 CLOSED 전에 동아리 상세 정보 조회하려고 하면
+    @ExceptionHandler(ClubRecruitmentNotClosedException.class)
+    public ResponseEntity<ApiResponseDto<Object>> handleClubRecruitmentNotClosedException(ClubRecruitmentNotClosedException e) {
+        ApiResponseDto<Object> response = ApiResponseDto.fail("CLUB_RECRUITMENT_NOT_CLOSED", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     /*
     ClubMember 예외 관련
      */
@@ -163,6 +170,7 @@ public class GlobalExceptionHandler {
         ApiResponseDto<Object> response = ApiResponseDto.fail("EXCEL_ERROR", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
 
 
 }

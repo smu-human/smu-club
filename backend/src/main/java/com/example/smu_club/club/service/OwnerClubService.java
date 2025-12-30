@@ -240,6 +240,11 @@ public class OwnerClubService {
 
         Club club = getValidatedClubAsOwner(clubId, studentId);
 
+        // 추가 CLOSED인 상태인 동아리에 대해서만 상세정보 조회가 가능하기 떄문에 방어로직
+        if (club.getRecruitingStatus() != CLOSED) {
+            throw new ClubRecruitmentNotClosedException("모집이 마감된 이후에만 지원서를 열람할 수 있습니다.");
+        }
+
         // 2. 데이터 조회
         ClubMember application = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberNotFoundException("해당 지원서를 찾을 수 없습니다. ID: " + clubMemberId));
