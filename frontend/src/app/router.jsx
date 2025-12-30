@@ -12,8 +12,8 @@ import ClubManage from "../pages/club_manage/club_manage.jsx";
 import ApplicantManage from "../pages/applicant_manage/applicant_manage.jsx";
 import ApplyFormEdit from "../pages/apply_form_edit/apply_form_edit.jsx";
 import ApplyForm from "../pages/apply_form/apply_form.jsx";
-import ApplyFormSubmit from "../pages/apply_form_submit/apply_form_submit.jsx"; // ✅ 추가
-import ApplyFormChange from "../pages/apply_form_change/apply_form_change.jsx"; // ✅ 추가
+import ApplyFormSubmit from "../pages/apply_form_submit/apply_form_submit.jsx";
+import ApplyFormChange from "../pages/apply_form_change/apply_form_change.jsx";
 
 export const router = createBrowserRouter([
   { path: "/", element: <HomePage /> },
@@ -22,6 +22,7 @@ export const router = createBrowserRouter([
   { path: "/club/:id", element: <ClubPage /> },
   { path: "/mypage", element: <MyPage /> },
   { path: "/account_edit", element: <AccountEdit /> },
+
   { path: "/club_edit", element: <ClubEdit /> },
   { path: "/club_manage/:clubId", element: <ClubManage /> },
 
@@ -33,8 +34,6 @@ export const router = createBrowserRouter([
   // ✅ 기존 (유지)
   { path: "/apply_form_edit/:id", element: <ApplyFormEdit /> },
   { path: "/apply_form", element: <ApplyForm /> },
-  { path: "/apply_form_submit", element: <ApplyFormSubmit /> }, // ✅ 신규 추가
-  { path: "/apply_form_change", element: <ApplyFormChange /> }, // ✅ 신규 추가
-
-  // { path: "*", element: <NotFoundPage /> },
+  { path: "/apply_form_submit", element: <ApplyFormSubmit /> },
+  { path: "/apply_form_change", element: <ApplyFormChange /> },
 ]);
