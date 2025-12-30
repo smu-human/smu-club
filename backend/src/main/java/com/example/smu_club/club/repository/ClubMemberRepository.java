@@ -33,8 +33,6 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     Optional<ClubMember> findByClubAndMember_StudentId(Club club, String studentId);
 
-    List<ClubMember> findByClubAndStatus(Club club, ClubMemberStatus status);
-
     @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.club = :club AND cm.status = :status")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<ClubMember> findByClubAndEmailStatus(Club club, EmailStatus status);
@@ -81,4 +79,6 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     @Modifying(clearAutomatically = true) // 이게 있어야 UPDATE/DELETE 쿼리로 인식함 (영속성 컨텍스트(메모리 캐시) 초기화 옵션)
     @Query("UPDATE ClubMember cm SET cm.emailStatus = :emailStatus WHERE cm.id = :clubMemberId")
     void updateEmailStatus(Long clubMemberId, EmailStatus emailStatus);
+
+    List<ClubMember> findAllByClubAndClubRoleOrderByAppliedAtDesc(Club club, ClubRole clubRole);
 }
