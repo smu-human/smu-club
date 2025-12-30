@@ -19,9 +19,12 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.club WHERE cm.member.id = :memberId AND cm.clubRole = :clubRole")
     List<ClubMember> findByMemberIdAndClubRoleWithClub(long memberId, ClubRole clubRole);
-  
-    @Query( "SELECT cm FROM ClubMember cm JOIN FETCH cm.member m JOIN FETCH cm.club c WHERE m.studentId = :studentId")
-    List<ClubMember> findAllWithMemberAndClubByStudentId(@Param("studentId") String studentId);
+
+    @Query("SELECT cm FROM ClubMember cm " +
+            "JOIN FETCH cm.member m " +
+            "JOIN FETCH cm.club c " +
+            "WHERE m.studentId = :studentId AND cm.clubRole != :excludeRole")
+    List<ClubMember> findAllByStudentIdAndRoleNot(@Param("studentId") String studentId, @Param("excludeRole") ClubRole excludeRole);
 
     @Query( "SELECT cm FROM ClubMember cm JOIN FETCH cm.member m JOIN FETCH cm.club c WHERE m.studentId = :studentId AND c.id = :clubId")
     ClubMember findAllWithMemberAndClubByStudentIdAndClubId(@Param("studentId") String studentId, @Param("clubId") Long clubId);
@@ -29,8 +32,6 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     Optional<ClubMember> findByClubAndMember(Club club, Member member);
 
     Optional<ClubMember> findByClubAndMember_StudentId(Club club, String studentId);
-
-    List<ClubMember> findByClubAndStatus(Club club, ClubMemberStatus status);
 
     @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.club = :club AND cm.status = :status")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -78,4 +79,6 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     @Modifying(clearAutomatically = true) // 이게 있어야 UPDATE/DELETE 쿼리로 인식함 (영속성 컨텍스트(메모리 캐시) 초기화 옵션)
     @Query("UPDATE ClubMember cm SET cm.emailStatus = :emailStatus WHERE cm.id = :clubMemberId")
     void updateEmailStatus(Long clubMemberId, EmailStatus emailStatus);
+
+    List<ClubMember> findAllByClubAndClubRoleOrderByAppliedAtDesc(Club club, ClubRole clubRole);
 }
