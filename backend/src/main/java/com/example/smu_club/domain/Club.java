@@ -20,7 +20,11 @@ import java.util.Objects;
 //인덱스의 효율성을 위해 "작업 범위 결정 조건", "이름" 순으로 인덱스 생성
 //인덱스의 정렬은 왼쪽 컬럼 기준으로 진행하기 때문에 Unique한 값이 적을수록 인덱스 스킵 스캔 활용도가 높아진다.
 //현재는 쓸 일이 없겠지만 추후에 특정 범위의 레코드를 검색할 때 좋은 효율이 나온다.
-@Table(name = "club", indexes = @Index(name = "idx_club_priority_name", columnList = "recruit_priority ASC, name ASC"))
+@Table(name = "club", indexes =
+    @Index(name = "idx_club_priority_name", columnList = "recruit_priority ASC, name ASC")
+    @Index(name = "idx_club_recruiting_closure", columnList = "recruiting_status,")
+)
+
 public class Club {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

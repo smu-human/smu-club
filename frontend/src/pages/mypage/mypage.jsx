@@ -1,129 +1,25 @@
 // src/pages/mypage/mypage.jsx
-import { useEffect, useMemo, useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/globals.css";
 import "./mypage.css";
-import result from "../../components/result";
-import { fetch_application_result } from "../../lib/api";
 
 import {
   fetch_mypage_name,
   fetch_my_applications,
-  fetch_owner_managed_clubs,
   is_logged_in,
   apiLogout,
   api_member_withdraw,
-  owner_start_recruitment,
 } from "../../lib/api";
-
-const HIDDEN_CLUBS_KEY = "smu_hidden_club_ids_v1";
 
 export default function MyPage() {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [applications, setApplications] = useState([]);
-  const [managed_clubs, set_managed_clubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error_msg, set_error_msg] = useState("");
-  const [result_open, set_result_open] = useState(false);
-  const [result_loading, set_result_loading] = useState(false);
-  const [result_error, set_result_error] = useState("");
-  const [result_data, set_result_data] = useState(null);
-  const [recruiting_map, set_recruiting_map] = useState({});
-  const [recruiting_loading_map, set_recruiting_loading_map] = useState({});
-
-  // ✅ 임시 삭제(숨김) 상태
-  const [hidden_ids, set_hidden_ids] = useState(() => {
-    try {
-      const raw = localStorage.getItem(HIDDEN_CLUBS_KEY);
-      const arr = raw ? JSON.parse(raw) : [];
-      return new Set(Array.isArray(arr) ? arr.map(String) : []);
-    } catch {
-      return new Set();
-    }
-  });
-
-  const persist_hidden = (nextSet) => {
-    try {
-      localStorage.setItem(HIDDEN_CLUBS_KEY, JSON.stringify([...nextSet]));
-    } catch {}
-  };
-
-  const hide_club = (club_id) => {
-    const id = String(club_id);
-    const next = new Set(hidden_ids);
-    next.add(id);
-    set_hidden_ids(next);
-    persist_hidden(next);
-  };
-
-  const unhide_all = () => {
-    const next = new Set();
-    set_hidden_ids(next);
-    persist_hidden(next);
-  };
-
-  // ✅ id/name 강력 추출 + string 통일
-  const get_id = (obj) => {
-    const v =
-      obj?.clubId ??
-      obj?.club_id ??
-      obj?.id ??
-      obj?.club?.clubId ??
-      obj?.club?.id ??
-      obj?.club?.club_id ??
-      obj?.application?.clubId ??
-      obj?.application?.club_id ??
-      obj?.clubInfo?.clubId ??
-      obj?.clubInfo?.id;
-
-    return v === undefined || v === null ? null : String(v);
-  };
-
-  const get_name = (obj) =>
-    obj?.clubName ??
-    obj?.name ??
-    obj?.club?.clubName ??
-    obj?.club?.name ??
-    obj?.clubInfo?.clubName ??
-    obj?.clubInfo?.name ??
-    "동아리";
-
-  const is_application_item = (a) => {
-    if (a?.applicationId != null) return true;
-    if (a?.applyId != null) return true;
-    if (a?.memberId != null) return true;
-    if (a?.status != null) return true;
-    if (a?.applicationStatus != null) return true;
-    if (a?.applyStatus != null) return true;
-    if (a?.appliedAt != null) return true;
-
-    if (a?.president != null) return false;
-    if (a?.contact != null) return false;
-    if (a?.recruitingEnd != null) return false;
-    if (a?.clubRoom != null) return false;
-    if (a?.description != null) return false;
-
-    return true;
-  };
-
-  // ✅ 모집 토글: start-recruitment만 호출(백에서 토글 가정)
-  const toggle_recruiting = async (club) => {
-    const id = get_id(club);
-    if (!id) return;
-
-    set_recruiting_loading_map((prev) => ({ ...prev, [id]: true }));
-
-    try {
-      await owner_start_recruitment(id);
-      set_recruiting_map((prev) => ({ ...prev, [id]: !prev[id] }));
-    } catch (e) {
-      alert(e?.message || "모집 상태 변경에 실패했습니다.");
-    } finally {
-      set_recruiting_loading_map((prev) => ({ ...prev, [id]: false }));
-    }
-  };
 
   useEffect(() => {
     if (!is_logged_in()) {
@@ -134,21 +30,12 @@ export default function MyPage() {
     const load = async () => {
       try {
         const nameData = await fetch_mypage_name();
-        setName(nameData?.name || "");
-
         const appsData = await fetch_my_applications();
-        const apps = Array.isArray(appsData) ? appsData : [];
-        setApplications(apps);
 
-        try {
-          const ownerData = await fetch_owner_managed_clubs();
-          const owners = Array.isArray(ownerData) ? ownerData : [];
-          set_managed_clubs(owners);
-        } catch (_) {
-          set_managed_clubs([]);
-        }
+        setName(nameData?.name || "");
+        setApplications(appsData || []);
       } catch (err) {
-        set_error_msg(err?.message || "마이페이지 정보를 불러오지 못했습니다.");
+        set_error_msg(err.message || "마이페이지 정보를 불러오지 못했습니다.");
       } finally {
         setLoading(false);
       }
@@ -157,47 +44,12 @@ export default function MyPage() {
     load();
   }, [navigate]);
 
-  const open_result_modal = async (club_id) => {
-    set_result_open(true);
-    set_result_loading(true);
-    set_result_error("");
-    set_result_data(null);
-
-    try {
-      const data = await fetch_application_result(club_id);
-      set_result_data(data);
-    } catch (e) {
-      set_result_error(e?.message || "결과를 불러오지 못했습니다.");
-    } finally {
-      set_result_loading(false);
-    }
-  };
-
-  const managed_ids = useMemo(() => {
-    return new Set((managed_clubs || []).map(get_id).filter((v) => v != null));
-  }, [managed_clubs]);
-
-  // ✅ 숨김 반영
-  const pure_applications = useMemo(() => {
-    return (applications || [])
-      .filter((a) => get_id(a) != null)
-      .filter((a) => is_application_item(a))
-      .filter((a) => !managed_ids.has(get_id(a)))
-      .filter((a) => !hidden_ids.has(get_id(a))); // ⭐ 임시 삭제(숨김)
-  }, [applications, managed_ids, hidden_ids]);
-
-  const visible_managed_clubs = useMemo(() => {
-    return (managed_clubs || [])
-      .filter((c) => get_id(c) != null)
-      .filter((c) => !hidden_ids.has(get_id(c))); // ⭐ 임시 삭제(숨김)
-  }, [managed_clubs, hidden_ids]);
-
   const handleLogout = async () => {
     try {
       await apiLogout();
       navigate("/");
     } catch (err) {
-      set_error_msg(err?.message || "로그아웃에 실패했습니다.");
+      set_error_msg(err.message || "로그아웃에 실패했습니다.");
     }
   };
 
@@ -210,7 +62,7 @@ export default function MyPage() {
       alert("탈퇴가 완료되었습니다.");
       navigate("/");
     } catch (err) {
-      set_error_msg(err?.message || "탈퇴에 실패했습니다.");
+      set_error_msg(err.message || "탈퇴에 실패했습니다.");
     }
   };
 
@@ -226,6 +78,7 @@ export default function MyPage() {
 
   return (
     <div className="page-root">
+      {/* Header */}
       <div className="page-header sticky-header safe-area-top">
         <div className="container">
           <div className="page-header-content">
@@ -251,6 +104,7 @@ export default function MyPage() {
         </div>
       </div>
 
+      {/* Main */}
       <main className="page-main mypage_main">
         {error_msg && <p className="mypage_error">{error_msg}</p>}
 
@@ -258,108 +112,44 @@ export default function MyPage() {
         <section className="mypage_section">
           <h2 className="mypage_title">지원 목록</h2>
 
-          {pure_applications.length === 0 ? (
+          {applications.length === 0 ? (
             <div className="mypage_card">
               <p className="empty">아직 지원한 동아리가 없습니다.</p>
             </div>
           ) : (
             <div className="mypage_card">
-              {pure_applications.map((app) => {
-                const id = get_id(app);
-                return (
-                  <div className="club_box" key={`app-${id}`}>
-                    <p className="club_title">{get_name(app)}</p>
-                    <div className="club_buttons">
-                      <button onClick={() => navigate(`/club/${id}`)}>
-                        동아리 페이지
-                      </button>
-                      <button
-                        onClick={() => navigate(`/apply_form_edit/${id}`)}
-                      >
-                        지원서 편집
-                      </button>
-                      <button onClick={() => open_result_modal(get_id(app))}>
-                        결과 확인
-                      </button>
-
-                      {/* ⭐ 임시 삭제(숨김) */}
-                      <button onClick={() => hide_club(id)}>삭제</button>
-                    </div>
+              {applications.map((app) => (
+                <div className="club_box" key={app.clubId}>
+                  <p className="club_title">{app.clubName}</p>
+                  <div className="club_buttons">
+                    <button onClick={() => navigate(`/club/${app.clubId}`)}>
+                      동아리 페이지
+                    </button>
+                    <button
+                      onClick={() => navigate(`/apply_form_edit/${app.clubId}`)}
+                    >
+                      지원서 편집
+                    </button>
+                    <button
+                      onClick={() =>
+                        navigate(`/apply_form_result/${app.clubId}`)
+                      }
+                    >
+                      결과 확인
+                    </button>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
         </section>
 
-        <result
-          open={result_open}
-          loading={result_loading}
-          error={result_error}
-          result={result_data}
-          onClose={() => set_result_open(false)}
-        />
-
-        {/* 동아리 운영/관리 */}
+        {/* 동아리 운영/관리 (추후 오너 기능 연동용) */}
         <section className="mypage_section">
           <h2 className="mypage_title">동아리 운영/관리</h2>
-
           <div className="mypage_card">
-            {/* ⭐ 숨김 복구(전부) */}
-            {hidden_ids.size > 0 && (
-              <button className="add_btn" type="button" onClick={unhide_all}>
-                숨김 해제(전체)
-              </button>
-            )}
-
-            {visible_managed_clubs.length === 0 ? (
-              <p className="empty">운영 중인 동아리가 없습니다.</p>
-            ) : (
-              visible_managed_clubs.map((club) => {
-                const id = get_id(club);
-                return (
-                  <div className="club_box" key={`owner-${id}`}>
-                    <p className="club_title">{get_name(club)}</p>
-                    <div className="club_buttons">
-                      <button onClick={() => navigate(`/club/${id}`)}>
-                        동아리 페이지
-                      </button>
-                      <button onClick={() => navigate(`/club_manage/${id}`)}>
-                        동아리 관리
-                      </button>
-                      <button
-                        onClick={() => navigate(`/apply_form_edit/${id}`)}
-                      >
-                        지원양식 편집
-                      </button>
-                      <button
-                        onClick={() => navigate(`/applicant_manage/${id}`)}
-                      >
-                        지원자 관리
-                      </button>
-
-                      <button
-                        className={`recruit_btn ${
-                          recruiting_map[id] ? "stop" : "start"
-                        }`}
-                        disabled={!!recruiting_loading_map[id]}
-                        onClick={() => toggle_recruiting(club)}
-                      >
-                        {recruiting_loading_map[id]
-                          ? "처리중..."
-                          : recruiting_map[id]
-                          ? "모집중지"
-                          : "모집시작"}
-                      </button>
-
-                      {/* ⭐ 임시 삭제(숨김) */}
-                      <button onClick={() => hide_club(id)}>삭제</button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-
+            <p className="empty">운영 중인 동아리가 없습니다.</p>
+            {/* 오너 전용 데이터 생기면 여기서 map 렌더링 */}
             <button className="add_btn" onClick={() => navigate("/club_edit")}>
               동아리 등록하기
             </button>
@@ -374,9 +164,11 @@ export default function MyPage() {
           >
             회원정보수정
           </button>
+
           <button type="button" className="link_btn" onClick={handleLogout}>
             로그아웃
           </button>
+
           <button
             type="button"
             className="link_btn logout_red"
@@ -387,6 +179,7 @@ export default function MyPage() {
         </div>
       </main>
 
+      {/* Footer */}
       <div className="page-footer">
         <p>© 2025 smu-club. 상명대학교 동아리 플랫폼</p>
         <p>
