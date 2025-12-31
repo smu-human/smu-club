@@ -1,9 +1,10 @@
-package com.example.smu_club.util;
+package com.example.smu_club.util.scheduler;
 
 import com.example.smu_club.domain.EmailRetryQueue;
 import com.example.smu_club.email.repository.EmailRetryQueueRepository;
 
 import com.example.smu_club.email.service.EmailRetryService;
+import com.example.smu_club.util.discord.annotation.DiscordAlert;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +24,7 @@ public class EmailRetryScheduler {
     private final EmailRetryService emailRetryService;
 
     @Scheduled(cron = "0 * * * * *")
+    @DiscordAlert("이메일 재전송 스케줄러")
     public void retryFailedEmails() {
         // 1. 읽기 전용 트랜잭션이 아니어도 됨 (조회만 함)
         Pageable limit = PageRequest.of(0, 100);

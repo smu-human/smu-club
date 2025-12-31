@@ -1,6 +1,7 @@
-package com.example.smu_club.util;
+package com.example.smu_club.util.scheduler;
 
 import com.example.smu_club.answer.repository.AnswerRepository;
+import com.example.smu_club.util.discord.annotation.DiscordAlert;
 import com.example.smu_club.util.oci.OciStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ public class OracleStorageCleanupScheduler {
     private final AnswerRepository answerRepository;
 
     @Scheduled(cron = "0 0 3 * * *") // 매일 새벽 3시에 실행
+    @DiscordAlert("Oracle Cloud Storage 고아 파일 정리 스케줄러")
     public void cleanUpOrphanFiles() {
         /**
          * 1. Oracle Cloud Storage에 생성된지 24시간 지난 파일 목록 조회. (24시간 지난 파일인데 DB에 없다면 빼박 고아 파일)

@@ -1,6 +1,8 @@
-package com.example.smu_club.util;
+package com.example.smu_club.util.scheduler;
 
 
+import com.example.smu_club.util.discord.annotation.DiscordAlert;
+import com.example.smu_club.util.RecruitmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,7 @@ public class RecruitmentAutoClosureScheduler {
 
     // 매일 자정(00:00)에 자동으로 모집 상태를 종료하는 스케줄러
     @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
+    @DiscordAlert("동아리 모집 자동 마감 스케줄러")
     public void closeExpiredRecruitments() {
         log.info("[스케줄러] 모집상태 자동 마감 스케줄러 시작");
 

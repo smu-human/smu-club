@@ -4,13 +4,11 @@ import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.Club;
 import com.example.smu_club.domain.RecruitingStatus;
 import lombok.Builder;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
