@@ -26,12 +26,16 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
             "WHERE m.studentId = :studentId AND cm.clubRole != :excludeRole")
     List<ClubMember> findAllByStudentIdAndRoleNot(@Param("studentId") String studentId, @Param("excludeRole") ClubRole excludeRole);
 
+
+
     @Query( "SELECT cm FROM ClubMember cm JOIN FETCH cm.member m JOIN FETCH cm.club c WHERE m.studentId = :studentId AND c.id = :clubId")
     ClubMember findAllWithMemberAndClubByStudentIdAndClubId(@Param("studentId") String studentId, @Param("clubId") Long clubId);
+
 
     Optional<ClubMember> findByClubAndMember(Club club, Member member);
 
     Optional<ClubMember> findByClubAndMember_StudentId(Club club, String studentId);
+
 
     @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.club = :club AND cm.status = :status")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -81,4 +85,6 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     void updateEmailStatus(Long clubMemberId, EmailStatus emailStatus);
 
     List<ClubMember> findAllByClubAndClubRoleOrderByAppliedAtDesc(Club club, ClubRole clubRole);
+
+    List<ClubMember> findByClubAndStatus(Club club, ClubMemberStatus clubMemberStatus);
 }
