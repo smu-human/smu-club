@@ -20,25 +20,25 @@ public class RecruitmentService {
 //
 //
 //    }
-//
-//    @Transactional
-//    public void closeRecruitments(List<ClosureTarget> list) {
-//    }
-//
-//    @RequiredArgsConstructor
-//    @Getter
-//    @Builder
-//    public static class ClosureTarget {
-//        private final long clubId;
-//        private final RecruitingStatus previousStatus;
-//
-//        public static ClosureTarget from(Club club) {
-//            return ClosureTarget.builder()
-//                    .clubId(club.getId())
-//                    .previousStatus(club.getRecruitingStatus())
-//                    .build();
-//        }
-//
-//
-//    }
+
+    @Transactional
+    public void closeRecruitments(List<ClosureTarget> list) {
+    }
+
+    @RequiredArgsConstructor
+    @Getter
+    @Builder
+    public static class ClosureTarget {
+        private final long clubId;
+        private final RecruitingStatus previousStatus;
+
+        public static ClosureTarget from(Club club) {
+            return ClosureTarget.builder()
+                    .clubId(club.getId())
+                    .previousStatus(club.getRecruitingStatus())
+                    .build();
+        }
+
+
+    }
 }
