@@ -26,11 +26,13 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     @Query( "SELECT cm FROM ClubMember cm JOIN FETCH cm.member m JOIN FETCH cm.club c WHERE m.studentId = :studentId AND c.id = :clubId")
     ClubMember findAllWithMemberAndClubByStudentIdAndClubId(@Param("studentId") String studentId, @Param("clubId") Long clubId);
 
+    List<ClubMember> findByClubAndStatus(Club club, ClubMemberStatus status);
+
+
     Optional<ClubMember> findByClubAndMember(Club club, Member member);
 
     Optional<ClubMember> findByClubAndMember_StudentId(Club club, String studentId);
 
-    List<ClubMember> findByClubAndStatus(Club club, ClubMemberStatus status);
 
     @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.club = :club AND cm.status = :status")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
