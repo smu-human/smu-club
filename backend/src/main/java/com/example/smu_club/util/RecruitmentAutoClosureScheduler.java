@@ -14,7 +14,7 @@ public class RecruitmentAutoClosureScheduler {
     private final RecruitmentService recruitmentService;
 
     // 매일 자정(00:00)에 자동으로 모집 상태를 종료하는 스케줄러
-    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 0 * * *")
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     public void closeExpiredRecruitments() {
         log.info("[스케줄러] 모집상태 자동 마감 스케줄러 시작");
 
@@ -43,6 +43,7 @@ public class RecruitmentAutoClosureScheduler {
 
         } catch (Exception e) {
             log.error("[스케줄러] 모집상태 자동 마감 스케줄러 중 오류 발생: {}", e.getMessage(), e);
+
         }
 
 
