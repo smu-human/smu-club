@@ -1,16 +1,16 @@
-//package com.example.smu_club.util;
-//
-//
-//import lombok.RequiredArgsConstructor;
-//import lombok.extern.slf4j.Slf4j;
-//import org.springframework.stereotype.Component;
-//
-//import java.time.LocalDateTime;
-//import java.util.List;
-//@Component
-//@Slf4j
-//@RequiredArgsConstructor
-//public class RecruitmentAutoClosureScheduler {
+package com.example.smu_club.util;
+
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.util.List;
+@Component
+@Slf4j
+@RequiredArgsConstructor
+public class RecruitmentAutoClosureScheduler {
 //    private final RecruitmentService recruitmentService;
 //
 //    // 매일 자정(00:00)에 자동으로 모집 상태를 종료하는 스케줄러
@@ -32,6 +32,6 @@
 //        log.info("모집상태 자동 마감 스케줄러 종료");
 //
 //    }
-//
-//
-//}
+
+
+}
