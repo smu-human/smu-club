@@ -1,21 +1,36 @@
 // src/pages/club/club.jsx
-
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import "../../styles/globals.css";
 import "./club.css";
 import {
   fetch_public_club,
   fetch_member_club_apply,
   is_logged_in,
+  fetch_owner_managed_clubs,
+  fetch_my_applications,
 } from "../../lib/api";
 
 function fmt_date(v) {
   if (!v) return "-";
   const s = String(v);
-  // "2025-12-20T..." 형태면 날짜만
   if (s.includes("T")) return s.split("T")[0];
   return s;
+}
+
+function get_id(obj) {
+  const v =
+    obj?.clubId ??
+    obj?.club_id ??
+    obj?.id ??
+    obj?.club?.clubId ??
+    obj?.club?.id ??
+    obj?.club?.club_id ??
+    obj?.application?.clubId ??
+    obj?.application?.club_id ??
+    obj?.clubInfo?.clubId ??
+    obj?.clubInfo?.id;
+  return v === undefined || v === null ? null : String(v);
 }
 
 export default function ClubPage() {
@@ -29,29 +44,104 @@ export default function ClubPage() {
   const [error_msg, set_error_msg] = useState("");
   const carouselRef = useRef(null);
 
+  const [owner_ids, set_owner_ids] = useState(new Set());
+  const [applied_ids, set_applied_ids] = useState(new Set());
+
+  const is_owner = useMemo(() => owner_ids.has(String(id)), [owner_ids, id]);
+  const is_applied = useMemo(
+    () => applied_ids.has(String(id)),
+    [applied_ids, id]
+  );
+
+  const is_guest = useMemo(() => !is_logged_in(), []);
+
+  const can_show_apply = useMemo(() => {
+    if (is_guest) return false; // 게스트면 숨김
+    if (is_owner) return false; // 오너면 숨김
+    if (is_applied) return false; // 이미 지원했으면 숨김
+    return true;
+  }, [is_guest, is_owner, is_applied]);
+
+  useEffect(() => {
+    const load_owner_and_applied = async () => {
+      if (!is_logged_in()) {
+        set_owner_ids(new Set());
+        set_applied_ids(new Set());
+        return;
+      }
+
+      try {
+        const [ownerData, appsData] = await Promise.allSettled([
+          fetch_owner_managed_clubs(),
+          fetch_my_applications(),
+        ]);
+
+        if (ownerData.status === "fulfilled") {
+          const owners = Array.isArray(ownerData.value) ? ownerData.value : [];
+          const next_owner = new Set(
+            owners
+              .map((c) => c?.clubId ?? c?.id ?? c?.club_id)
+              .filter((v) => v !== undefined && v !== null)
+              .map(String)
+          );
+          set_owner_ids(next_owner);
+        } else {
+          set_owner_ids(new Set());
+        }
+
+        if (appsData.status === "fulfilled") {
+          const apps = Array.isArray(appsData.value) ? appsData.value : [];
+          const next_applied = new Set(
+            apps.map(get_id).filter((v) => v !== null)
+          );
+          set_applied_ids(next_applied);
+        } else {
+          set_applied_ids(new Set());
+        }
+      } catch {
+        set_owner_ids(new Set());
+        set_applied_ids(new Set());
+      }
+    };
+
+    load_owner_and_applied();
+  }, []);
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       set_error_msg("");
 
       try {
-        const data = await fetch_public_club(id);
+        const res = await fetch_public_club(id);
+        const data = res?.data ?? res;
         setClub(data);
 
-        const urls = Array.isArray(data?.clubImageUrls)
-          ? data.clubImageUrls.filter(
-              (v) => v && String(v).trim() && v !== "string"
-            )
+        const club_images = Array.isArray(data?.clubImages)
+          ? data.clubImages
           : [];
 
-        if (urls.length > 0) setImages(urls);
-        else if (
+        const urls_from_club_images = club_images
+          .slice()
+          .sort((a, b) => (a?.orderNumber ?? 0) - (b?.orderNumber ?? 0))
+          .map((it) => it?.imageUrl)
+          .filter((v) => v && String(v).trim() && v !== "string");
+
+        const thumb =
           data?.thumbnailUrl &&
           String(data.thumbnailUrl).trim() &&
           data.thumbnailUrl !== "string"
-        )
-          setImages([data.thumbnailUrl]);
-        else setImages([]);
+            ? data.thumbnailUrl
+            : null;
+
+        const final_urls =
+          urls_from_club_images.length > 0
+            ? urls_from_club_images
+            : thumb
+            ? [thumb]
+            : [];
+
+        setImages(final_urls);
 
         setActiveIndex(0);
         carouselRef.current?.scrollTo({ left: 0 });
@@ -97,14 +187,11 @@ export default function ClubPage() {
   };
 
   const handleApply = async () => {
-    if (!is_logged_in()) {
-      nav("/login");
-      return;
-    }
+    if (!can_show_apply) return;
 
     try {
       const data = await fetch_member_club_apply(id);
-      nav("/apply_form", {
+      nav("/apply_form_submit", {
         state: {
           club,
           applyData: data,
@@ -135,10 +222,14 @@ export default function ClubPage() {
                 <path d="M12 19l-7-7 7-7" />
               </svg>
             </button>
+
             <h1>{club?.name || `클럽 ${id} 상세`}</h1>
-            <button className="apply_btn" onClick={handleApply}>
-              지원하기
-            </button>
+
+            {can_show_apply && (
+              <button className="apply_btn" onClick={handleApply}>
+                지원하기
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -220,8 +311,6 @@ export default function ClubPage() {
                     <span className="label">연락처</span>
                     <span className="val">{club.contact || "-"}</span>
                   </li>
-
-                  {/* ✅ 모집 시작/마감 둘 다 표시 */}
                   <li>
                     <span className="label">모집 시작</span>
                     <span className="val">
@@ -232,7 +321,6 @@ export default function ClubPage() {
                     <span className="label">모집 마감</span>
                     <span className="val">{fmt_date(club.recruitingEnd)}</span>
                   </li>
-
                   <li>
                     <span className="label">상태</span>
                     <span className="val badge">
