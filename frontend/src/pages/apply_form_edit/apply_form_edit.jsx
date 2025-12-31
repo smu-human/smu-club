@@ -1,6 +1,6 @@
 // src/pages/apply_form_edit/apply_form_edit.jsx
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/globals.css";
 import "./apply_form_edit.css";
 import {
@@ -65,7 +65,7 @@ export default function ApplyFormEdit() {
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState("");
+  const [gender, setGender] = useState("male");
 
   const [questions, setQuestions] = useState([]); // text only in UI
   const [has_file_upload, set_has_file_upload] = useState(false); // file fixed item
@@ -236,7 +236,6 @@ export default function ApplyFormEdit() {
 
   return (
     <div className="page-root">
-      {/* Header */}
       <div className="page-header sticky-header safe-area-top">
         <div className="container">
           <div className="page-header-content">
@@ -261,140 +260,64 @@ export default function ApplyFormEdit() {
         </div>
       </div>
 
-      {/* Main */}
       <main className="page-main apply_main">
         <section className="apply_section">
           <h2 className="apply_title">지원서 양식 수정</h2>
 
           <div className="apply_card">
-            <p className="desc">지원자가 보게 될 질문들을 추가·수정하세요.</p>
+            {error_msg && <p className="mypage_error">{error_msg}</p>}
 
-            {/* 기본 항목 */}
-            <label className="field_label" htmlFor="dept">
-              학과
-            </label>
-            <input
-              id="dept"
-              className="field_input"
-              placeholder="소속 학과를 입력하세요"
-              value={dept}
-              onChange={(e) => setDept(e.target.value)}
-            />
-
-            <label className="field_label" htmlFor="sid">
-              학번
-            </label>
-            <input
-              id="sid"
-              className="field_input"
-              placeholder="학번을 입력하세요 (예: 202012345)"
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-            />
-
-            <label className="field_label" htmlFor="uname">
-              이름
-            </label>
-            <input
-              id="uname"
-              className="field_input"
-              placeholder="이름을 입력하세요"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-
-            <label className="field_label" htmlFor="phone">
-              전화번호
-            </label>
-            <input
-              id="phone"
-              className="field_input"
-              placeholder="- 제외 번호만 입력해주세요"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-
-            <fieldset className="fieldset">
-              <legend className="field_label">성별</legend>
-              <label className="radio_item">
-                <input
-                  type="radio"
-                  name="gender"
-                  value="male"
-                  checked={gender === "male"}
-                  onChange={(e) => setGender(e.target.value)}
-                />
-                남성
-              </label>
-              <label className="radio_item">
-                <input
-                  type="radio"
-                  name="gender"
-                  value="female"
-                  checked={gender === "female"}
-                  onChange={(e) => setGender(e.target.value)}
-                />
-                여성
-              </label>
-              <label className="radio_item">
-                <input
-                  type="radio"
-                  name="gender"
-                  value="other"
-                  checked={gender === "other"}
-                  onChange={(e) => setGender(e.target.value)}
-                />
-                기타
-              </label>
-            </fieldset>
-
-            {/* 커스텀 질문 리스트 */}
-            {questions.length > 0 && (
-              <div className="custom_list">
-                {questions.map((q, idx) => (
-                  <div key={q.id} className="q_item">
-                    <label className="field_label">
-                      {idx + 1}. {q.label}
-                    </label>
-                    <textarea
-                      className="answer_area"
-                      placeholder="답변을 입력하세요"
-                      value={answers[q.id] ?? ""}
-                      onChange={(e) =>
-                        setAnswers((prev) => ({
-                          ...prev,
-                          [q.id]: e.target.value,
-                        }))
-                      }
-                    />
-                    <button
-                      type="button"
-                      className="q_remove_btn"
-                      onClick={() => removeQuestion(q.id)}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* 질문 추가 영역 */}
-            {!adding ? (
-              <button
-                type="button"
-                className="outline_btn add_q_btn"
-                onClick={() => setAdding(true)}
-              >
-                + 질문 추가
-              </button>
+            {loading ? (
+              <p className="desc">불러오는 중...</p>
             ) : (
-              <div className="add_row">
+              <>
+                <p className="desc">
+                  지원자가 보게 될 질문들을 추가·수정하세요.
+                </p>
+
+                {/* 기본 항목(UI 유지용) */}
+                <label className="field_label" htmlFor="dept">
+                  학과
+                </label>
                 <input
+                  id="dept"
                   className="field_input"
-                  placeholder="추가할 질문 내용을 입력하세요"
-                  value={newQuestion}
-                  onChange={(e) => setNewQuestion(e.target.value)}
+                  placeholder="소속 학과를 입력하세요"
+                  value={dept}
+                  onChange={(e) => setDept(e.target.value)}
+                />
+
+                <label className="field_label" htmlFor="sid">
+                  학번
+                </label>
+                <input
+                  id="sid"
+                  className="field_input"
+                  placeholder="학번을 입력하세요 (예: 202012345)"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                />
+
+                <label className="field_label" htmlFor="uname">
+                  이름
+                </label>
+                <input
+                  id="uname"
+                  className="field_input"
+                  placeholder="이름을 입력하세요"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+
+                <label className="field_label" htmlFor="phone">
+                  전화번호
+                </label>
+                <input
+                  id="phone"
+                  className="field_input"
+                  placeholder="- 제외 번호만 입력해주세요"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
 
                 <fieldset className="fieldset">
@@ -468,10 +391,10 @@ export default function ApplyFormEdit() {
                 {!adding ? (
                   <button
                     type="button"
-                    className="outline_btn sm"
-                    onClick={() => setAdding(false)}
+                    className="outline_btn add_q_btn"
+                    onClick={() => setAdding(true)}
                   >
-                    취소
+                    + 질문 추가
                   </button>
                 ) : (
                   <div className="add_row">
@@ -513,22 +436,15 @@ export default function ApplyFormEdit() {
                 )}
                 <div className="form_actions">
                   <button
-                    type="button"
-                    className="outline_btn sm"
-                    onClick={addQuestion}
+                    className="primary_btn save_btn"
+                    onClick={onSave}
+                    disabled={saving}
                   >
-                    추가
+                    {saving ? "저장중..." : "저장하기"}
                   </button>
                 </div>
-              </div>
+              </>
             )}
-
-            {/* 하단 저장만 남김 */}
-            <div className="form_actions">
-              <button className="primary_btn save_btn" onClick={onSave}>
-                저장하기
-              </button>
-            </div>
           </div>
         </section>
       </main>

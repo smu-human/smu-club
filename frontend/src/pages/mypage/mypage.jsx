@@ -1,6 +1,5 @@
 // src/pages/mypage/mypage.jsx
-
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/globals.css";
 import "./mypage.css";
@@ -9,6 +8,7 @@ import Result from "../../components/result";
 import {
   fetch_mypage_name,
   fetch_my_applications,
+  fetch_owner_managed_clubs,
   is_logged_in,
   apiLogout,
   api_member_withdraw,
@@ -16,11 +16,14 @@ import {
   fetch_application_result,
 } from "../../lib/api";
 
+const HIDDEN_CLUBS_KEY = "smu_hidden_club_ids_v1";
+
 export default function MyPage() {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [applications, setApplications] = useState([]);
+  const [managed_clubs, set_managed_clubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error_msg, set_error_msg] = useState("");
 
@@ -151,6 +154,8 @@ export default function MyPage() {
     const load = async () => {
       try {
         const nameData = await fetch_mypage_name();
+        setName(nameData?.name || "");
+
         const appsData = await fetch_my_applications();
         setApplications(Array.isArray(appsData) ? appsData : []);
 
@@ -161,7 +166,7 @@ export default function MyPage() {
           set_recruiting_map({});
         }
       } catch (err) {
-        set_error_msg(err.message || "마이페이지 정보를 불러오지 못했습니다.");
+        set_error_msg(err?.message || "마이페이지 정보를 불러오지 못했습니다.");
       } finally {
         setLoading(false);
       }
@@ -214,7 +219,7 @@ export default function MyPage() {
       await apiLogout();
       navigate("/");
     } catch (err) {
-      set_error_msg(err.message || "로그아웃에 실패했습니다.");
+      set_error_msg(err?.message || "로그아웃에 실패했습니다.");
     }
   };
 
@@ -227,7 +232,7 @@ export default function MyPage() {
       alert("탈퇴가 완료되었습니다.");
       navigate("/");
     } catch (err) {
-      set_error_msg(err.message || "탈퇴에 실패했습니다.");
+      set_error_msg(err?.message || "탈퇴에 실패했습니다.");
     }
   };
 
@@ -243,7 +248,6 @@ export default function MyPage() {
 
   return (
     <div className="page-root">
-      {/* Header */}
       <div className="page-header sticky-header safe-area-top">
         <div className="container">
           <div className="page-header-content">
@@ -269,14 +273,13 @@ export default function MyPage() {
         </div>
       </div>
 
-      {/* Main */}
       <main className="page-main mypage_main">
         {error_msg && <p className="mypage_error">{error_msg}</p>}
 
         <section className="mypage_section">
           <h2 className="mypage_title">지원 목록</h2>
 
-          {applications.length === 0 ? (
+          {pure_applications.length === 0 ? (
             <div className="mypage_card">
               <p className="empty">아직 지원한 동아리가 없습니다.</p>
             </div>
@@ -302,8 +305,8 @@ export default function MyPage() {
                       <button onClick={() => hide_club(id)}>삭제</button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
@@ -394,11 +397,9 @@ export default function MyPage() {
           >
             회원정보수정
           </button>
-
           <button type="button" className="link_btn" onClick={handleLogout}>
             로그아웃
           </button>
-
           <button
             type="button"
             className="link_btn logout_red"
@@ -409,7 +410,6 @@ export default function MyPage() {
         </div>
       </main>
 
-      {/* Footer */}
       <div className="page-footer">
         <p>© 2025 smu-club. 상명대학교 동아리 플랫폼</p>
         <p>
