@@ -1,7 +1,6 @@
 package com.example.smu_club.util;
 
 import com.example.smu_club.club.dto.ApplicantExcelDto;
-import com.example.smu_club.club.dto.ApplicantResponse;
 import com.example.smu_club.exception.custom.ExcelException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -10,8 +9,6 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
-
-import static org.apache.poi.ss.usermodel.TableStyleType.headerRow;
 
 @Component
 public class ExcelService {
