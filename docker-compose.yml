@@ -34,6 +34,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       OCI_SMTP_USERNAME: ${OCI_SMTP_USERNAME}
       OCI_SMTP_PASSWORD: ${OCI_SMTP_PASSWORD}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
     networks:
       - network
 
