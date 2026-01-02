@@ -1,10 +1,11 @@
-// src/pages/club/club.jsx
+// src/pages/club/club.jsx (전체)
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
 import "../../styles/globals.css";
 import "./club.css";
 import {
   fetch_public_club,
+  fetch_owner_club_detail,
   fetch_member_club_apply,
   is_logged_in,
   fetch_owner_managed_clubs,
@@ -56,9 +57,9 @@ export default function ClubPage() {
   const is_guest = useMemo(() => !is_logged_in(), []);
 
   const can_show_apply = useMemo(() => {
-    if (is_guest) return false; // 게스트면 숨김
-    if (is_owner) return false; // 오너면 숨김
-    if (is_applied) return false; // 이미 지원했으면 숨김
+    if (is_guest) return false;
+    if (is_owner) return false;
+    if (is_applied) return false;
     return true;
   }, [is_guest, is_owner, is_applied]);
 
@@ -113,12 +114,18 @@ export default function ClubPage() {
       set_error_msg("");
 
       try {
-        const res = await fetch_public_club(id);
-        const data = res?.data ?? res;
-        setClub(data);
+        const logged_in = is_logged_in();
 
-        const club_images = Array.isArray(data?.clubImages)
-          ? data.clubImages
+        const data =
+          logged_in && is_owner
+            ? await fetch_owner_club_detail(id)
+            : await fetch_public_club(id);
+
+        const club_data = data?.data ?? data;
+        setClub(club_data);
+
+        const club_images = Array.isArray(club_data?.clubImages)
+          ? club_data.clubImages
           : [];
 
         const urls_from_club_images = club_images
@@ -128,10 +135,10 @@ export default function ClubPage() {
           .filter((v) => v && String(v).trim() && v !== "string");
 
         const thumb =
-          data?.thumbnailUrl &&
-          String(data.thumbnailUrl).trim() &&
-          data.thumbnailUrl !== "string"
-            ? data.thumbnailUrl
+          club_data?.thumbnailUrl &&
+          String(club_data.thumbnailUrl).trim() &&
+          club_data.thumbnailUrl !== "string"
+            ? club_data.thumbnailUrl
             : null;
 
         const final_urls =
@@ -147,13 +154,16 @@ export default function ClubPage() {
         carouselRef.current?.scrollTo({ left: 0 });
       } catch (err) {
         set_error_msg(err.message || "동아리 정보를 불러오지 못했습니다.");
+        setClub(null);
+        setImages([]);
+        setActiveIndex(0);
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, [id]);
+  }, [id, is_owner]);
 
   const goTo = (nextIdx) => {
     if (!carouselRef.current || images.length === 0) return;

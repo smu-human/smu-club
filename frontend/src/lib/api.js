@@ -342,10 +342,10 @@ export async function owner_register_club(payload) {
       title: payload?.title ?? "",
       president: payload?.president ?? "",
       contact: payload?.contact ?? "",
+      recruitingStart: payload?.recruitingStart ?? null,
       recruitingEnd: payload?.recruitingEnd ?? null,
       clubRoom: payload?.clubRoom ?? "",
       description: payload?.description ?? "",
-      // recruitingStart: payload?.recruitingStart ?? null,
     }),
   });
 
@@ -375,6 +375,12 @@ export async function owner_update_club(club_id, payload) {
 // ===== OWNER: 모집 시작(토글) =====
 export async function owner_start_recruitment(club_id) {
   return apiJson(`/owner/club/${club_id}/start-recruitment`, {
+    method: "POST",
+  });
+}
+// src/lib/api.js (추가)
+export async function owner_close_recruitment(club_id) {
+  return apiJson(`/owner/club/${club_id}/close-recruitment`, {
     method: "POST",
   });
 }
@@ -435,7 +441,6 @@ export async function owner_download_applicants_excel(club_id) {
 
   const content_type = (res.headers.get("content-type") || "").toLowerCase();
 
-  // json으로 오는 경우(스웨거 example: string)
   if (content_type.includes("application/json")) {
     const json = await res.json().catch(() => null);
 
@@ -450,13 +455,11 @@ export async function owner_download_applicants_excel(club_id) {
 
     const maybe_string = json?.data;
 
-    // url이면 새창
     if (typeof maybe_string === "string" && /^https?:\/\//.test(maybe_string)) {
       window.open(maybe_string, "_blank", "noopener,noreferrer");
       return true;
     }
 
-    // 그냥 string이면 파일로 저장 fallback
     const blob = new Blob([maybe_string ?? ""], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
@@ -471,7 +474,6 @@ export async function owner_download_applicants_excel(club_id) {
     return true;
   }
 
-  // 바이너리로 오는 경우
   if (!res.ok) {
     let msg = "엑셀 다운로드에 실패했습니다.";
     try {
@@ -505,7 +507,6 @@ export async function owner_download_applicants_excel(club_id) {
 }
 
 // ===== OWNER: 합불 결과 메일 발송 =====
-// ✅ 백엔드 실제 엔드포인트가 확실치 않아서, 흔한 후보 2~3개를 순차로 시도
 export async function owner_send_result_email(club_id) {
   const candidates = [
     `/owner/club/${club_id}/applicants/send-result-email`,
@@ -524,10 +525,8 @@ export async function owner_send_result_email(club_id) {
       const code = String(e?.code || "").toUpperCase();
       const status = Number(e?.status || 0);
 
-      // 404/405 계열은 다음 후보로 시도
       if (status === 404 || status === 405 || code === "NOT_FOUND") continue;
 
-      // 그 외 에러는 즉시 throw
       throw e;
     }
   }
