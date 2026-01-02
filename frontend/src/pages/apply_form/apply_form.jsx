@@ -1,5 +1,5 @@
 // src/pages/apply_form/apply_form.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/globals.css";
 import "./apply_form.css";
@@ -54,97 +54,112 @@ export default function ApplyForm() {
   const [decision, setDecision] = useState("pending");
   const [saving, set_saving] = useState(false);
 
+  const request_seq = useRef(0);
+
+  const load_detail = async () => {
+    if (!club_id || !club_member_id) {
+      set_error_msg(
+        "club id / club member id가 없습니다. (라우트 파라미터 확인)"
+      );
+      set_loading(false);
+      return;
+    }
+
+    const seq = ++request_seq.current;
+
+    set_loading(true);
+    set_error_msg("");
+
+    try {
+      const data = await fetch_owner_applicant_detail(club_id, club_member_id);
+
+      if (seq !== request_seq.current) return;
+
+      const applicant =
+        data?.applicantInfo ?? data?.applicant ?? data?.applicant_info ?? null;
+
+      const application_form =
+        data?.applicationForm ?? data?.application_form ?? data?.form ?? [];
+
+      const name = applicant?.name ?? "";
+      const student_id = applicant?.studentId ?? applicant?.student_id ?? "";
+      const department = applicant?.department ?? "";
+      const phone_number =
+        applicant?.phoneNumber ?? applicant?.phone_number ?? "";
+
+      const find_answer = (matcher) => {
+        const arr = Array.isArray(application_form) ? application_form : [];
+        const hit = arr.find((q) => matcher(String(q?.questionContent ?? "")));
+        return String(hit?.answerContent ?? "");
+      };
+
+      const gender_answer = find_answer((t) => t.includes("성별"));
+      const intro_answer = find_answer((t) => t.includes("자기소개"));
+
+      const attachment_answer =
+        find_answer((t) => t.includes("첨부")) ||
+        find_answer((t) => t.includes("포트폴리오"));
+
+      set_form({
+        dept: department,
+        studentId: student_id,
+        name,
+        phone: phone_number,
+        gender:
+          gender_answer === "남" || gender_answer === "남성"
+            ? "male"
+            : gender_answer === "여" || gender_answer === "여성"
+            ? "female"
+            : gender_answer
+            ? "other"
+            : "",
+        intro: intro_answer,
+        attachment: attachment_answer,
+      });
+
+      set_applicant_name(name ? `${name}님의 지원서` : "지원서");
+
+      // ✅ 상태는 applicant.status 뿐만 아니라 data 최상위 status에서도 올 수 있으니 둘 다 체크
+      const server_status =
+        applicant?.status ?? data?.status ?? data?.applicationStatus;
+      setDecision(normalize_status(server_status));
+    } catch (e) {
+      if (seq !== request_seq.current) return;
+      set_error_msg(e?.message || "지원서 정보를 불러오지 못했습니다.");
+    } finally {
+      if (seq !== request_seq.current) return;
+      set_loading(false);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      if (!club_id || !club_member_id) {
-        set_error_msg(
-          "club id / club member id가 없습니다. (라우트 파라미터 확인)"
-        );
-        set_loading(false);
-        return;
-      }
-
-      set_loading(true);
-      set_error_msg("");
-
-      try {
-        const data = await fetch_owner_applicant_detail(
-          club_id,
-          club_member_id
-        );
-
-        const applicant =
-          data?.applicantInfo ??
-          data?.applicant ??
-          data?.applicant_info ??
-          null;
-
-        const application_form =
-          data?.applicationForm ?? data?.application_form ?? data?.form ?? [];
-
-        // applicant 공통 필드
-        const name = applicant?.name ?? "";
-        const student_id = applicant?.studentId ?? applicant?.student_id ?? "";
-        const department = applicant?.department ?? "";
-        const phone_number =
-          applicant?.phoneNumber ?? applicant?.phone_number ?? "";
-
-        // applicationForm(질문/답변)에서 기존 더미 필드 매핑 (백엔드 형태에 맞춰 유연 처리)
-        const find_answer = (matcher) => {
-          const arr = Array.isArray(application_form) ? application_form : [];
-          const hit = arr.find((q) =>
-            matcher(String(q?.questionContent ?? ""))
-          );
-          return String(hit?.answerContent ?? "");
-        };
-
-        const gender_answer = find_answer((t) => t.includes("성별"));
-        const intro_answer = find_answer((t) => t.includes("자기소개"));
-
-        const attachment_answer =
-          find_answer((t) => t.includes("첨부")) ||
-          find_answer((t) => t.includes("포트폴리오"));
-
-        set_form({
-          dept: department,
-          studentId: student_id,
-          name,
-          phone: phone_number,
-          gender:
-            gender_answer === "남" || gender_answer === "남성"
-              ? "male"
-              : gender_answer === "여" || gender_answer === "여성"
-              ? "female"
-              : gender_answer
-              ? "other"
-              : "",
-          intro: intro_answer,
-          attachment: attachment_answer,
-        });
-
-        set_applicant_name(name ? `${name}님의 지원서` : "지원서");
-        setDecision(normalize_status(applicant?.status));
-      } catch (e) {
-        set_error_msg(e?.message || "지원서 정보를 불러오지 못했습니다.");
-      } finally {
-        set_loading(false);
-      }
-    };
-
-    load();
+    load_detail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [club_id, club_member_id]);
 
   const on_change_decision = async (next) => {
     if (!club_id || !club_member_id) return;
+    if (saving) return;
 
+    const prev = decision;
+
+    // ✅ 즉시 UI 반영
     setDecision(next);
     set_saving(true);
+
     try {
       await owner_update_applicant_status(
         club_id,
         club_member_id,
         decision_to_api(next)
       );
+
+      // ✅ 백에서 저장된 상태로 다시 동기화(유지)
+      await load_detail();
+    } catch (e) {
+      // ✅ 실패 시 롤백
+      setDecision(prev);
+      alert(e?.message || "상태 변경에 실패했습니다.");
     } finally {
       set_saving(false);
     }

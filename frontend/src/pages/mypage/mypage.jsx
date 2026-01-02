@@ -13,7 +13,9 @@ import {
   apiLogout,
   api_member_withdraw,
   owner_start_recruitment,
+  owner_close_recruitment,
   fetch_application_result,
+  fetch_owner_club_questions,
 } from "../../lib/api";
 
 const HIDDEN_CLUBS_KEY = "smu_hidden_club_ids_v1";
@@ -32,8 +34,8 @@ export default function MyPage() {
   const [result_error, set_result_error] = useState("");
   const [result_data, set_result_data] = useState(null);
 
-  const [recruiting_map, set_recruiting_map] = useState({});
   const [recruiting_loading_map, set_recruiting_loading_map] = useState({});
+  const [is_owner, set_is_owner] = useState(false);
 
   const [hidden_ids, set_hidden_ids] = useState(() => {
     try {
@@ -65,6 +67,8 @@ export default function MyPage() {
     persist_hidden(next);
   };
 
+  // ✅ "클럽/지원" 공용 id 추출(오너 목록 등에서 사용)
+  // ⚠️ 지원목록에서는 application.id가 섞일 수 있어 사용 금지!
   const get_id = (obj) => {
     const v =
       obj?.clubId ??
@@ -78,6 +82,22 @@ export default function MyPage() {
       obj?.clubInfo?.clubId ??
       obj?.clubInfo?.id;
 
+    return v === undefined || v === null ? null : String(v);
+  };
+
+  // ✅ 지원목록 전용: "동아리 id"만 추출 (application.id는 절대 사용 X)
+  const get_application_club_id = (app) => {
+    const v =
+      app?.clubId ??
+      app?.club_id ??
+      app?.club?.clubId ??
+      app?.club?.id ??
+      app?.club?.club_id ??
+      app?.clubInfo?.clubId ??
+      app?.clubInfo?.id ??
+      app?.application?.clubId ??
+      app?.application?.club_id ??
+      app?.club_id_fk;
     return v === undefined || v === null ? null : String(v);
   };
 
@@ -108,40 +128,54 @@ export default function MyPage() {
     return true;
   };
 
-  const is_open_status = (status) =>
-    String(status || "").toUpperCase() === "OPEN";
-
-  const sync_recruiting_map_from_clubs = (clubs) => {
-    const next = {};
-    (clubs || []).forEach((c) => {
-      const id = get_id(c);
-      if (!id) return;
-      next[id] = is_open_status(c?.recruitingStatus);
-    });
-    set_recruiting_map(next);
-  };
-
   const reload_owner_clubs = async () => {
     const ownerData = await fetch_owner_managed_clubs();
     const owners = Array.isArray(ownerData) ? ownerData : [];
     set_managed_clubs(owners);
-    sync_recruiting_map_from_clubs(owners);
+    set_is_owner(true);
     return owners;
   };
 
-  const toggle_recruiting = async (club) => {
+  const has_questions = async (club_id) => {
+    const qs = await fetch_owner_club_questions(club_id);
+    return Array.isArray(qs) && qs.length > 0;
+  };
+
+  const start_recruiting = async (club) => {
     const id = get_id(club);
     if (!id) return;
 
-    set_recruiting_loading_map((prev) => ({ ...prev, [id]: true }));
+    set_recruiting_loading_map((prev) => ({ ...prev, [id]: "start" }));
 
     try {
+      const ok = await has_questions(id);
+      if (!ok) {
+        alert("지원서 양식을 먼저 등록해야 모집을 시작할 수 있습니다.");
+        return;
+      }
+
       await owner_start_recruitment(id);
       await reload_owner_clubs();
     } catch (e) {
-      alert(e?.message || "모집 상태 변경에 실패했습니다.");
+      alert(e?.message || "모집 시작에 실패했습니다.");
     } finally {
-      set_recruiting_loading_map((prev) => ({ ...prev, [id]: false }));
+      set_recruiting_loading_map((prev) => ({ ...prev, [id]: null }));
+    }
+  };
+
+  const close_recruiting = async (club) => {
+    const id = get_id(club);
+    if (!id) return;
+
+    set_recruiting_loading_map((prev) => ({ ...prev, [id]: "close" }));
+
+    try {
+      await owner_close_recruitment(id);
+      await reload_owner_clubs();
+    } catch (e) {
+      alert(e?.message || "모집 중지에 실패했습니다.");
+    } finally {
+      set_recruiting_loading_map((prev) => ({ ...prev, [id]: null }));
     }
   };
 
@@ -163,7 +197,7 @@ export default function MyPage() {
           await reload_owner_clubs();
         } catch (_) {
           set_managed_clubs([]);
-          set_recruiting_map({});
+          set_is_owner(false);
         }
       } catch (err) {
         set_error_msg(err?.message || "마이페이지 정보를 불러오지 못했습니다.");
@@ -197,10 +231,10 @@ export default function MyPage() {
 
   const pure_applications = useMemo(() => {
     return (applications || [])
-      .filter((a) => get_id(a) != null)
+      .filter((a) => get_application_club_id(a) != null)
       .filter((a) => is_application_item(a))
-      .filter((a) => !managed_ids.has(get_id(a)))
-      .filter((a) => !hidden_ids.has(get_id(a)));
+      .filter((a) => !managed_ids.has(get_application_club_id(a)))
+      .filter((a) => !hidden_ids.has(get_application_club_id(a)));
   }, [applications, managed_ids, hidden_ids]);
 
   const visible_managed_clubs = useMemo(() => {
@@ -208,11 +242,6 @@ export default function MyPage() {
       .filter((c) => get_id(c) != null)
       .filter((c) => !hidden_ids.has(get_id(c)));
   }, [managed_clubs, hidden_ids]);
-
-  const is_owner = useMemo(
-    () => visible_managed_clubs.length > 0,
-    [visible_managed_clubs]
-  );
 
   const handleLogout = async () => {
     try {
@@ -285,24 +314,53 @@ export default function MyPage() {
             </div>
           ) : (
             <div className="mypage_card">
-              {pure_applications.map((app) => {
-                const id = get_id(app);
+              {pure_applications.map((app, idx) => {
+                const club_id = get_application_club_id(app);
+                const key = club_id ? `app-${club_id}` : `app-${idx}`;
+
                 return (
-                  <div className="club_box" key={`app-${id}`}>
+                  <div className="club_box" key={key}>
                     <p className="club_title">{get_name(app)}</p>
                     <div className="club_buttons">
-                      <button onClick={() => navigate(`/club/${id}`)}>
+                      <button
+                        onClick={() => {
+                          if (!club_id)
+                            return alert("동아리 id를 찾지 못했습니다.");
+                          navigate(`/club/${club_id}`);
+                        }}
+                      >
                         동아리 페이지
                       </button>
+
                       <button
-                        onClick={() => navigate(`/apply_form_edit/${id}`)}
+                        onClick={() => {
+                          if (!club_id)
+                            return alert("동아리 id를 찾지 못했습니다.");
+                          navigate(`/apply_form_edit/${club_id}`);
+                        }}
                       >
                         지원서 편집
                       </button>
-                      <button onClick={() => open_result_modal(get_id(app))}>
+
+                      <button
+                        onClick={() => {
+                          if (!club_id)
+                            return alert("동아리 id를 찾지 못했습니다.");
+                          open_result_modal(club_id);
+                        }}
+                      >
                         결과 확인
                       </button>
-                      <button onClick={() => hide_club(id)}>삭제</button>
+
+                      <button
+                        onClick={() => {
+                          if (!club_id)
+                            return alert("동아리 id를 찾지 못했습니다.");
+                          hide_club(club_id);
+                        }}
+                      >
+                        삭제
+                      </button>
                     </div>
                   </div>
                 );
@@ -335,11 +393,12 @@ export default function MyPage() {
               ) : (
                 visible_managed_clubs.map((club) => {
                   const id = get_id(club);
-                  const is_open = !!recruiting_map[id];
+                  const loading_kind = recruiting_loading_map[id];
 
                   return (
                     <div className="club_box" key={`owner-${id}`}>
                       <p className="club_title">{get_name(club)}</p>
+
                       <div className="club_buttons">
                         <button onClick={() => navigate(`/club/${id}`)}>
                           동아리 페이지
@@ -359,17 +418,23 @@ export default function MyPage() {
                         </button>
 
                         <button
-                          className={`recruit_btn ${
-                            is_open ? "stop" : "start"
-                          }`}
-                          disabled={!!recruiting_loading_map[id]}
-                          onClick={() => toggle_recruiting(club)}
+                          className="recruit_btn start"
+                          disabled={
+                            loading_kind === "start" || loading_kind === "close"
+                          }
+                          onClick={() => start_recruiting(club)}
                         >
-                          {recruiting_loading_map[id]
-                            ? "처리중..."
-                            : is_open
-                            ? "모집중지"
-                            : "모집시작"}
+                          {loading_kind === "start" ? "처리중..." : "모집시작"}
+                        </button>
+
+                        <button
+                          className="recruit_btn stop"
+                          disabled={
+                            loading_kind === "start" || loading_kind === "close"
+                          }
+                          onClick={() => close_recruiting(club)}
+                        >
+                          {loading_kind === "close" ? "처리중..." : "모집중지"}
                         </button>
 
                         <button onClick={() => hide_club(id)}>삭제</button>
