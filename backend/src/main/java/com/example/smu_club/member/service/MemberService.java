@@ -49,7 +49,7 @@ public class MemberService {
         //데이터가 없을 경우 ResponseEntity.ok에 감싸진 ApiResponseDto의 success 메소드에서 메세지가 구분된다.
         return clubMember.stream().map(
                 cm -> new ApplicationListResponseDto(
-                        cm.getId(),
+                        cm.getClub().getId(),
                         cm.getClub().getName()
                 )).toList();
     }
