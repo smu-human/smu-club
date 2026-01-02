@@ -215,6 +215,17 @@ public class OwnerClubService {
         club.updateRecruitment(OPEN);
     }
 
+    @Transactional
+    public void closeRecruitment(Long clubId, String studentId) {
+
+        Club club = getValidatedClubAsOwner(clubId, studentId);
+
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
+        // 3. 비즈니스 로직 위임
+        club.closeRecruitment(today);
+    }
+
     @Transactional(readOnly = true)
     public ClubInfoResponse getClubInfo(Long clubId, String studentId) {
 
@@ -475,5 +486,7 @@ public class OwnerClubService {
 
         return excelService.createApplicantExcel(excelDtos);
     }
+
+
 }
 
