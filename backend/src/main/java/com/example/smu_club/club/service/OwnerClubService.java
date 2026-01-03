@@ -275,6 +275,7 @@ public class OwnerClubService {
                 .phoneNumber(applicationMember.getPhoneNumber())
                 .email(applicationMember.getEmail())
                 .appliedAt(application.getAppliedAt())
+                .status(application.getStatus())
                 .build();
 
         // 3. 질문+답변 만들기

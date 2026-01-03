@@ -1,5 +1,6 @@
 package com.example.smu_club.club.dto;
 
+import com.example.smu_club.domain.ClubMemberStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -19,5 +20,6 @@ public class ApplicantInfoResponse {
     private String phoneNumber;
     private String email;
     private LocalDateTime appliedAt;
+    private ClubMemberStatus status;
 
 }
