@@ -20,6 +20,9 @@ import {
 
 const HIDDEN_CLUBS_KEY = "smu_hidden_club_ids_v1";
 
+const STARTED_KEY = "smu_recruiting_started_v1";
+const STOPPED_KEY = "smu_recruiting_stopped_v1";
+
 export default function MyPage() {
   const navigate = useNavigate();
 
@@ -47,9 +50,35 @@ export default function MyPage() {
     }
   });
 
+  const [started_ids, set_started_ids] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STARTED_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr.map(String) : []);
+    } catch {
+      return new Set();
+    }
+  });
+
+  const [stopped_ids, set_stopped_ids] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STOPPED_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr.map(String) : []);
+    } catch {
+      return new Set();
+    }
+  });
+
   const persist_hidden = (nextSet) => {
     try {
       localStorage.setItem(HIDDEN_CLUBS_KEY, JSON.stringify([...nextSet]));
+    } catch {}
+  };
+
+  const persist_set = (key, setObj) => {
+    try {
+      localStorage.setItem(key, JSON.stringify([...setObj]));
     } catch {}
   };
 
@@ -67,8 +96,6 @@ export default function MyPage() {
     persist_hidden(next);
   };
 
-  // ✅ "클럽/지원" 공용 id 추출(오너 목록 등에서 사용)
-  // ⚠️ 지원목록에서는 application.id가 섞일 수 있어 사용 금지!
   const get_id = (obj) => {
     const v =
       obj?.clubId ??
@@ -85,7 +112,6 @@ export default function MyPage() {
     return v === undefined || v === null ? null : String(v);
   };
 
-  // ✅ 지원목록 전용: "동아리 id"만 추출 (application.id는 절대 사용 X)
   const get_application_club_id = (app) => {
     const v =
       app?.clubId ??
@@ -141,9 +167,78 @@ export default function MyPage() {
     return Array.isArray(qs) && qs.length > 0;
   };
 
+  const mark_started = (club_id) => {
+    const id = String(club_id);
+    const next_started = new Set(started_ids);
+    next_started.add(id);
+
+    const next_stopped = new Set(stopped_ids);
+    next_stopped.delete(id);
+
+    set_started_ids(next_started);
+    set_stopped_ids(next_stopped);
+
+    persist_set(STARTED_KEY, next_started);
+    persist_set(STOPPED_KEY, next_stopped);
+  };
+
+  const mark_stopped = (club_id) => {
+    const id = String(club_id);
+
+    const next_stopped = new Set(stopped_ids);
+    next_stopped.add(id);
+
+    const next_started = new Set(started_ids);
+    next_started.delete(id);
+
+    set_stopped_ids(next_stopped);
+    set_started_ids(next_started);
+
+    persist_set(STOPPED_KEY, next_stopped);
+    persist_set(STARTED_KEY, next_started);
+  };
+
+  const is_deadline_passed = (club) => {
+    const endRaw = club?.recruitingEnd ?? club?.recruiting_end ?? null;
+    if (!endRaw) return false;
+
+    const endDate = new Date(String(endRaw));
+    if (Number.isNaN(endDate.getTime())) return false;
+
+    const now = new Date();
+    return now.getTime() >= endDate.getTime();
+  };
+
+  const is_recruiting_started = (club) => {
+    const id = get_id(club);
+    if (!id) return false;
+    return started_ids.has(id);
+  };
+
+  const is_recruiting_closed = (club) => {
+    const id = get_id(club);
+    if (!id) return false;
+    return is_deadline_passed(club) || stopped_ids.has(id);
+  };
+
   const start_recruiting = async (club) => {
     const id = get_id(club);
     if (!id) return;
+
+    if (is_recruiting_closed(club)) {
+      alert("모집이 종료된 동아리는 다시 시작할 수 없습니다.");
+      return;
+    }
+
+    if (is_recruiting_started(club)) {
+      alert("이미 모집을 시작한 동아리입니다.");
+      return;
+    }
+
+    const ok_confirm = window.confirm(
+      "정말 모집을 시작하시겠습니까? 모집 시작을 한 이후에는 지원 양식을 편집할 수 없으며 모집 종료 이후에만 지원서 상세조회가 가능합니다."
+    );
+    if (!ok_confirm) return;
 
     set_recruiting_loading_map((prev) => ({ ...prev, [id]: "start" }));
 
@@ -155,6 +250,7 @@ export default function MyPage() {
       }
 
       await owner_start_recruitment(id);
+      mark_started(id);
       await reload_owner_clubs();
     } catch (e) {
       alert(e?.message || "모집 시작에 실패했습니다.");
@@ -167,13 +263,24 @@ export default function MyPage() {
     const id = get_id(club);
     if (!id) return;
 
+    if (is_recruiting_closed(club)) {
+      alert("이미 모집이 종료된 동아리입니다.");
+      return;
+    }
+
+    const ok_confirm = window.confirm(
+      "정말 모집을 종료하시겠습니까? 종료 후 다시 시작할 수 없습니다."
+    );
+    if (!ok_confirm) return;
+
     set_recruiting_loading_map((prev) => ({ ...prev, [id]: "close" }));
 
     try {
       await owner_close_recruitment(id);
+      mark_stopped(id);
       await reload_owner_clubs();
     } catch (e) {
-      alert(e?.message || "모집 중지에 실패했습니다.");
+      alert(e?.message || "모집 종료에 실패했습니다.");
     } finally {
       set_recruiting_loading_map((prev) => ({ ...prev, [id]: null }));
     }
@@ -332,11 +439,12 @@ export default function MyPage() {
                         동아리 페이지
                       </button>
 
+                      {/* ✅ 여기만 변경: 지원서 편집 -> apply_form_change 로 이동 */}
                       <button
                         onClick={() => {
                           if (!club_id)
                             return alert("동아리 id를 찾지 못했습니다.");
-                          navigate(`/apply_form_edit/${club_id}`);
+                          navigate(`/apply_form_change/${club_id}`);
                         }}
                       >
                         지원서 편집
@@ -395,6 +503,13 @@ export default function MyPage() {
                   const id = get_id(club);
                   const loading_kind = recruiting_loading_map[id];
 
+                  const started = is_recruiting_started(club);
+                  const closed = is_recruiting_closed(club);
+
+                  const edit_form_disabled = started;
+                  const start_disabled = started || closed;
+                  const stop_disabled = !started || closed;
+
                   return (
                     <div className="club_box" key={`owner-${id}`}>
                       <p className="club_title">{get_name(club)}</p>
@@ -403,14 +518,26 @@ export default function MyPage() {
                         <button onClick={() => navigate(`/club/${id}`)}>
                           동아리 페이지
                         </button>
+
                         <button onClick={() => navigate(`/club_manage/${id}`)}>
                           동아리 관리
                         </button>
+
                         <button
-                          onClick={() => navigate(`/apply_form_edit/${id}`)}
+                          disabled={edit_form_disabled}
+                          onClick={() => {
+                            if (edit_form_disabled) {
+                              alert(
+                                "모집을 시작한 이후에는 지원양식을 편집할 수 없습니다."
+                              );
+                              return;
+                            }
+                            navigate(`/apply_form_edit/${id}`);
+                          }}
                         >
                           지원양식 편집
                         </button>
+
                         <button
                           onClick={() => navigate(`/applicant_manage/${id}`)}
                         >
@@ -420,21 +547,35 @@ export default function MyPage() {
                         <button
                           className="recruit_btn start"
                           disabled={
-                            loading_kind === "start" || loading_kind === "close"
+                            start_disabled ||
+                            loading_kind === "start" ||
+                            loading_kind === "close"
                           }
                           onClick={() => start_recruiting(club)}
                         >
-                          {loading_kind === "start" ? "처리중..." : "모집시작"}
+                          {loading_kind === "start"
+                            ? "처리중..."
+                            : closed
+                            ? "모집종료됨"
+                            : started
+                            ? "모집중"
+                            : "모집시작"}
                         </button>
 
                         <button
                           className="recruit_btn stop"
                           disabled={
-                            loading_kind === "start" || loading_kind === "close"
+                            stop_disabled ||
+                            loading_kind === "start" ||
+                            loading_kind === "close"
                           }
                           onClick={() => close_recruiting(club)}
                         >
-                          {loading_kind === "close" ? "처리중..." : "모집중지"}
+                          {loading_kind === "close"
+                            ? "처리중..."
+                            : closed
+                            ? "종료완료"
+                            : "모집종료"}
                         </button>
 
                         <button onClick={() => hide_club(id)}>삭제</button>

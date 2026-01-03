@@ -16,8 +16,22 @@ function normalize_content(s) {
     .trim();
 }
 
+// ✅ "파일추가" 고정이 아니라, "파일 업로드/첨부" 문구도 파일항목으로 인식
 function is_file_question_content(content) {
-  return normalize_content(content).toLowerCase() === "파일추가";
+  const t = normalize_content(content).toLowerCase();
+
+  if (t === "파일추가") return true;
+
+  if (t.includes("파일") && (t.includes("업로드") || t.includes("첨부")))
+    return true;
+
+  if (t.includes("포트폴리오") && (t.includes("업로드") || t.includes("첨부")))
+    return true;
+
+  if (t.includes("이력서") && (t.includes("업로드") || t.includes("첨부")))
+    return true;
+
+  return false;
 }
 
 function pick_questions_from_apply_data(applyData) {
@@ -47,7 +61,7 @@ function pick_questions_from_apply_data(applyData) {
 
   const file_item = mapped.find((q) => is_file_question_content(q.content));
 
-  // ✅ 파일추가 제외한 텍스트 질문만
+  // ✅ 파일 질문은 textarea 목록에서 제거
   const text_only = mapped.filter((q) => !is_file_question_content(q.content));
 
   // ✅ 중복 제거(content 기준)
@@ -87,21 +101,18 @@ export default function ApplyFormSubmit() {
   const [submitting, setSubmitting] = useState(false);
   const [error_msg, set_error_msg] = useState("");
 
-  const [custom_questions, set_custom_questions] = useState([]); // [{questionId, orderNum, questionContent}]
+  const [custom_questions, set_custom_questions] = useState([]);
   const [has_file_upload, set_has_file_upload] = useState(false);
 
-  // 기본 항목(지금은 UI만 유지)
   const [dept, setDept] = useState("");
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState("");
 
-  // 파일
   const [picked_file, set_picked_file] = useState(null);
   const [fileName, setFileName] = useState("선택된 파일 없음");
 
-  // 답변: { [questionId]: string }
   const [answers, setAnswers] = useState({});
 
   useEffect(() => {
@@ -124,10 +135,12 @@ export default function ApplyFormSubmit() {
 
         setAnswers((prev) => {
           const next = { ...(prev || {}) };
+
           for (const q of parsed.questions) {
             const key = String(q.questionId);
             if (next[key] == null) next[key] = "";
           }
+
           for (const k of Object.keys(next)) {
             if (
               !parsed.questions.find((q) => String(q.questionId) === String(k))
@@ -135,6 +148,7 @@ export default function ApplyFormSubmit() {
               delete next[k];
             }
           }
+
           return next;
         });
       } catch (e) {
@@ -155,6 +169,11 @@ export default function ApplyFormSubmit() {
     setFileName(f ? f.name : "선택된 파일 없음");
   };
 
+  const clearFile = () => {
+    set_picked_file(null);
+    setFileName("선택된 파일 없음");
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!club_id || submitting) return;
@@ -165,16 +184,16 @@ export default function ApplyFormSubmit() {
     try {
       // 1) 파일 업로드(선택)
       let file_key = "";
-      if (picked_file) {
+      if (has_file_upload && picked_file) {
         const issued = await member_issue_application_upload_url(picked_file);
         if (!issued?.preSignedUrl || !issued?.fileName) {
           throw new Error("업로드 URL 응답이 올바르지 않습니다.");
         }
         await member_put_presigned_url(issued.preSignedUrl, picked_file);
-        file_key = issued.fileName; // ✅ swagger의 fileKey로 사용
+        file_key = issued.fileName;
       }
 
-      // 2) questionAndAnswer 만들기 (swagger 스키마)
+      // 2) questionAndAnswer 만들기
       const questionAndAnswer = (custom_questions || []).map((q) => ({
         questionId: Number(q.questionId),
         orderNum: String(q.orderNum ?? ""),
@@ -182,7 +201,7 @@ export default function ApplyFormSubmit() {
         answerContent: String(answers[String(q.questionId)] ?? "").trim(),
       }));
 
-      // 3) 제출 payload
+      // 3) payload
       const payload = {
         fileKey: file_key,
         questionAndAnswer,
@@ -288,6 +307,7 @@ export default function ApplyFormSubmit() {
 
                 <fieldset className="fieldset">
                   <legend className="field_label">성별</legend>
+
                   <label className="radio_item">
                     <input
                       type="radio"
@@ -299,6 +319,7 @@ export default function ApplyFormSubmit() {
                     />
                     남성
                   </label>
+
                   <label className="radio_item">
                     <input
                       type="radio"
@@ -310,6 +331,7 @@ export default function ApplyFormSubmit() {
                     />
                     여성
                   </label>
+
                   <label className="radio_item">
                     <input
                       type="radio"
@@ -321,28 +343,41 @@ export default function ApplyFormSubmit() {
                     />
                     기타
                   </label>
-
-                  {/* ✅ 파일 업로드(백엔드에 파일추가 질문이 있을 때만 보여줄 수도 있음) */}
-                  {has_file_upload && (
-                    <>
-                      <div className="file_row">
-                        <label htmlFor="attach" className="outline_btn">
-                          파일 선택
-                        </label>
-                        <input
-                          id="attach"
-                          type="file"
-                          onChange={onPickFile}
-                          style={{ display: "none" }}
-                        />
-                        <span className="file_name">{fileName}</span>
-                      </div>
-                      <p className="hint_text">
-                        이력서, 포트폴리오 등 — 선택 사항
-                      </p>
-                    </>
-                  )}
                 </fieldset>
+
+                {/* ✅ 파일 업로드 버튼(백에서 "파일 업로드/첨부" 질문이 있으면 표시) */}
+                {has_file_upload && (
+                  <div className="file_upload_section">
+                    <label className="field_label">
+                      첨부파일 등 — 선택 사항
+                    </label>
+
+                    <div className="file_row">
+                      <label htmlFor="attach" className="outline_btn">
+                        파일 선택
+                      </label>
+                      <input
+                        id="attach"
+                        type="file"
+                        onChange={onPickFile}
+                        style={{ display: "none" }}
+                      />
+                      <span className="file_name">{fileName}</span>
+
+                      {picked_file && (
+                        <button
+                          type="button"
+                          className="outline_btn sm"
+                          onClick={clearFile}
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+
+                    <p className="hint_text"></p>
+                  </div>
+                )}
 
                 {/* ✅ 커스텀 질문(텍스트만) */}
                 {custom_questions.length > 0 && (

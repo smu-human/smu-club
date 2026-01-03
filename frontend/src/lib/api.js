@@ -239,13 +239,18 @@ export async function fetch_application_result(club_id) {
   return res.data;
 }
 
+// ✅ 스웨거 기준: POST /member/mypage/application/{clubId}/delete (singular application)
 export async function delete_application(club_id) {
-  const res = await apiJson(`/member/mypage/applications/${club_id}/delete`, {
+  const res = await apiJson(`/member/mypage/application/${club_id}/delete`, {
     method: "POST",
   });
   return res;
 }
 
+// ✅ alias (optional)
+export const delete_member_application = delete_application;
+
+// ✅ 스웨거 기준: GET/PUT /member/mypage/applications/{clubId}/update
 export async function fetch_application_for_update(club_id) {
   const res = await apiJson(`/member/mypage/applications/${club_id}/update`, {
     method: "GET",
@@ -378,7 +383,7 @@ export async function owner_start_recruitment(club_id) {
     method: "POST",
   });
 }
-// src/lib/api.js (추가)
+
 export async function owner_close_recruitment(club_id) {
   return apiJson(`/owner/club/${club_id}/close-recruitment`, {
     method: "POST",
@@ -508,30 +513,9 @@ export async function owner_download_applicants_excel(club_id) {
 
 // ===== OWNER: 합불 결과 메일 발송 =====
 export async function owner_send_result_email(club_id) {
-  const candidates = [
-    `/owner/club/${club_id}/applicants/send-result-email`,
-    `/owner/club/${club_id}/applicants/result-email`,
-    `/owner/club/${club_id}/applicants/send-email`,
-  ];
-
-  let last_error = null;
-
-  for (const path of candidates) {
-    try {
-      const res = await apiJson(path, { method: "POST" });
-      return res;
-    } catch (e) {
-      last_error = e;
-      const code = String(e?.code || "").toUpperCase();
-      const status = Number(e?.status || 0);
-
-      if (status === 404 || status === 405 || code === "NOT_FOUND") continue;
-
-      throw e;
-    }
-  }
-
-  throw last_error || new Error("메일 발송 API를 찾지 못했습니다.");
+  return apiJson(`/owner/club/email/${club_id}`, {
+    method: "POST",
+  });
 }
 
 // ===== MEMBER: 지원서 파일 업로드용 presigned url 발급 =====
