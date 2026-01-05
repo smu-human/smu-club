@@ -37,7 +37,7 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     Optional<ClubMember> findByClubAndMember_StudentId(Club club, String studentId);
 
 
-    @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.club = :club AND cm.status = :status")
+    @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.club = :club AND cm.status = :emailStatus")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<ClubMember> findByClubAndEmailStatus(Club club, EmailStatus status);
 
