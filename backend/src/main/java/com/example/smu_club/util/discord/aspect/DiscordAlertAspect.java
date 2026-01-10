@@ -9,6 +9,9 @@ import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 
+//@Aspect는 해당 클래스가 공통 관심사(Cross-cutting Concerns)를 정의한 '메타데이터(규칙서)'임을 나타내며,
+//스프링은 이를 참조하여 프록시(Proxy) 객체를 생성하고
+//내부적인 메서드 호출 가로채기(Interception) 로직을 통해 부가 기능을 주입한다.
 @Aspect
 @Component
 @RequiredArgsConstructor

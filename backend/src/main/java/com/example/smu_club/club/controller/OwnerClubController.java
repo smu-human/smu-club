@@ -165,7 +165,6 @@ public class OwnerClubController {
     }
 
     // 통보 이메일 보내는 API
-    @PreAuthorize("hasRole('OWNER')") //1.[AOP] 단순 권한 확인 (Spring Security)
     @PostMapping("/email/{clubId}")
     public ResponseEntity<ApiResponseDto<Void>> sendNotificationEmails(
             @PathVariable Long clubId,

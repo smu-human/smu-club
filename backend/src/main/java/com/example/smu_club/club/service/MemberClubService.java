@@ -7,10 +7,7 @@ import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
-import com.example.smu_club.exception.custom.ClubNotRecruitmentPeriodException;
-import com.example.smu_club.exception.custom.ClubNotFoundException;
-import com.example.smu_club.exception.custom.MemberNotFoundException;
-import com.example.smu_club.exception.custom.QuestionNotFoundException;
+import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.question.dto.QuestionResponse;
 import com.example.smu_club.question.repository.QuestionRepository;
@@ -131,5 +128,18 @@ public class MemberClubService {
                 myInfo.getPhoneNumber(),
                 clubQuestionListResponse
         );
+    }
+
+    @Transactional
+    public List<ClubMember> findExpiredClubMembers() {
+        //1. 모집 종료된지 1달이 지난 동아리 회원 조회
+        // 오늘 날짜에서 1달 이전 날짜 >= 동아리 모집 종료일 이라면, 삭제 대상으로 간주한다.
+        return clubMemberRepository.findExpiredClubMembers(LocalDateTime.now().minusMonths(1));
+    }
+
+
+    public int cleanupExpiredClubMembers(List<ClubMember> expiredClubMembers) {
+        //2. 만료된 동아리 회원 삭제 (배치 삭제)
+        return clubMemberRepository.deleteAllInBatchWithCount(expiredClubMembers);
     }
 }
