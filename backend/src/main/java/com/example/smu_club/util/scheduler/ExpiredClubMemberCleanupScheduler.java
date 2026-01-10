@@ -1,6 +1,6 @@
 package com.example.smu_club.util.scheduler;
 
-import com.example.smu_club.club.service.MemberClubService;
+import com.example.smu_club.club.service.BatchClubService;
 import com.example.smu_club.domain.ClubMember;
 import com.example.smu_club.util.discord.annotation.DiscordAlert;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import java.util.List;
 @Slf4j
 class ExpiredClubMemberCleanupScheduler {
 
-    private final MemberClubService clubService;
+    private final BatchClubService batchClubService;
 
     @Scheduled(cron = "0 30 2 * * *") // 매일 새벽 2시 30분에 실행
     @DiscordAlert("만료된 동아리 회원 정리 스케줄러")
@@ -24,7 +24,7 @@ class ExpiredClubMemberCleanupScheduler {
         log.info("[스케줄러] 만료된 동아리 회원 정리 스케줄러 시작");
 
         try {
-            List<ClubMember> expiredClubMembers = clubService.findExpiredClubMembers();
+            List<ClubMember> expiredClubMembers = batchClubService.findExpiredClubMembers();
 
             if (expiredClubMembers.isEmpty()) {
                 log.info("만료된 동아리 회원이 없습니다.");
@@ -32,7 +32,7 @@ class ExpiredClubMemberCleanupScheduler {
             }
             log.info("[스케줄러] 총 {}명의 만료된 동아리 회원 정리 처리 시도", expiredClubMembers.size());
 
-            int result = clubService.cleanupExpiredClubMembers(expiredClubMembers);
+            int result = batchClubService.cleanupExpiredClubMembers(expiredClubMembers);
             if (result != expiredClubMembers.size()) {
                 log.warn("[스케줄러] 일부 동아리 회원 정리 누락 (대상: {}, 실제 처리: {}) - 누군가 합/불 처리를 하고 있을 수도 있습니다.",
                         expiredClubMembers.size(), result);

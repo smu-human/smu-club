@@ -34,7 +34,7 @@ public class MemberClubService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
 
-    @Transactional(readOnly = false)
+    @Transactional()
     public ApplicationResponseDto saveApplication(Long clubId, String studentId, List<AnswerRequestDto> questionAndAnswer, String fileKey) {
         // 1. ClubMember 에 회원 등록 (Status 기본 값은 PENDING)
         Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +"에 해당하는 회원을 찾을 수 없습니다."));
@@ -128,18 +128,5 @@ public class MemberClubService {
                 myInfo.getPhoneNumber(),
                 clubQuestionListResponse
         );
-    }
-
-    @Transactional
-    public List<ClubMember> findExpiredClubMembers() {
-        //1. 모집 종료된지 1달이 지난 동아리 회원 조회
-        // 오늘 날짜에서 1달 이전 날짜 >= 동아리 모집 종료일 이라면, 삭제 대상으로 간주한다.
-        return clubMemberRepository.findExpiredClubMembers(LocalDateTime.now().minusMonths(1));
-    }
-
-
-    public int cleanupExpiredClubMembers(List<ClubMember> expiredClubMembers) {
-        //2. 만료된 동아리 회원 삭제 (배치 삭제)
-        return clubMemberRepository.deleteAllInBatchWithCount(expiredClubMembers);
     }
 }
