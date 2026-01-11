@@ -518,13 +518,14 @@ export default function MyPage() {
                         <button onClick={() => navigate(`/club/${id}`)}>
                           동아리 페이지
                         </button>
-
                         <button onClick={() => navigate(`/club_manage/${id}`)}>
                           동아리 관리
                         </button>
 
                         <button
-                          disabled={edit_form_disabled}
+                          className={
+                            edit_form_disabled ? "is_disabled_btn" : ""
+                          }
                           onClick={() => {
                             if (edit_form_disabled) {
                               alert(
@@ -537,13 +538,11 @@ export default function MyPage() {
                         >
                           지원양식 편집
                         </button>
-
                         <button
                           onClick={() => navigate(`/applicant_manage/${id}`)}
                         >
                           지원자 관리
                         </button>
-
                         <button
                           className="recruit_btn start"
                           disabled={
@@ -561,7 +560,6 @@ export default function MyPage() {
                             ? "모집중"
                             : "모집시작"}
                         </button>
-
                         <button
                           className="recruit_btn stop"
                           disabled={
@@ -577,7 +575,6 @@ export default function MyPage() {
                             ? "종료완료"
                             : "모집종료"}
                         </button>
-
                         <button onClick={() => hide_club(id)}>삭제</button>
                       </div>
                     </div>

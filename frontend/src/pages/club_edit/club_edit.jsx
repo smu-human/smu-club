@@ -15,18 +15,15 @@ export default function ClubEdit() {
 
   useEffect(() => {
     const scroll_to_top = () => {
-      // 1) window/document
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
 
-      // 2) 실제 스크롤 컨테이너(overflow)일 수 있어서 ref도 같이
       if (scroll_ref.current) {
         scroll_ref.current.scrollTo({ top: 0, left: 0, behavior: "auto" });
       }
     };
 
-    // 렌더 직후 + 에디터/이미지 로딩으로 레이아웃 변하는 것까지 커버
     scroll_to_top();
     requestAnimationFrame(() => {
       scroll_to_top();
@@ -42,6 +39,8 @@ export default function ClubEdit() {
     };
   }, []);
 
+  const today_str = new Date().toISOString().slice(0, 10);
+
   const [club_name, set_club_name] = useState("");
   const [club_one_line, set_club_one_line] = useState("");
   const [leader_name, set_leader_name] = useState("");
@@ -52,6 +51,45 @@ export default function ClubEdit() {
 
   const [images, set_images] = useState([]); // File[]
   const [is_saving, set_is_saving] = useState(false);
+
+  // ✅ 실시간 “실제 렌더” 프리뷰
+  const [preview_html, set_preview_html] = useState("");
+  const [show_live_preview, set_show_live_preview] = useState(true);
+
+  // ✅ 풀스크린(모달 느낌)
+  const [is_editor_fullscreen, set_is_editor_fullscreen] = useState(false);
+
+  const preview_timer_ref = useRef(null);
+  const sync_preview_from_editor = () => {
+    if (preview_timer_ref.current) clearTimeout(preview_timer_ref.current);
+
+    preview_timer_ref.current = setTimeout(() => {
+      const html = editorRef.current?.getInstance().getHTML() || "";
+      set_preview_html(html);
+    }, 200);
+  };
+
+  useEffect(() => {
+    // 최초 1회 프리뷰 동기화
+    const t = setTimeout(() => {
+      const html = editorRef.current?.getInstance().getHTML() || "";
+      set_preview_html(html);
+    }, 0);
+
+    return () => {
+      clearTimeout(t);
+      if (preview_timer_ref.current) clearTimeout(preview_timer_ref.current);
+    };
+  }, []);
+
+  // ESC로 풀스크린 닫기
+  useEffect(() => {
+    const on_key = (e) => {
+      if (e.key === "Escape") set_is_editor_fullscreen(false);
+    };
+    window.addEventListener("keydown", on_key);
+    return () => window.removeEventListener("keydown", on_key);
+  }, []);
 
   const on_pick_images = (e) => {
     const files = Array.from(e.target.files || []);
@@ -203,7 +241,12 @@ export default function ClubEdit() {
               className="field_input"
               type="date"
               value={start_date}
-              onChange={(e) => set_start_date(e.target.value)}
+              min={today_str}
+              onChange={(e) => {
+                const v = e.target.value;
+                set_start_date(v);
+                if (deadline && v && deadline < v) set_deadline("");
+              }}
             />
 
             <label className="field_label">모집 마감일</label>
@@ -211,6 +254,7 @@ export default function ClubEdit() {
               className="field_input"
               type="date"
               value={deadline}
+              min={start_date || today_str}
               onChange={(e) => set_deadline(e.target.value)}
             />
           </div>
@@ -218,15 +262,74 @@ export default function ClubEdit() {
 
         <section className="club_section">
           <h2 className="club_title">동아리 소개</h2>
-          <div className="club_card">
-            <Editor
-              ref={editorRef}
-              height="320px"
-              initialEditType="wysiwyg"
-              previewStyle="vertical"
-              usageStatistics={false}
-              placeholder="동아리 소개와 활동 내용을 자유롭게 작성하세요."
-            />
+
+          <div
+            className={[
+              "club_card",
+              "editor_shell",
+              is_editor_fullscreen ? "editor_fullscreen" : "",
+            ].join(" ")}
+          >
+            <div className="editor_topbar">
+              <div className="editor_topbar_left">
+                <button
+                  type="button"
+                  className="mini_btn"
+                  onClick={() => set_show_live_preview((v) => !v)}
+                >
+                  {show_live_preview ? "프리뷰 숨기기" : "프리뷰 보기"}
+                </button>
+              </div>
+
+              <div className="editor_topbar_right">
+                <button
+                  type="button"
+                  className="mini_btn"
+                  onClick={() => {
+                    set_is_editor_fullscreen((v) => !v);
+                    // 풀스크린 전환 직후 프리뷰 동기화
+                    setTimeout(() => {
+                      const html =
+                        editorRef.current?.getInstance().getHTML() || "";
+                      set_preview_html(html);
+                    }, 0);
+                  }}
+                >
+                  {is_editor_fullscreen ? "전체화면 닫기 (ESC)" : "전체화면"}
+                </button>
+              </div>
+            </div>
+
+            <div
+              className={[
+                "editor_grid",
+                show_live_preview ? "with_preview" : "no_preview",
+              ].join(" ")}
+            >
+              <div className="editor_col">
+                <Editor
+                  ref={editorRef}
+                  height={is_editor_fullscreen ? "74vh" : "520px"}
+                  initialEditType="wysiwyg"
+                  previewStyle="tab"
+                  usageStatistics={false}
+                  placeholder="동아리 소개와 활동 내용을 자유롭게 작성하세요."
+                  onChange={sync_preview_from_editor}
+                />
+              </div>
+
+              {show_live_preview && (
+                <div className="preview_col">
+                  <div className="preview_title">실제 화면 미리보기</div>
+                  <div
+                    className="club_description preview_box"
+                    dangerouslySetInnerHTML={{
+                      __html: preview_html || "<p></p>",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </section>
 

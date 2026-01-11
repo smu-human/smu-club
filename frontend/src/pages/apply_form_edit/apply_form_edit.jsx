@@ -65,7 +65,7 @@ export default function ApplyFormEdit() {
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState("male");
+  const [gender, setGender] = useState("");
 
   const [questions, setQuestions] = useState([]); // text only in UI
   const [has_file_upload, set_has_file_upload] = useState(false); // file fixed item
@@ -277,7 +277,8 @@ export default function ApplyFormEdit() {
                   className="field_input"
                   placeholder="소속 학과를 입력하세요"
                   value={dept}
-                  onChange={(e) => setDept(e.target.value)}
+                  readOnly
+                  disabled
                 />
 
                 <label className="field_label" htmlFor="sid">
@@ -288,7 +289,8 @@ export default function ApplyFormEdit() {
                   className="field_input"
                   placeholder="학번을 입력하세요 (예: 202012345)"
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
+                  readOnly
+                  disabled
                 />
 
                 <label className="field_label" htmlFor="uname">
@@ -299,7 +301,8 @@ export default function ApplyFormEdit() {
                   className="field_input"
                   placeholder="이름을 입력하세요"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  readOnly
+                  disabled
                 />
 
                 <label className="field_label" htmlFor="phone">
@@ -310,38 +313,42 @@ export default function ApplyFormEdit() {
                   className="field_input"
                   placeholder="- 제외 번호만 입력해주세요"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  readOnly
+                  disabled
                 />
 
                 <fieldset className="fieldset">
                   <legend className="field_label">성별</legend>
+
                   <label className="radio_item">
                     <input
                       type="radio"
                       name="gender"
                       value="male"
                       checked={gender === "male"}
-                      onChange={(e) => setGender(e.target.value)}
+                      disabled
                     />
                     남성
                   </label>
+
                   <label className="radio_item">
                     <input
                       type="radio"
                       name="gender"
                       value="female"
                       checked={gender === "female"}
-                      onChange={(e) => setGender(e.target.value)}
+                      disabled
                     />
                     여성
                   </label>
+
                   <label className="radio_item">
                     <input
                       type="radio"
                       name="gender"
                       value="other"
                       checked={gender === "other"}
-                      onChange={(e) => setGender(e.target.value)}
+                      disabled
                     />
                     기타
                   </label>

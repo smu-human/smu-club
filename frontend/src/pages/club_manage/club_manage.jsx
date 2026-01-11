@@ -16,10 +16,8 @@ function extract_object_key(v) {
   const s = String(v || "").trim();
   if (!s) return null;
 
-  // 이미 object key 형태면 그대로 사용
   if (!s.startsWith("http")) return s;
 
-  // .../o/<objectKey>
   const idx = s.indexOf("/o/");
   if (idx >= 0) return s.slice(idx + 3);
 
@@ -50,7 +48,6 @@ function normalize_existing_images(detail) {
 
 function to_display_name(v) {
   const s = String(v || "");
-  // 화면에는 보기 좋게 마지막 파일명만 보여주기
   try {
     const decoded = decodeURIComponent(s);
     const last = decoded.split("/").pop();
@@ -65,6 +62,8 @@ export default function ClubManage() {
   const navigate = useNavigate();
   const { clubId } = useParams();
   const editorRef = useRef(null);
+
+  const today_str = new Date().toISOString().slice(0, 10);
 
   const [club_name, set_club_name] = useState("");
   const [club_one_line, set_club_one_line] = useState("");
@@ -81,6 +80,31 @@ export default function ClubManage() {
   const [is_loading, set_is_loading] = useState(true);
   const [is_saving, set_is_saving] = useState(false);
 
+  // ✅ 실시간 “실제 렌더” 프리뷰
+  const [preview_html, set_preview_html] = useState("");
+  const [show_live_preview, set_show_live_preview] = useState(true);
+
+  // ✅ 풀스크린(모달 느낌)
+  const [is_editor_fullscreen, set_is_editor_fullscreen] = useState(false);
+
+  const preview_timer_ref = useRef(null);
+  const sync_preview_from_editor = () => {
+    if (preview_timer_ref.current) clearTimeout(preview_timer_ref.current);
+
+    preview_timer_ref.current = setTimeout(() => {
+      const html = editorRef.current?.getInstance().getHTML() || "";
+      set_preview_html(html);
+    }, 200);
+  };
+
+  useEffect(() => {
+    const on_key = (e) => {
+      if (e.key === "Escape") set_is_editor_fullscreen(false);
+    };
+    window.addEventListener("keydown", on_key);
+    return () => window.removeEventListener("keydown", on_key);
+  }, []);
+
   const get_detail = async () => {
     const detail = await fetch_owner_club_detail(clubId);
 
@@ -94,12 +118,13 @@ export default function ClubManage() {
 
     set_club_room(detail?.clubRoom ?? "");
 
-    // ✅ 반드시 "object key"로만 보관 (업데이트 시 그대로 전송)
     set_existing_images(normalize_existing_images(detail));
 
     const html = detail?.description ?? "";
     const inst = editorRef.current?.getInstance();
     if (inst) inst.setHTML(html || "");
+
+    set_preview_html(html || "");
   };
 
   useEffect(() => {
@@ -120,6 +145,10 @@ export default function ClubManage() {
     };
 
     load();
+
+    return () => {
+      if (preview_timer_ref.current) clearTimeout(preview_timer_ref.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clubId]);
 
@@ -163,7 +192,6 @@ export default function ClubManage() {
         ? await owner_upload_images(new_images)
         : [];
 
-      // ✅ 업로드 결과도 object key로 정규화 (혹시 URL로 와도 안전)
       const uploaded_new_keys = (uploaded_new || [])
         .map((it) => extract_object_key(it))
         .filter(Boolean);
@@ -179,7 +207,7 @@ export default function ClubManage() {
       }
 
       await owner_update_club(clubId, {
-        uploadedImageFileNames: merged_images, // ✅ object key만 전송
+        uploadedImageFileNames: merged_images,
         name: club_name,
         title: club_one_line,
         president: leader_name,
@@ -345,7 +373,12 @@ export default function ClubManage() {
               className="field_input"
               type="date"
               value={start_date}
-              onChange={(e) => set_start_date(e.target.value)}
+              min={today_str}
+              onChange={(e) => {
+                const v = e.target.value;
+                set_start_date(v);
+                if (deadline && v && deadline < v) set_deadline("");
+              }}
             />
 
             <label className="field_label" htmlFor="deadline">
@@ -356,6 +389,7 @@ export default function ClubManage() {
               className="field_input"
               type="date"
               value={deadline}
+              min={start_date || today_str}
               onChange={(e) => set_deadline(e.target.value)}
             />
 
@@ -374,15 +408,72 @@ export default function ClubManage() {
 
         <section className="club_section">
           <h2 className="club_title">동아리 소개</h2>
-          <div className="club_card">
-            <Editor
-              ref={editorRef}
-              height="320px"
-              initialEditType="wysiwyg"
-              previewStyle="vertical"
-              usageStatistics={false}
-              placeholder="동아리 소개와 활동 내용을 자유롭게 작성하세요."
-            />
+          <div
+            className={[
+              "club_card",
+              "editor_shell",
+              is_editor_fullscreen ? "editor_fullscreen" : "",
+            ].join(" ")}
+          >
+            <div className="editor_topbar">
+              <div className="editor_topbar_left">
+                <button
+                  type="button"
+                  className="mini_btn"
+                  onClick={() => set_show_live_preview((v) => !v)}
+                >
+                  {show_live_preview ? "프리뷰 숨기기" : "프리뷰 보기"}
+                </button>
+              </div>
+
+              <div className="editor_topbar_right">
+                <button
+                  type="button"
+                  className="mini_btn"
+                  onClick={() => {
+                    set_is_editor_fullscreen((v) => !v);
+                    setTimeout(() => {
+                      const html =
+                        editorRef.current?.getInstance().getHTML() || "";
+                      set_preview_html(html);
+                    }, 0);
+                  }}
+                >
+                  {is_editor_fullscreen ? "전체화면 닫기 (ESC)" : "전체화면"}
+                </button>
+              </div>
+            </div>
+
+            <div
+              className={[
+                "editor_grid",
+                show_live_preview ? "with_preview" : "no_preview",
+              ].join(" ")}
+            >
+              <div className="editor_col">
+                <Editor
+                  ref={editorRef}
+                  height={is_editor_fullscreen ? "74vh" : "520px"}
+                  initialEditType="wysiwyg"
+                  previewStyle="tab"
+                  usageStatistics={false}
+                  placeholder="동아리 소개와 활동 내용을 자유롭게 작성하세요."
+                  onChange={sync_preview_from_editor}
+                />
+              </div>
+
+              {show_live_preview && (
+                <div className="preview_col">
+                  <div className="preview_title">실제 화면 미리보기</div>
+                  <div
+                    className="club_description preview_box"
+                    dangerouslySetInnerHTML={{
+                      __html: preview_html || "<p></p>",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </section>
 

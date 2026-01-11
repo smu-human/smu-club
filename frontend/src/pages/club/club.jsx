@@ -310,7 +310,6 @@ export default function ClubPage() {
                   </>
                 )}
               </section>
-
               <section className="club_meta card">
                 <ul className="info_list">
                   <li>
@@ -343,13 +342,12 @@ export default function ClubPage() {
                   </li>
                 </ul>
               </section>
-
               <section className="intro card">
                 <h2 className="section_title">동아리 소개</h2>
 
                 {club?.description ? (
                   <div
-                    className="desc rich_desc"
+                    className="desc rich_desc club_description"
                     dangerouslySetInnerHTML={{ __html: club.description }}
                   />
                 ) : (
