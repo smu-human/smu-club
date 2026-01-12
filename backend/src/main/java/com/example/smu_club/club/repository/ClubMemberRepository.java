@@ -89,12 +89,5 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     List<ClubMember> findByClubAndStatus(Club club, ClubMemberStatus clubMemberStatus);
 
-    // n+1 문제를 해결하기 위한 쿼리는 아니므로, JOIN(교집합)을 사용한다.
-    @Query("SELECT cm FROM ClubMember cm JOIN cm.club c WHERE c.recruitingEnd <= :expirationDate")
-    List<ClubMember> findExpiredClubMembers(LocalDateTime expirationDate);
 
-    @Modifying(clearAutomatically = true)
-    @Transactional
-    @Query("DELETE FROM ClubMember cm WHERE cm IN :expiredClubMembers")
-    int deleteAllInBatchWithCount(List<ClubMember> expiredClubMembers);
 }
