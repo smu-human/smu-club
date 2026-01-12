@@ -12,7 +12,9 @@ import java.util.List;
 
 public interface BatchClubMemberRepository extends JpaRepository<ClubMember, Long> {
     // n+1 문제를 해결하기 위한 쿼리는 아니므로, JOIN(교집합)을 사용한다.
-    @Query("SELECT cm FROM ClubMember cm JOIN cm.club c WHERE c.recruitingEnd <= :expirationDate")
+    @Query("SELECT cm FROM ClubMember cm JOIN cm.club c " +
+            "WHERE cm.clubRole = com.example.smu_club.domain.ClubRole.MEMBER " +
+            "AND c.recruitingEnd <= :expirationDate")
     List<ClubMember> findExpiredClubMembers(LocalDate expirationDate);
 
     @Modifying(clearAutomatically = true)

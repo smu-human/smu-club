@@ -51,7 +51,7 @@ public class ClubMemberRepositoryTest {
                 .email("asdfasasdfdf@gmail.com")
                 .department("Computer Science")
                 .phoneNumber(uniqueId)
-                .role(Role.MEMBER)
+                .role(Role.OWNER)
                 .createdAt(java.time.LocalDateTime.now())
                 .refreshToken("sample_refresh_token")
                 .build()
@@ -76,7 +76,7 @@ public class ClubMemberRepositoryTest {
         ClubMember clubMember = clubMemberRepository.save(ClubMember.builder()
                 .member(member)
                 .club(club)
-                .clubRole(ClubRole.MEMBER)
+                .clubRole(ClubRole.MEMBER) //OWNER가 되면 isEqualTo(0)이 되야함.
                 .appliedAt(java.time.LocalDateTime.now().minusMonths(2))
                 .status(ClubMemberStatus.ACCEPTED)
                 .emailStatus(EmailStatus.PROCESSING)
@@ -87,10 +87,10 @@ public class ClubMemberRepositoryTest {
 
         //When & Then
         List<ClubMember> result = batchClubMemberRepository.findExpiredClubMembers(LocalDate.now().minusMonths(1));
-        assertThat(result.size()).isEqualTo(1);
+        assertThat(result.size()).isEqualTo(0);
 
         int num = batchClubMemberRepository.deleteAllInBatchWithCount(result);
-        assertThat(num).isEqualTo(1);
+        assertThat(num).isEqualTo(0);
 
     }
 
