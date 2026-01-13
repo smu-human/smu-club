@@ -76,6 +76,14 @@ dependencies {
 	//Only Test
 	runtimeOnly 'com.h2database:h2'
 
+	// for Deployment
+	// OCI SDK
+	implementation 'com.oracle.oci.sdk:oci-java-sdk-secrets:3.28.0'
+	implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey:3.28.0'
+
+	// Jackson for JSON parsing  (default installed Spring Boot)
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
 }
 
 tasks.named('test') {
