@@ -7,10 +7,10 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --skip-character-set-client-handshake
     environment:
-      MYSQL_ROOT_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-      MYSQL_DATABASE: ${SPRING_DATASOURCE_DATABASE}
-      MYSQL_USER: ${SPRING_DATASOURCE_USERNAME}
-      MYSQL_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      MYSQL_ROOT_PASSWORD: smu1234!
+      MYSQL_DATABASE: smu_db
+      MYSQL_USER: smu
+      MYSQL_PASSWORD: smu1234!
     volumes:
       - ./db/store:/var/lib/mysql
     networks:
