@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 @Component
-@Profile("prod") // ⭐ 핵심! 'prod' 프로필일 때만 이 설정 클래스가 동작합니다.
+@Profile("prod")
 public class OciVaultService {
 
     public Map<String, Object> getSecrets(String secretId) throws Exception {

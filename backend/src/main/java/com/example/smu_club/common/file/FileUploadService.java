@@ -23,16 +23,17 @@ public class FileUploadService {
     public List<PreSignedUrlResponse> prepareUploads(List<UploadUrlListRequest.FileDetail> fileDetails) {
 
         return fileDetails.stream()
-                .map(this::createPendingFileAndUrl)
+                .map(detail -> createPendingFileAndUrl(detail.getFileName(), detail.getContentType()))
                 .toList();
     }
 
-    private PreSignedUrlResponse createPendingFileAndUrl(UploadUrlListRequest.FileDetail fileDetail) {
+    @Transactional
+    public PreSignedUrlResponse createPendingFileAndUrl(String originalFileName, String contentType) {
 
-        String uniqueFileName = UUID.randomUUID() + "_" + fileDetail.getFileName();
+        String uniqueFileName = UUID.randomUUID() + "_" + originalFileName;
 
         fileMetaDataService.savePending(uniqueFileName);
 
-        return ociStorageService.createUploadPreSignedUrl(uniqueFileName, fileDetail.getContentType());
+        return ociStorageService.createUploadPreSignedUrl(uniqueFileName, contentType);
     }
 }

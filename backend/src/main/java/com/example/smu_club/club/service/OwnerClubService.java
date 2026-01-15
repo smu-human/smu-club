@@ -284,9 +284,11 @@ public class OwnerClubService {
         List<AnswerResponseDto> applicationForm = answers.stream()
                 .map(answer -> {
                     Question question = answer.getQuestion();
-                    String content = (question.getQuestionContentType() == QuestionContentType.FILE)
-                            ? answer.getFileKey()
-                            : answer.getAnswerContent();
+                    String content = answer.getAnswerContent();
+
+                    if (question.getQuestionContentType() == QuestionContentType.FILE && answer.getFileKey() != null) {
+                        content = ociStorageService.createFinalOciUrl(answer.getFileKey());
+                    }
 
                     return new AnswerResponseDto(
                             question.getId(),
