@@ -1,46 +1,66 @@
 package com.example.smu_club.util.oci;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 import com.oracle.bmc.secrets.SecretsClient;
+import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 import com.oracle.bmc.secrets.responses.GetSecretBundleResponse;
-import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.codec.binary.Base64;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.boot.logging.DeferredLog; // 스프링 로거 사용
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.Profiles;
 
+import java.util.Base64; // Java 표준 Base64
 import java.util.Map;
 
-@Component
-@Profile("prod") // ⭐ 핵심! 'prod' 프로필일 때만 이 설정 클래스가 동작합니다.
-public class OciVaultService {
+public class OciVaultService implements EnvironmentPostProcessor {
+    private static final DeferredLog log = new DeferredLog();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public Map<String, Object> getSecrets(String secretId) throws Exception {
-        // 1. Instance Principal 인증 설정
-        // 인스턴스 자체의 메타데이터를 사용하여 인증하므로 설정 파일이 필요 없습니다.
+    @Override
+    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application){
+        //1. prod 프로필일 때만 작동
+        if(!environment.acceptsProfiles(Profiles.of("prod"))) {
+            log.warn("[Deploy] Profile이 prod가 아닙니다.");
+            return;
+        }
+
+        String secretId = "ocid1.vaultsecret.oc1.ap-osaka-1.amaaaaaa5mz35fyafxs5ofmr72yjgrtce3r6hfypgen2afavot46czwuny7a";
+
+        try{
+            //2. vault에서 시크릿 로드
+            Map<String, Object> secrets = fetchSecrets(secretId);
+
+            //3. 환경변수 등록
+            environment.getPropertySources().addFirst(new MapPropertySource("ociVaultSecrets", secrets));
+        } catch(Exception e){
+            throw new IllegalStateException("[OCI Vault] 시크릿 로드 실패, 앱 시작 중단.", e);
+        }
+    }
+
+    private Map<String, Object> fetchSecrets(String secretId) throws Exception {
         InstancePrincipalsAuthenticationDetailsProvider provider =
                 InstancePrincipalsAuthenticationDetailsProvider.builder().build();
 
-        // 2. Client 생성 (Region은 인스턴스 정보를 통해 자동으로 감지됩니다)
-        SecretsClient secretsClient = SecretsClient.builder().build(provider);
+        try (SecretsClient secretsClient = SecretsClient.builder().build(provider)) {
+            GetSecretBundleRequest request = GetSecretBundleRequest.builder()
+                    .secretId(secretId)
+                    .build();
 
-        // 3. 비밀 가져오기 요청
-        GetSecretBundleRequest getSecretBundleRequest = GetSecretBundleRequest.builder()
-                .secretId(secretId)
-                .build();
+            GetSecretBundleResponse response = secretsClient.getSecretBundle(request);
 
-        GetSecretBundleResponse getSecretBundleResponse = secretsClient.getSecretBundle(getSecretBundleRequest);
+            Base64SecretBundleContentDetails content =
+                    (Base64SecretBundleContentDetails) response.getSecretBundle().getSecretBundleContent();
 
-        // 4. Base64 디코딩
-        Base64SecretBundleContentDetails contentDetails =
-                (Base64SecretBundleContentDetails) getSecretBundleResponse.getSecretBundle().getSecretBundleContent();
+            // Apache Commons 대신 Java 내장 Base64 사용
+            String jsonString = new String(Base64.getDecoder().decode(content.getContent()));
 
-        byte[] decodedBytes = Base64.decodeBase64(contentDetails.getContent());
-        String jsonString = new String(decodedBytes);
-
-        // 5. JSON을 Map으로 변환
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(jsonString, Map.class);
+            return OBJECT_MAPPER.readValue(jsonString, new TypeReference<Map<String, Object>>() {
+            });
+        }
     }
 }
