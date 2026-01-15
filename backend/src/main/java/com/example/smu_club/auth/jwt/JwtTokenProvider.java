@@ -8,6 +8,7 @@
     import io.jsonwebtoken.*;
     import io.jsonwebtoken.io.Decoders;
     import io.jsonwebtoken.security.Keys;
+    import jakarta.annotation.PostConstruct;
     import lombok.extern.slf4j.Slf4j;
     import org.springframework.beans.factory.annotation.Value;
     import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,12 +29,25 @@
     public class JwtTokenProvider {
 
         private static final String AUTHORITIES = "auth";
-        private final Key key;
+        //init에서 사용해야되므로,, final 제거
+        private Key key;
         private final long accessTokenValidityInMilliseconds;
         private final long refreshTokenValidityInMilliseconds;
+        //1. Vault가 접근 하기 전, 객체 생성중 초기화를 못하여 에러 발생을 막기위해 secretKey를 필드로 뺀다.
+        @Value("${jwt.secret}")
+        private String secretKey;
 
-        public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
-                                @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds,
+        //2. 모든 주입이 끝난 후 실행되는 @PostConstruct를 활용한다.
+        @PostConstruct
+        public void init() {
+            // 모든 의존성 주입 및 Vault 설정 로드가 완료된 후 실행됨
+            if (secretKey != null && !secretKey.isEmpty()) {
+                byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+                this.key = Keys.hmacShaKeyFor(keyBytes);
+            }
+        }
+
+        public JwtTokenProvider(@Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds,
                                 @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityInSeconds) {
             byte[] keyBytes = Decoders.BASE64.decode(secretKey);
             this.key = Keys.hmacShaKeyFor(keyBytes);
