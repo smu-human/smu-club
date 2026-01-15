@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,9 +38,9 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     Optional<ClubMember> findByClubAndMember_StudentId(Club club, String studentId);
 
 
-    @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.club = :club AND cm.status = :emailStatus")
+    @Query("SELECT cm FROM ClubMember cm JOIN FETCH cm.member m WHERE cm.club = :club AND cm.emailStatus = :emailStatus")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    List<ClubMember> findByClubAndEmailStatus(Club club, EmailStatus status);
+    List<ClubMember> findByClubAndEmailStatus(Club club, EmailStatus emailStatus);
 
     /**
      *     {@code @Modifying(clearAutomatically} = true) 를 쓰는 이유는 이러하다.
@@ -87,4 +88,6 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     List<ClubMember> findAllByClubAndClubRoleOrderByAppliedAtDesc(Club club, ClubRole clubRole);
 
     List<ClubMember> findByClubAndStatus(Club club, ClubMemberStatus clubMemberStatus);
+
+
 }

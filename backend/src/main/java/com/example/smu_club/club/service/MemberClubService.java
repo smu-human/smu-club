@@ -7,10 +7,7 @@ import com.example.smu_club.club.dto.*;
 import com.example.smu_club.club.repository.ClubMemberRepository;
 import com.example.smu_club.club.repository.ClubRepository;
 import com.example.smu_club.domain.*;
-import com.example.smu_club.exception.custom.ClubNotRecruitmentPeriodException;
-import com.example.smu_club.exception.custom.ClubNotFoundException;
-import com.example.smu_club.exception.custom.MemberNotFoundException;
-import com.example.smu_club.exception.custom.QuestionNotFoundException;
+import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.question.dto.QuestionResponse;
 import com.example.smu_club.question.repository.QuestionRepository;
@@ -37,7 +34,7 @@ public class MemberClubService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
 
-    @Transactional(readOnly = false)
+    @Transactional()
     public ApplicationResponseDto saveApplication(Long clubId, String studentId, List<AnswerRequestDto> questionAndAnswer, String fileKey) {
         // 1. ClubMember 에 회원 등록 (Status 기본 값은 PENDING)
         Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +"에 해당하는 회원을 찾을 수 없습니다."));

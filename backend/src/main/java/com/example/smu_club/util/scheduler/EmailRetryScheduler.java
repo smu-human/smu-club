@@ -23,7 +23,7 @@ public class EmailRetryScheduler {
     private final EmailRetryQueueRepository emailRetryQueueRepository;
     private final EmailRetryService emailRetryService;
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 * * * * *") // 매 분마다 실행
     @DiscordAlert("이메일 재전송 스케줄러")
     public void retryFailedEmails() {
         // 1. 읽기 전용 트랜잭션이 아니어도 됨 (조회만 함)

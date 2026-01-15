@@ -45,3 +45,10 @@ VALUES
     ('마감 동아리 10','모집 마감 동아리 10','설명 10','CLOSED',3,'2025-10-01','2025-10-31','회장30','연락처30','동아리방30',NOW());
 
 
+insert into club_member (applied_at, club_role, memo, status, club_id, member_id, email_status, retry_count)
+values
+    ('2026-01-01', 'MEMBER', '메모1', 'PENDING', 40, 20, 'READY', 0);
+
+insert into club_member (applied_at, club_role, memo, status, club_id, member_id, email_status, retry_count)
+values
+    ('2026-01-01', 'OWNER', '메모1', 'ACCEPTED', 40, 21, 'READY', 0);
