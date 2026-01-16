@@ -128,6 +128,30 @@ export default function ApplyFormSubmit() {
 
       try {
         const applyData = await fetch_member_club_apply(club_id);
+
+        // ✅ 지원서 조회 응답에 포함된 지원자 정보 자동 채우기
+        // (현재 스샷 기준: data에 memberId, studentId, name, phone 내려옴)
+        // department는 백엔드에서 추가해주면 자동 반영됨
+        const d = applyData?.data ?? applyData;
+
+        const next_student_id = d?.studentId ?? d?.student_id ?? "";
+        const next_name = d?.name ?? "";
+        const next_phone = d?.phone ?? d?.phoneNumber ?? d?.phone_number ?? "";
+        const next_dept = d?.department ?? d?.dept ?? d?.major ?? "";
+
+        if (next_student_id) {
+          setStudentId((prev) => (prev ? prev : String(next_student_id)));
+        }
+        if (next_name) {
+          setName((prev) => (prev ? prev : String(next_name)));
+        }
+        if (next_phone) {
+          setPhone((prev) => (prev ? prev : String(next_phone)));
+        }
+        if (next_dept) {
+          setDept((prev) => (prev ? prev : String(next_dept)));
+        }
+
         const parsed = pick_questions_from_apply_data(applyData);
 
         set_custom_questions(parsed.questions);
@@ -345,7 +369,6 @@ export default function ApplyFormSubmit() {
                   </label>
                 </fieldset>
 
-                {/* ✅ 파일 업로드 버튼(백에서 "파일 업로드/첨부" 질문이 있으면 표시) */}
                 {has_file_upload && (
                   <div className="file_upload_section">
                     <label className="field_label">
@@ -379,7 +402,6 @@ export default function ApplyFormSubmit() {
                   </div>
                 )}
 
-                {/* ✅ 커스텀 질문(텍스트만) */}
                 {custom_questions.length > 0 && (
                   <div className="custom_list">
                     {custom_questions.map((q, i) => (

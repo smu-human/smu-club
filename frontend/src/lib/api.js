@@ -553,3 +553,65 @@ export async function member_apply_club(club_id, payload) {
   });
   return res?.data || null;
 }
+// src/lib/api.js (추가)
+export async function member_issue_application_download_url(file_key) {
+  const q = encodeURIComponent(String(file_key || ""));
+  const candidates = [
+    `/api/v1/member/mypage/applications/file-url?fileKey=${q}`,
+    `/api/v1/member/mypage/applications/file-url?file_key=${q}`,
+    `/api/v1/member/applications/file-url?fileKey=${q}`,
+    `/api/v1/files/presigned-download?fileKey=${q}`,
+    `/api/v1/file/presigned-download?fileKey=${q}`,
+  ];
+
+  let last_err = null;
+
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error(`download url failed: ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      return data;
+    } catch (e) {
+      last_err = e;
+    }
+  }
+
+  throw last_err || new Error("download url api not found");
+}
+// src/lib/api.js (추가)
+export async function owner_issue_application_download_url(
+  club_id,
+  club_member_id,
+  file_key
+) {
+  const q = encodeURIComponent(String(file_key || ""));
+  const candidates = [
+    `/api/v1/owner/club/${club_id}/applicants/${club_member_id}/file-url?fileKey=${q}`,
+    `/api/v1/owner/club/${club_id}/applicants/${club_member_id}/file-url?file_key=${q}`,
+    `/api/v1/owner/files/presigned-download?fileKey=${q}`,
+    `/api/v1/files/presigned-download?fileKey=${q}`,
+  ];
+
+  let last_err = null;
+
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`download url failed: ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      return data;
+    } catch (e) {
+      last_err = e;
+    }
+  }
+
+  throw last_err || new Error("download url api not found");
+}

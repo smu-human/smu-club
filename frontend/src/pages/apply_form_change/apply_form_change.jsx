@@ -10,10 +10,10 @@ import {
   delete_application,
   member_issue_application_upload_url,
   member_put_presigned_url,
+  member_issue_application_download_url,
 } from "../../lib/api";
 
 function unwrap_api(res) {
-  // 백이 {status,message,data:{...}} 형태면 data만 꺼내쓰기
   if (res && typeof res === "object") {
     if (res.data != null && typeof res.data === "object") return res.data;
     if (res.result != null && typeof res.result === "object") return res.result;
@@ -27,15 +27,12 @@ function normalize_content(s) {
     .trim();
 }
 
-// ✅ "파일추가" 고정이 아니라, "파일 업로드/첨부" 문구도 파일항목으로 인식
 function is_file_question_content(content) {
   const t = normalize_content(content).toLowerCase();
-
   if (!t) return false;
 
   if (t === "파일추가") return true;
 
-  // 더 넓게 인식(백에서 문구 고정해도 잡히게)
   if (t.includes("파일") && (t.includes("업로드") || t.includes("첨부")))
     return true;
 
@@ -45,7 +42,6 @@ function is_file_question_content(content) {
   if (t.includes("이력서") && (t.includes("업로드") || t.includes("첨부")))
     return true;
 
-  // 안전빵: 문구가 조금 달라도 "파일"만 들어가면 파일항목으로 취급
   if (t.includes("파일")) return true;
 
   return false;
@@ -73,6 +69,11 @@ function display_file_name(fileKey) {
   return parts[parts.length - 1];
 }
 
+function is_http_url(v) {
+  const s = String(v || "").trim();
+  return s.startsWith("http://") || s.startsWith("https://");
+}
+
 export default function ApplyFormChange() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -87,11 +88,15 @@ export default function ApplyFormChange() {
     studentId: "",
     name: "",
     phone: "",
+    department: "",
   });
 
-  const [questions, set_questions] = useState([]); // file 제외 질문만
+  const [questions, set_questions] = useState([]);
   const [has_file_upload, set_has_file_upload] = useState(false);
   const [file_key, set_file_key] = useState("");
+
+  const [file_url, set_file_url] = useState("");
+  const [file_url_loading, set_file_url_loading] = useState(false);
 
   const file_input_ref = useRef(null);
 
@@ -109,14 +114,16 @@ export default function ApplyFormChange() {
       const raw = await fetch_application_for_update(club_id);
       const data = unwrap_api(raw);
 
+      console.log("[apply change] full data:", data);
+
       set_member_info({
         memberId: data?.memberId ?? "",
         studentId: data?.studentId ?? "",
         name: data?.name ?? "",
         phone: data?.phone ?? "",
+        department: data?.department ?? "",
       });
 
-      // ✅ swagger 응답: data.fileKey 존재
       const server_file_key = data?.fileKey ?? data?.file_key ?? "";
       set_file_key(server_file_key || "");
 
@@ -151,19 +158,24 @@ export default function ApplyFormChange() {
       const file_item = list.find((q) => q.type === "file");
       set_has_file_upload(!!file_item);
 
-      // ✅ file_key가 서버에서 안 오고, 파일 질문 answerContent로 오는 케이스도 커버
       if (!server_file_key && file_item?.answerContent) {
         set_file_key(String(file_item.answerContent));
       }
 
-      // ✅ 파일 질문은 answers(textarea)에서 제거
       set_questions(list.filter((q) => q.type !== "file"));
     } catch (e) {
       set_error_msg(e?.message || "지원서 정보를 불러오지 못했습니다.");
-      set_member_info({ memberId: "", studentId: "", name: "", phone: "" });
+      set_member_info({
+        department: "",
+        memberId: "",
+        studentId: "",
+        name: "",
+        phone: "",
+      });
       set_questions([]);
       set_has_file_upload(false);
       set_file_key("");
+      set_file_url("");
     } finally {
       set_loading(false);
     }
@@ -177,6 +189,49 @@ export default function ApplyFormChange() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [club_id, navigate]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!has_file_upload) {
+        set_file_url("");
+        return;
+      }
+      if (!file_key) {
+        set_file_url("");
+        return;
+      }
+
+      if (is_http_url(file_key)) {
+        set_file_url(String(file_key));
+        return;
+      }
+
+      set_file_url_loading(true);
+      try {
+        const raw = await member_issue_application_download_url(file_key);
+        const data = unwrap_api(raw);
+
+        const url =
+          data?.preSignedUrl ??
+          data?.presignedUrl ??
+          data?.url ??
+          data?.downloadUrl ??
+          raw?.preSignedUrl ??
+          raw?.presignedUrl ??
+          raw?.url ??
+          raw?.downloadUrl ??
+          "";
+
+        set_file_url(url ? String(url) : "");
+      } catch {
+        set_file_url("");
+      } finally {
+        set_file_url_loading(false);
+      }
+    };
+
+    run();
+  }, [file_key, has_file_upload]);
 
   const update_answer = (question_id, next_value) => {
     set_questions((prev) =>
@@ -201,7 +256,6 @@ export default function ApplyFormChange() {
       const issued_raw = await member_issue_application_upload_url(file);
       const issued = unwrap_api(issued_raw);
 
-      // ✅ issued.data 안에 있을 수도 있어서 unwrap_api로 정리
       const preSignedUrl = issued?.preSignedUrl ?? issued?.presignedUrl ?? "";
       const fileName = issued?.fileName ?? issued?.filename ?? "";
 
@@ -211,7 +265,6 @@ export default function ApplyFormChange() {
 
       await member_put_presigned_url(preSignedUrl, file);
 
-      // ✅ update API에 넣을 fileKey = fileName
       set_file_key(fileName);
       alert("파일이 업로드되었습니다.");
     } catch (err) {
@@ -229,7 +282,6 @@ export default function ApplyFormChange() {
     set_error_msg("");
 
     try {
-      // ✅ swagger update body: { answers: [{questionId, answerContent}], fileKey }
       const answers = (questions || [])
         .filter((q) => q?.questionId != null)
         .map((q) => ({
@@ -237,8 +289,6 @@ export default function ApplyFormChange() {
           answerContent: String(q.answerContent ?? ""),
         }));
 
-      // ✅ 핵심: fileKey를 ""로 보내지 말고 현재 file_key 상태를 그대로 보내야 함
-      // (파일 항목이 있을 때만)
       const payload = {
         answers,
         fileKey: has_file_upload ? String(file_key || "") : "",
@@ -272,6 +322,11 @@ export default function ApplyFormChange() {
     } finally {
       set_saving(false);
     }
+  };
+
+  const on_download = () => {
+    if (!file_url) return;
+    window.open(file_url, "_blank", "noopener,noreferrer");
   };
 
   if (loading) {
@@ -350,7 +405,13 @@ export default function ApplyFormChange() {
                 <span style={{ opacity: 0.7 }}>(처리중...)</span>
               ) : null}
             </p>
-
+            <label className="field_label">학과</label>
+            <input
+              className="field_input"
+              value={member_info.department || ""}
+              disabled
+              readOnly
+            />
             <label className="field_label">학번</label>
             <input
               className="field_input"
@@ -462,7 +523,6 @@ export default function ApplyFormChange() {
               </p>
             )}
 
-            {/* ✅ 파일 질문 textarea는 제거하고, 파일 버튼으로 대체 */}
             {has_file_upload && (
               <div className="file_upload_section">
                 <label className="field_label">첨부파일</label>
@@ -470,6 +530,11 @@ export default function ApplyFormChange() {
                 <div className="file_row">
                   <span className="file_name">
                     {file_key ? display_file_name(file_key) : "첨부 없음"}
+                    {file_url_loading ? (
+                      <span style={{ marginLeft: 8, opacity: 0.7 }}>
+                        (링크 생성중...)
+                      </span>
+                    ) : null}
                   </span>
 
                   <input
@@ -478,6 +543,27 @@ export default function ApplyFormChange() {
                     style={{ display: "none" }}
                     onChange={on_file_change}
                   />
+
+                  {file_url ? (
+                    <button
+                      type="button"
+                      className="outline_btn sm"
+                      onClick={on_download}
+                      disabled={saving}
+                    >
+                      열기/다운로드
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="outline_btn sm"
+                      onClick={on_download}
+                      disabled
+                      style={{ opacity: 0.5 }}
+                    >
+                      열기/다운로드
+                    </button>
+                  )}
 
                   <button
                     type="button"
