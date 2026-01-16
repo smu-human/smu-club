@@ -60,6 +60,7 @@ dependencies {
 	implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-choices:3.38.0'
 	implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.37.0'
 	implementation 'com.oracle.cloud.spring:spring-cloud-oci-starter-vault:1.4.5'
+	implementation 'com.oracle.cloud.spring:spring-cloud-oci-starter-storage:1.4.5'
 
 
 	// 트랜잭션 이벤트 리스너 관련

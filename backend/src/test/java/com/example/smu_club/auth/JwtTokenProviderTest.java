@@ -26,7 +26,7 @@ public class JwtTokenProviderTest {
 
     @BeforeEach
     void setUp() {
-        this.jwtTokenProvider = new JwtTokenProvider(accessTokenValidity, refreshTokenValidity);
+        this.jwtTokenProvider = new JwtTokenProvider(secretKey, accessTokenValidity, refreshTokenValidity);
 
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);

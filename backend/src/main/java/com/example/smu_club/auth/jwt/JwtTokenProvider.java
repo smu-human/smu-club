@@ -30,29 +30,16 @@
 
         private static final String AUTHORITIES = "auth";
         //init에서 사용해야되므로,, final 제거
-        private Key key;
+        private final Key key;
         private final long accessTokenValidityInMilliseconds;
         private final long refreshTokenValidityInMilliseconds;
         //1. Vault가 접근 하기 전, 객체 생성중 초기화를 못하여 에러 발생을 막기위해 secretKey를 필드로 뺀다.
-        @Value("${jwt.secret}")
-        private String secretKey;
 
-        //2. 모든 주입이 끝난 후 실행되는 @PostConstruct를 활용한다.
-        @PostConstruct
-        public void init() {
-            log.info("JWT 키 초기화를 시작합니다.");
-            // 모든 의존성 주입 및 Vault 설정 로드가 완료된 후 실행됨
-            if (secretKey != null && !secretKey.isEmpty()) {
-                byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-                this.key = Keys.hmacShaKeyFor(keyBytes);
-            }
-            else{
-                log.error("JWT Secret Key가 비어있습니다!");
-            }
-        }
-
-        public JwtTokenProvider(@Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds,
+        public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
+                                @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds,
                                 @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityInSeconds) {
+            byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+            this.key = Keys.hmacShaKeyFor(keyBytes);
             this.accessTokenValidityInMilliseconds = accessTokenValidityInSeconds * 1000;
             this.refreshTokenValidityInMilliseconds = refreshTokenValidityInSeconds * 1000;
         }
