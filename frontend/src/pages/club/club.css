@@ -317,7 +317,7 @@ body {
 
 .desc.rich_desc p,
 .club_description p {
-  margin: 10px 25px; /*보이는 좌우 여백 조절*/
+  margin: 4px; /*보이는 좌우 여백 조절*/
 }
 
 .desc.rich_desc ul,

@@ -228,7 +228,7 @@ export default function ClubEdit() {
               onChange={(e) => set_leader_name(e.target.value)}
             />
 
-            <label className="field_label">연락처</label>
+            <label className="field_label">연락처 (- 없이 숫자만 입력)</label>
             <input
               className="field_input"
               type="tel"

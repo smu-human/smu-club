@@ -418,3 +418,35 @@
 .toastui-editor-defaultUI .toastui-editor-main .toastui-editor-md-container {
   min-height: 320px;
 }
+/* ✅ club_manage / club_edit 쪽(에디터 있는 페이지) CSS 맨 아래에 추가
+   목적: editor_shell(흰 박스) 안에서 ToastUI 에디터가 "가로/세로 꽉 차게" */
+
+.club_card.editor_shell {
+  padding: 0 !important; /* 바깥 여백 제거 */
+}
+
+.club_card.editor_shell .toastui-editor-defaultUI {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 에디터 전체 높이 고정(원하는 값으로 조절) */
+.club_card.editor_shell .toastui-editor-defaultUI {
+  min-height: 560px !important; /* ✅ 여기만 취향대로 */
+}
+
+/* WYSIWYG/Markdown 컨텐츠 영역이 남는 높이를 전부 먹게 */
+.club_card.editor_shell .toastui-editor-main {
+  height: calc(100% - 40px) !important; /* 탭/툴바 제외 대충 */
+}
+
+/* 실제 글 쓰는 영역(파란 부분)이 카드 안을 꽉 채우게 */
+.club_card.editor_shell .toastui-editor-contents {
+  height: 100% !important;
+  box-sizing: border-box;
+}
+
+/* (선택) 스크롤은 에디터 내부로만 */
+.club_card.editor_shell .toastui-editor-main-container {
+  height: 100% !important;
+}

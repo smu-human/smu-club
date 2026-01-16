@@ -1,4 +1,4 @@
-// src/pages/apply_form/apply_form.jsx
+// src/pages/apply_form/apply_form.jsx (전체 교체)
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/globals.css";
@@ -6,6 +6,7 @@ import "./apply_form.css";
 import {
   fetch_owner_applicant_detail,
   owner_update_applicant_status,
+  owner_issue_application_download_url,
 } from "../../lib/api";
 
 function normalize_status(s) {
@@ -21,6 +22,26 @@ function decision_to_api(decision) {
   if (decision === "pass") return "ACCEPTED";
   if (decision === "fail") return "REJECTED";
   return "PENDING";
+}
+
+function unwrap_api(res) {
+  if (res && typeof res === "object") {
+    if (res.data != null && typeof res.data === "object") return res.data;
+    if (res.result != null && typeof res.result === "object") return res.result;
+  }
+  return res;
+}
+
+function is_http_url(v) {
+  const s = String(v || "").trim();
+  return s.startsWith("http://") || s.startsWith("https://");
+}
+
+function display_file_name(fileKey) {
+  if (!fileKey) return "";
+  const s = String(fileKey);
+  const parts = s.split("/");
+  return parts[parts.length - 1];
 }
 
 export default function ApplyForm() {
@@ -54,6 +75,10 @@ export default function ApplyForm() {
   const [decision, setDecision] = useState("pending");
   const [saving, set_saving] = useState(false);
 
+  const [file_key, set_file_key] = useState("");
+  const [file_url, set_file_url] = useState("");
+  const [file_url_loading, set_file_url_loading] = useState(false);
+
   const request_seq = useRef(0);
 
   const load_detail = async () => {
@@ -71,7 +96,8 @@ export default function ApplyForm() {
     set_error_msg("");
 
     try {
-      const data = await fetch_owner_applicant_detail(club_id, club_member_id);
+      const raw = await fetch_owner_applicant_detail(club_id, club_member_id);
+      const data = unwrap_api(raw);
 
       if (seq !== request_seq.current) return;
 
@@ -98,7 +124,8 @@ export default function ApplyForm() {
 
       const attachment_answer =
         find_answer((t) => t.includes("첨부")) ||
-        find_answer((t) => t.includes("포트폴리오"));
+        find_answer((t) => t.includes("포트폴리오")) ||
+        find_answer((t) => t.includes("파일"));
 
       set_form({
         dept: department,
@@ -119,10 +146,21 @@ export default function ApplyForm() {
 
       set_applicant_name(name ? `${name}님의 지원서` : "지원서");
 
-      // ✅ 상태는 applicant.status 뿐만 아니라 data 최상위 status에서도 올 수 있으니 둘 다 체크
       const server_status =
         applicant?.status ?? data?.status ?? data?.applicationStatus;
       setDecision(normalize_status(server_status));
+
+      // ✅ fileKey: (1) applicantInfo에 올 수도, (2) 최상위에 올 수도, (3) 파일 질문 answerContent로 올 수도 있음
+      const fk =
+        applicant?.fileKey ??
+        applicant?.file_key ??
+        applicant?.filekey ??
+        data?.fileKey ??
+        data?.file_key ??
+        data?.filekey ??
+        attachment_answer ??
+        "";
+      set_file_key(String(fk || ""));
     } catch (e) {
       if (seq !== request_seq.current) return;
       set_error_msg(e?.message || "지원서 정보를 불러오지 못했습니다.");
@@ -137,13 +175,55 @@ export default function ApplyForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [club_id, club_member_id]);
 
+  useEffect(() => {
+    const run = async () => {
+      set_file_url("");
+      if (!file_key) return;
+
+      if (is_http_url(file_key)) {
+        set_file_url(file_key);
+        return;
+      }
+
+      set_file_url_loading(true);
+      try {
+        // ✅ 가정: 백엔드가 fileKey로 presigned GET 발급해줌
+        const raw = await owner_issue_application_download_url(
+          club_id,
+          club_member_id,
+          file_key
+        );
+        const data = unwrap_api(raw);
+
+        const url =
+          data?.preSignedUrl ??
+          data?.presignedUrl ??
+          data?.url ??
+          data?.downloadUrl ??
+          raw?.preSignedUrl ??
+          raw?.presignedUrl ??
+          raw?.url ??
+          raw?.downloadUrl ??
+          "";
+
+        set_file_url(url ? String(url) : "");
+      } catch {
+        set_file_url("");
+      } finally {
+        set_file_url_loading(false);
+      }
+    };
+
+    if (!club_id || !club_member_id) return;
+    run();
+  }, [club_id, club_member_id, file_key]);
+
   const on_change_decision = async (next) => {
     if (!club_id || !club_member_id) return;
     if (saving) return;
 
     const prev = decision;
 
-    // ✅ 즉시 UI 반영
     setDecision(next);
     set_saving(true);
 
@@ -154,15 +234,18 @@ export default function ApplyForm() {
         decision_to_api(next)
       );
 
-      // ✅ 백에서 저장된 상태로 다시 동기화(유지)
       await load_detail();
     } catch (e) {
-      // ✅ 실패 시 롤백
       setDecision(prev);
       alert(e?.message || "상태 변경에 실패했습니다.");
     } finally {
       set_saving(false);
     }
+  };
+
+  const on_download = () => {
+    if (!file_url) return;
+    window.open(file_url, "_blank", "noopener,noreferrer");
   };
 
   if (loading) {
@@ -366,17 +449,25 @@ export default function ApplyForm() {
 
             <div className="file_row view_only">
               <span className="file_name">
-                {form.attachment || "첨부 없음"}
+                {file_key ? display_file_name(file_key) : "첨부 없음"}
+                {file_url_loading ? (
+                  <span style={{ marginLeft: 8, opacity: 0.7 }}>
+                    (링크 생성중...)
+                  </span>
+                ) : null}
               </span>
-              {form.attachment && (
-                <a
+
+              {file_key ? (
+                <button
+                  type="button"
                   className="outline_btn sm"
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
+                  onClick={on_download}
+                  disabled={!file_url}
+                  style={!file_url ? { opacity: 0.5 } : undefined}
                 >
                   다운로드
-                </a>
-              )}
+                </button>
+              ) : null}
             </div>
 
             <div
