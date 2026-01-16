@@ -151,6 +151,8 @@ public class OciStorageService {
         try {
             String encodedFileName = URLEncoder.encode(uniqueFileName, StandardCharsets.UTF_8);
 
+            encodedFileName = encodedFileName.replace("+", "%20");
+
             return String.format(
                     "https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
                     region,

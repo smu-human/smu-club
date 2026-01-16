@@ -12,10 +12,11 @@ public class UpdateApplicationResponseDto {
     //내정보
     private Long memberId;
     private String studentId;
+    private String department;
     private String name;
     private String phone;
 
     //질문, 답변, 파일 키
     private final List<AnswerResponseDto> QuestionAndAnswer;
-    private final String fileKey;
+    private final String fileKeyUrl;
 }
