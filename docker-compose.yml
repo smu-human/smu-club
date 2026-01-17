@@ -78,7 +78,6 @@ services:
       - db
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      OCI_SECRET_ID: "ocid1.vault.oc1.ap-osaka-1.fzuwmeclaab32.abvwsljrqakn3wj5thdh56hvhp5zawuqi5kcfv7lycsfnzre2qolayj4ukoa"
     networks:
       - smu-network
     profiles: ["prod"]

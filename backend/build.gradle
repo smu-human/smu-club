@@ -84,6 +84,9 @@ dependencies {
 	// Jackson for JSON parsing  (default installed Spring Boot)
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+	// OCI vault
+	implementation 'com.oracle.cloud.spring:spring-cloud-oci-starter-vault:1.4.2'
+
 }
 
 tasks.named('test') {
