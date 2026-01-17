@@ -61,6 +61,8 @@ dependencies {
 	implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.37.0'
 	implementation 'com.oracle.cloud.spring:spring-cloud-oci-starter-vault:1.4.5'
 	implementation 'com.oracle.cloud.spring:spring-cloud-oci-starter-storage:1.4.5'
+	//cloud function
+	implementation 'com.oracle.cloud.spring:spring-cloud-oci-starter-function'
 
 
 	// 트랜잭션 이벤트 리스너 관련

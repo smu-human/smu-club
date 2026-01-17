@@ -29,11 +29,9 @@
     public class JwtTokenProvider {
 
         private static final String AUTHORITIES = "auth";
-        //init에서 사용해야되므로,, final 제거
         private final Key key;
         private final long accessTokenValidityInMilliseconds;
         private final long refreshTokenValidityInMilliseconds;
-        //1. Vault가 접근 하기 전, 객체 생성중 초기화를 못하여 에러 발생을 막기위해 secretKey를 필드로 뺀다.
 
         public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
                                 @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds,
