@@ -13,5 +13,5 @@ public class ApplicantDetailViewResponse {
 
     private ApplicantInfoResponse applicantInfo;
     private List<AnswerResponseDto> applicationForm;
-
+    private String fileKeyUrl;
 }

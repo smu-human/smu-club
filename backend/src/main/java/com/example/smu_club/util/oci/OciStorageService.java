@@ -109,7 +109,7 @@ public class OciStorageService {
 
         CreatePreauthenticatedRequestDetails details =
                 CreatePreauthenticatedRequestDetails.builder()
-                        .name("Upload-PAR-" + uniqueFileName.substring(0, 10)) // PAR(Pre Authenticated Request)의 이름 (관리 용도)
+                        .name("Upload-PAR-" + UUID.randomUUID().toString()) // PAR(Pre Authenticated Request)의 이름 (관리 용도)
                         .accessType(CreatePreauthenticatedRequestDetails.AccessType.ObjectWrite) // 접근 유형: 객체 쓰기 (PUT 요청 허용)
                         .objectName(uniqueFileName) // PAR이 적용될 객체 이름
                         .timeExpires(expirationDate) // 만료 시간
@@ -150,6 +150,8 @@ public class OciStorageService {
 
         try {
             String encodedFileName = URLEncoder.encode(uniqueFileName, StandardCharsets.UTF_8);
+
+            encodedFileName = encodedFileName.replace("+", "%20");
 
             return String.format(
                     "https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",

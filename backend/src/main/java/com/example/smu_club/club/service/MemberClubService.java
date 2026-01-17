@@ -16,9 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.example.smu_club.domain.RecruitingStatus.OPEN;
@@ -34,63 +34,50 @@ public class MemberClubService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
 
-    @Transactional()
+    @Transactional(readOnly = false)
     public ApplicationResponseDto saveApplication(Long clubId, String studentId, List<AnswerRequestDto> questionAndAnswer, String fileKey) {
         // 1. ClubMember 에 회원 등록 (Status 기본 값은 PENDING)
-        Member myInfo = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +"에 해당하는 회원을 찾을 수 없습니다."));
+        Member user = memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberNotFoundException("student id = "+ studentId +"에 해당하는 회원을 찾을 수 없습니다."));
 
         Club appliedClub = clubRepository.findById(clubId).orElseThrow(() -> new ClubNotFoundException("club id = "+ clubId +"에 해당하는 동아리를 찾을 수 없습니다."));
 
         ClubMember clubMember = ClubMember.builder()
-                .member(myInfo)
+                .member(user)
                 .club(appliedClub)
                 .clubRole(ClubRole.MEMBER)
                 .appliedAt(LocalDateTime.now())
                 .status(ClubMemberStatus.PENDING)
                 .emailStatus(EmailStatus.READY)
                 .build();
-
         clubMemberRepository.save(clubMember);
 
-        // 2. 지원서 답변 및 파일 저장 (답변은 질문에 맞게 Mapping 한다.)
-        if(questionAndAnswer.isEmpty()) throw new QuestionNotFoundException("clubId = " + clubId + ": 해당 동아리에 등록된 질문을 찾을 수 없습니다.");
+        // 2. 지원서 답변 및 파일 저장
+        List<Question> allQuestions = questionRepository.findByClubId(clubId);
 
-        List<Long> questionIds = questionAndAnswer.stream()
-                .map(AnswerRequestDto::getQuestionId)
-                .collect(toList()
-                );
+        Map<Long, String> answerMap = questionAndAnswer.stream()
+                .collect(Collectors.toMap(AnswerRequestDto::getQuestionId, AnswerRequestDto::getAnswerContent));
 
-        Map<Long, Question> questionMap = questionRepository.findAllById(questionIds)
-                .stream().collect(Collectors.toMap(Question::getId, Function.identity()));
+        List<Answer> answersToSave = new ArrayList<>();
 
-        //답변 타입 "TEXT", "FILE"을 구분하여 저장한다.
-        for (AnswerRequestDto ard : questionAndAnswer){
-            Question question = questionMap.get(ard.getQuestionId());
-
+        for (Question question : allQuestions) {
             Answer answer = new Answer();
             answer.setQuestion(question);
-            // Answer 엔티티에 Member 객체를 넣어줌
-            answer.setMember(myInfo);
+            answer.setMember(user);
 
-            if(question.getQuestionContentType() == QuestionContentType.FILE){
-                //Blank: 문자가 없거나 모든 문자가 공배인 경우 true 반환
-                if(fileKey != null && !fileKey.isBlank()){
-                    answer.setFileKey(fileKey);
-                }
-                else{
-                    answer.setFileKey(null);
-                }
+            if (question.getQuestionContentType() == QuestionContentType.FILE) {
+                answer.setFileKey(fileKey);
+            } else {
+                answer.setAnswerContent(answerMap.get(question.getId()));
             }
-            else{
-                answer.setAnswerContent(ard.getAnswerContent());
-            }
-            answerRepository.save(answer);
+            answersToSave.add(answer);
         }
+
+        answerRepository.saveAll(answersToSave);
 
         return new ApplicationResponseDto(questionAndAnswer, fileKey);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public ApplicationFormResponseDto findMemberInfoWithQuestions(Long clubId, String studentId){
         /**
          * questions search

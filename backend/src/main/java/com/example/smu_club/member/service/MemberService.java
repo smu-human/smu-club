@@ -9,6 +9,7 @@ import com.example.smu_club.exception.custom.*;
 import com.example.smu_club.member.dto.*;
 import com.example.smu_club.member.repository.MemberRepository;
 import com.example.smu_club.question.repository.QuestionRepository;
+import com.example.smu_club.util.oci.OciStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class MemberService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final ClubRepository clubRepository;
+    private final OciStorageService ociStorageService;
 
     public MemberNameResponseDto MyName(String studentId) {
         Member member = memberRepository.findByStudentId(studentId)
@@ -107,26 +109,29 @@ public class MemberService {
                 .findFirst();
 
         //fileKey 추출 (없다면 null)
-        String fileKey = fileTypeAnswer
+        String fileUrl = fileTypeAnswer
                 .map(Answer::getFileKey)
-                .orElse(null); // 저장 할 때 파일이 없으면 null로 저장 하도록 함.
+                .map(ociStorageService::createFinalOciUrl)
+                .orElse(null);
 
         List<AnswerResponseDto> answerResponseDto = questions.stream()
+                .filter(q -> q.getQuestionContentType() == TEXT)
                 .map(q -> new AnswerResponseDto(
                         q.getId(),
                         q.getOrderNum(),
                         q.getContent(),
-                        answerContentsMap.getOrDefault(q.getId(), "") //map을 통해 쉽게 answerContent를 가져온다.
+                        answerContentsMap.getOrDefault(q.getId(), "")
                 ))
                 .toList();
 
         return new UpdateApplicationResponseDto(
                 member.getId(),
                 member.getStudentId(),
+                member.getDepartment(),
                 member.getName(),
                 member.getPhoneNumber(),
                 answerResponseDto,
-                fileKey
+                fileUrl
         );
     }
 
