@@ -125,6 +125,7 @@ public class MemberClubService {
                 myInfo.getId(),
                 myInfo.getStudentId(),
                 myInfo.getName(),
+                myInfo.getDepartment(),
                 myInfo.getPhoneNumber(),
                 clubQuestionListResponse
         );
