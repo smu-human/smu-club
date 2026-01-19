@@ -52,8 +52,8 @@ function pick_questions_from_apply_data(applyData) {
         typeof q?.orderNum === "number"
           ? q.orderNum
           : typeof q?.orderNumber === "number"
-          ? q.orderNumber
-          : idx,
+            ? q.orderNumber
+            : idx,
       content: q?.content ?? q?.label ?? q?.question ?? "",
     }))
     .filter((q) => normalize_content(q.content).length > 0)
@@ -108,7 +108,17 @@ export default function ApplyFormSubmit() {
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState("");
+
+  // ✅ 백엔드 자동 채움 값은 수정 못하게 잠금
+  const [locked, set_locked] = useState({
+    dept: false,
+    studentId: false,
+    name: false,
+    phone: false,
+  });
+
+  // 성별은 안하기로 해서 주석 처리
+  // const [gender, setGender] = useState("");
 
   const [picked_file, set_picked_file] = useState(null);
   const [fileName, setFileName] = useState("선택된 파일 없음");
@@ -129,30 +139,36 @@ export default function ApplyFormSubmit() {
       try {
         const applyData = await fetch_member_club_apply(club_id);
 
-        // ✅ 지원서 조회 응답에 포함된 지원자 정보 자동 채우기
-        // (현재 스샷 기준: data에 memberId, studentId, name, phone 내려옴)
-        // department는 백엔드에서 추가해주면 자동 반영됨
-        const d = applyData?.data ?? applyData;
+        const root = applyData?.data ?? applyData?.result ?? applyData;
+        const d = root?.data ?? root?.result ?? root;
 
         const next_student_id = d?.studentId ?? d?.student_id ?? "";
         const next_name = d?.name ?? "";
         const next_phone = d?.phone ?? d?.phoneNumber ?? d?.phone_number ?? "";
+
+        // ✅ department가 실제 응답에 없으면 절대 자동 채움 불가 → 콘솔로 바로 확인
         const next_dept = d?.department ?? d?.dept ?? d?.major ?? "";
 
-        if (next_student_id) {
-          setStudentId((prev) => (prev ? prev : String(next_student_id)));
-        }
-        if (next_name) {
-          setName((prev) => (prev ? prev : String(next_name)));
-        }
-        if (next_phone) {
-          setPhone((prev) => (prev ? prev : String(next_phone)));
-        }
-        if (next_dept) {
-          setDept((prev) => (prev ? prev : String(next_dept)));
+        if (!next_dept) {
+          console.warn(
+            "[apply_form_submit] department missing in response:",
+            applyData,
+          );
         }
 
-        const parsed = pick_questions_from_apply_data(applyData);
+        set_locked((prev) => ({
+          dept: prev.dept || !!next_dept,
+          studentId: prev.studentId || !!next_student_id,
+          name: prev.name || !!next_name,
+          phone: prev.phone || !!next_phone,
+        }));
+
+        if (next_dept) setDept((prev) => (prev ? prev : String(next_dept)));
+        if (next_student_id)
+          setStudentId((prev) => (prev ? prev : String(next_student_id)));
+        if (next_name) setName((prev) => (prev ? prev : String(next_name)));
+        if (next_phone) setPhone((prev) => (prev ? prev : String(next_phone)));
+        const parsed = pick_questions_from_apply_data(d);
 
         set_custom_questions(parsed.questions);
         set_has_file_upload(parsed.has_file);
@@ -289,7 +305,11 @@ export default function ApplyFormSubmit() {
                   className="field_input"
                   placeholder="소속 학과를 입력하세요"
                   value={dept}
-                  onChange={(e) => setDept(e.target.value)}
+                  onChange={(e) => {
+                    if (locked.dept) return;
+                    setDept(e.target.value);
+                  }}
+                  readOnly={locked.dept}
                   required
                 />
 
@@ -301,7 +321,11 @@ export default function ApplyFormSubmit() {
                   className="field_input"
                   placeholder="학번을 입력하세요 (예: 202012345)"
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
+                  onChange={(e) => {
+                    if (locked.studentId) return;
+                    setStudentId(e.target.value);
+                  }}
+                  readOnly={locked.studentId}
                   required
                 />
 
@@ -313,7 +337,11 @@ export default function ApplyFormSubmit() {
                   className="field_input"
                   placeholder="이름을 입력하세요"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    if (locked.name) return;
+                    setName(e.target.value);
+                  }}
+                  readOnly={locked.name}
                   required
                 />
 
@@ -325,10 +353,15 @@ export default function ApplyFormSubmit() {
                   className="field_input"
                   placeholder="01012345678"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    if (locked.phone) return;
+                    setPhone(e.target.value);
+                  }}
+                  readOnly={locked.phone}
                   required
                 />
 
+                {/*
                 <fieldset className="fieldset">
                   <legend className="field_label">성별</legend>
 
@@ -368,6 +401,7 @@ export default function ApplyFormSubmit() {
                     기타
                   </label>
                 </fieldset>
+                */}
 
                 {has_file_upload && (
                   <div className="file_upload_section">

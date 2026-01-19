@@ -93,7 +93,9 @@ export default function ApplyFormChange() {
 
   const [questions, set_questions] = useState([]);
   const [has_file_upload, set_has_file_upload] = useState(false);
-  const [file_key, set_file_key] = useState("");
+
+  // 백엔드에서 fileKeyUrl로 내려오는 경우가 있어 통합 관리
+  const [file_key, set_file_key] = useState(""); // (key or url)
 
   const [file_url, set_file_url] = useState("");
   const [file_url_loading, set_file_url_loading] = useState(false);
@@ -124,8 +126,15 @@ export default function ApplyFormChange() {
         department: data?.department ?? "",
       });
 
-      const server_file_key = data?.fileKey ?? data?.file_key ?? "";
-      set_file_key(server_file_key || "");
+      // ✅ 스웨거 응답처럼 fileKeyUrl로 내려오는 케이스 대응
+      const server_file_key =
+        data?.fileKeyUrl ??
+        data?.file_key_url ??
+        data?.fileKey ??
+        data?.file_key ??
+        "";
+
+      set_file_key(server_file_key ? String(server_file_key) : "");
 
       const raw_qna =
         data?.questionAndAnswer ??
@@ -141,8 +150,8 @@ export default function ApplyFormChange() {
             typeof q?.orderNum === "number"
               ? q.orderNum
               : typeof q?.orderNumber === "number"
-              ? q.orderNumber
-              : 0,
+                ? q.orderNumber
+                : 0,
           questionContent: q?.questionContent ?? q?.content ?? "",
           answerContent: q?.answerContent ?? q?.answer ?? "",
         }))
@@ -156,8 +165,12 @@ export default function ApplyFormChange() {
         });
 
       const file_item = list.find((q) => q.type === "file");
-      set_has_file_upload(!!file_item);
 
+      // ✅ file 질문이 없어도, 서버에서 fileKeyUrl/fileKey가 내려오면 파일 섹션 보이게
+      const has_server_file = !!server_file_key;
+      set_has_file_upload(!!file_item || has_server_file);
+
+      // ✅ 서버 필드가 비어있고, file 질문의 answerContent에 키/URL이 들어오는 케이스 보정
       if (!server_file_key && file_item?.answerContent) {
         set_file_key(String(file_item.answerContent));
       }
@@ -201,6 +214,7 @@ export default function ApplyFormChange() {
         return;
       }
 
+      // ✅ file_key가 이미 URL이면 그대로 열기
       if (is_http_url(file_key)) {
         set_file_url(String(file_key));
         return;
@@ -208,6 +222,7 @@ export default function ApplyFormChange() {
 
       set_file_url_loading(true);
       try {
+        // ✅ file_key(오브젝트 키)로 다운로드 URL 발급
         const raw = await member_issue_application_download_url(file_key);
         const data = unwrap_api(raw);
 
@@ -238,8 +253,8 @@ export default function ApplyFormChange() {
       (prev || []).map((q) =>
         String(q.questionId) === String(question_id)
           ? { ...q, answerContent: next_value }
-          : q
-      )
+          : q,
+      ),
     );
   };
 
@@ -257,7 +272,7 @@ export default function ApplyFormChange() {
       const issued = unwrap_api(issued_raw);
 
       const preSignedUrl = issued?.preSignedUrl ?? issued?.presignedUrl ?? "";
-      const fileName = issued?.fileName ?? issued?.filename ?? "";
+      const fileName = issued?.fileName ?? issued?.filename ?? ""; // 서버가 내려주는 key/이름
 
       if (!preSignedUrl || !fileName) {
         throw new Error("업로드 URL 발급 응답이 올바르지 않습니다.");
@@ -265,7 +280,8 @@ export default function ApplyFormChange() {
 
       await member_put_presigned_url(preSignedUrl, file);
 
-      set_file_key(fileName);
+      // ✅ 업로드 후 file_key 갱신 (다운로드 버튼 즉시 활성화)
+      set_file_key(String(fileName));
       alert("파일이 업로드되었습니다.");
     } catch (err) {
       alert(err?.message || "파일 업로드에 실패했습니다.");
@@ -289,9 +305,11 @@ export default function ApplyFormChange() {
           answerContent: String(q.answerContent ?? ""),
         }));
 
+      // ✅ 백엔드가 fileKeyUrl을 기대할 수도 있어 둘 다 넣어 호환
       const payload = {
         answers,
         fileKey: has_file_upload ? String(file_key || "") : "",
+        fileKeyUrl: has_file_upload ? String(file_key || "") : "",
       };
 
       await update_application(club_id, payload);
@@ -405,6 +423,7 @@ export default function ApplyFormChange() {
                 <span style={{ opacity: 0.7 }}>(처리중...)</span>
               ) : null}
             </p>
+
             <label className="field_label">학과</label>
             <input
               className="field_input"
@@ -544,26 +563,15 @@ export default function ApplyFormChange() {
                     onChange={on_file_change}
                   />
 
-                  {file_url ? (
-                    <button
-                      type="button"
-                      className="outline_btn sm"
-                      onClick={on_download}
-                      disabled={saving}
-                    >
-                      열기/다운로드
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="outline_btn sm"
-                      onClick={on_download}
-                      disabled
-                      style={{ opacity: 0.5 }}
-                    >
-                      열기/다운로드
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="outline_btn sm"
+                    onClick={on_download}
+                    disabled={!file_url || saving}
+                    style={!file_url ? { opacity: 0.5 } : undefined}
+                  >
+                    열기/다운로드
+                  </button>
 
                   <button
                     type="button"
