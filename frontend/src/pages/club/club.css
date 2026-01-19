@@ -194,7 +194,9 @@ body {
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(14, 32, 127, 0.22);
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 /* hover/active 시 색상만 변경 (위치 이동 X) */
@@ -280,125 +282,31 @@ body {
   background: rgba(14, 32, 127, 0.06);
   border-radius: 10px;
 }
+/* club.css 맨 아래에 추가 */
 
-/* src/pages/club/club.css */
-/* ✅ 맨 아래에 추가 */
+/* =========================
+   동아리 소개 카드 내부 텍스트 영역 고정
+   ========================= */
 
-/* club_edit/club_manage 프리뷰와 1:1 동일 타이포/여백/색감 */
-.desc.rich_desc,
-.club_description {
-  font-size: 14px;
-  line-height: 1.65;
-  color: #111827;
-  word-break: break-word;
-  white-space: normal;
-}
-
-.desc.rich_desc h1,
-.club_description h1 {
-  font-size: 22px;
-  margin: 18px 0 10px;
-  font-weight: 800;
-}
-
-.desc.rich_desc h2,
-.club_description h2 {
-  font-size: 18px;
-  margin: 16px 0 8px;
-  font-weight: 750;
-}
-
-.desc.rich_desc h3,
-.club_description h3 {
-  font-size: 16px;
-  margin: 14px 0 8px;
-  font-weight: 700;
-}
-
-.desc.rich_desc p,
-.club_description p {
-  margin: 4px; /*보이는 좌우 여백 조절*/
-}
-
-.desc.rich_desc ul,
-.desc.rich_desc ol,
-.club_description ul,
-.club_description ol {
-  padding-left: 18px;
-  margin: 10px 0;
-}
-
-.desc.rich_desc img,
-.club_description img {
+/* 카드 자체는 반응형 */
+section.intro.card {
+  width: 450px;
   max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  display: block;
-  margin: 10px 0;
+  box-sizing: border-box;
 }
 
-.desc.rich_desc a,
-.club_description a {
-  color: #0e207f;
-  text-decoration: underline;
+/* ✅ 카드 안 텍스트 영역만 고정 폭 */
+section.intro.card .desc.rich_desc {
+  width: 340px; /* ← 텍스트 기준 폭 (원하면 380 / 400 / 450 가능) */
+  max-width: 100%;
+  margin: 0 auto; /* 가운데 정렬 */
+  box-sizing: border-box;
 }
 
-.desc.rich_desc blockquote,
-.club_description blockquote {
-  border-left: 4px solid rgba(14, 32, 127, 0.35);
-  margin: 12px 0;
-  padding: 10px 12px;
-  background: rgba(14, 32, 127, 0.06);
-  border-radius: 10px;
-}
-
-.desc.rich_desc pre,
-.club_description pre {
-  background: #0b1020;
-  color: #e5e7eb;
-  border-radius: 12px;
-  padding: 12px;
-  overflow: auto;
-  margin: 12px 0;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.desc.rich_desc code,
-.club_description code {
-  background: rgba(17, 24, 39, 0.06);
-  border-radius: 6px;
-  padding: 2px 6px;
-  font-size: 13px;
-}
-
-.desc.rich_desc table,
-.club_description table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 12px 0;
-  overflow: hidden;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-}
-
-.desc.rich_desc th,
-.desc.rich_desc td,
-.club_description th,
-.club_description td {
-  border: 1px solid #e5e7eb;
-  padding: 10px;
-  font-size: 13px;
-}
-
-.desc.rich_desc th,
-.club_description th {
-  background: #f3f4f6;
-  font-weight: 700;
-}
-
-/* ✅ club.css의 기존 .desc가 덮어쓰지 못하게 강제 */
-.desc.rich_desc {
-  color: #111827 !important;
-  line-height: 1.65 !important;
+/* 내부 콘텐츠가 영역 밖으로 튀지 않게 */
+section.intro.card .desc.rich_desc *,
+section.intro.card .desc.rich_desc img,
+section.intro.card .desc.rich_desc table {
+  max-width: 100%;
+  box-sizing: border-box;
 }

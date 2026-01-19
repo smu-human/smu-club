@@ -50,11 +50,11 @@ export default function ApplyForm() {
 
   const club_id = useMemo(
     () => (clubId == null ? null : String(clubId)),
-    [clubId]
+    [clubId],
   );
   const club_member_id = useMemo(
     () => (clubMemberId == null ? null : String(clubMemberId)),
-    [clubMemberId]
+    [clubMemberId],
   );
 
   const [loading, set_loading] = useState(true);
@@ -75,7 +75,7 @@ export default function ApplyForm() {
   const [decision, setDecision] = useState("pending");
   const [saving, set_saving] = useState(false);
 
-  const [file_key, set_file_key] = useState("");
+  const [file_key, set_file_key] = useState(""); // key or url
   const [file_url, set_file_url] = useState("");
   const [file_url_loading, set_file_url_loading] = useState(false);
 
@@ -84,7 +84,7 @@ export default function ApplyForm() {
   const load_detail = async () => {
     if (!club_id || !club_member_id) {
       set_error_msg(
-        "club id / club member id가 없습니다. (라우트 파라미터 확인)"
+        "club id / club member id가 없습니다. (라우트 파라미터 확인)",
       );
       set_loading(false);
       return;
@@ -105,7 +105,14 @@ export default function ApplyForm() {
         data?.applicantInfo ?? data?.applicant ?? data?.applicant_info ?? null;
 
       const application_form =
-        data?.applicationForm ?? data?.application_form ?? data?.form ?? [];
+        data?.applicationForm ??
+        data?.application_form ??
+        data?.application_form_list ??
+        data?.form ??
+        data?.application ??
+        data?.applicationForms ??
+        data?.application_forms ??
+        [];
 
       const name = applicant?.name ?? "";
       const student_id = applicant?.studentId ?? applicant?.student_id ?? "";
@@ -136,10 +143,10 @@ export default function ApplyForm() {
           gender_answer === "남" || gender_answer === "남성"
             ? "male"
             : gender_answer === "여" || gender_answer === "여성"
-            ? "female"
-            : gender_answer
-            ? "other"
-            : "",
+              ? "female"
+              : gender_answer
+                ? "other"
+                : "",
         intro: intro_answer,
         attachment: attachment_answer,
       });
@@ -150,8 +157,12 @@ export default function ApplyForm() {
         applicant?.status ?? data?.status ?? data?.applicationStatus;
       setDecision(normalize_status(server_status));
 
-      // ✅ fileKey: (1) applicantInfo에 올 수도, (2) 최상위에 올 수도, (3) 파일 질문 answerContent로 올 수도 있음
+      // ✅ 스웨거 예시: data.fileKeyUrl 로 내려오는 케이스 최우선
       const fk =
+        data?.fileKeyUrl ??
+        data?.file_key_url ??
+        applicant?.fileKeyUrl ??
+        applicant?.file_key_url ??
         applicant?.fileKey ??
         applicant?.file_key ??
         applicant?.filekey ??
@@ -160,6 +171,7 @@ export default function ApplyForm() {
         data?.filekey ??
         attachment_answer ??
         "";
+
       set_file_key(String(fk || ""));
     } catch (e) {
       if (seq !== request_seq.current) return;
@@ -180,18 +192,19 @@ export default function ApplyForm() {
       set_file_url("");
       if (!file_key) return;
 
+      // ✅ file_key가 이미 URL이면 그대로 사용
       if (is_http_url(file_key)) {
-        set_file_url(file_key);
+        set_file_url(String(file_key));
         return;
       }
 
       set_file_url_loading(true);
       try {
-        // ✅ 가정: 백엔드가 fileKey로 presigned GET 발급해줌
+        // ✅ key라면 presigned GET 발급
         const raw = await owner_issue_application_download_url(
           club_id,
           club_member_id,
-          file_key
+          file_key,
         );
         const data = unwrap_api(raw);
 
@@ -231,7 +244,7 @@ export default function ApplyForm() {
       await owner_update_applicant_status(
         club_id,
         club_member_id,
-        decision_to_api(next)
+        decision_to_api(next),
       );
 
       await load_detail();
@@ -465,7 +478,7 @@ export default function ApplyForm() {
                   disabled={!file_url}
                   style={!file_url ? { opacity: 0.5 } : undefined}
                 >
-                  다운로드
+                  열기/다운로드
                 </button>
               ) : null}
             </div>
@@ -479,9 +492,7 @@ export default function ApplyForm() {
                 type="button"
                 role="tab"
                 aria-selected={decision === "fail"}
-                className={`seg seg-fail ${
-                  decision === "fail" ? "is_active" : ""
-                }`}
+                className={`seg seg-fail ${decision === "fail" ? "is_active" : ""}`}
                 onClick={() => on_change_decision("fail")}
                 disabled={saving}
               >
@@ -503,9 +514,7 @@ export default function ApplyForm() {
                 type="button"
                 role="tab"
                 aria-selected={decision === "pass"}
-                className={`seg seg-pass ${
-                  decision === "pass" ? "is_active" : ""
-                }`}
+                className={`seg seg-pass ${decision === "pass" ? "is_active" : ""}`}
                 onClick={() => on_change_decision("pass")}
                 disabled={saving}
               >

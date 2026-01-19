@@ -180,7 +180,12 @@
 
 /* ===== 여기부터 "추가" (club_edit에 넣었던 것 동일) ===== */
 
-/* Editor UX: topbar / grid / fullscreen */
+/* =========================
+   club_manage.css / club_edit.css
+   Editor + Preview (baseline: card 450 / text 340)
+   ========================= */
+
+/* ===== editor layout ===== */
 .editor_shell {
   position: relative;
 }
@@ -234,7 +239,15 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
+/* 가운데 정렬용 */
+.preview_col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .preview_title {
+  width: 100%;
   font-size: 13px;
   font-weight: 700;
   padding: 10px 12px;
@@ -242,21 +255,22 @@
   background: #f8fafc;
 }
 
-/* “실제 렌더” 프리뷰 박스 */
+/* “실제 렌더” 프리뷰 박스 (간격/타이포는 건들지 않음) */
 .preview_box {
   padding: 12px;
   max-height: 520px;
   overflow: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* 풀스크린 모드 */
+/* ===== fullscreen ===== */
 .editor_fullscreen {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #ffffff;
+  background: #fff;
   padding: 16px;
-  border-radius: 0;
   overflow: auto;
 }
 
@@ -269,7 +283,7 @@
   max-height: calc(74vh + 56px);
 }
 
-/* Toast UI Editor Styling */
+/* ===== toastui container ===== */
 .toastui-editor-defaultUI {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -277,176 +291,62 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
-.toastui-editor-defaultUI .toastui-editor-toolbar {
-  border-bottom: 1px solid #e5e7eb;
-  background: #f8fafc;
-}
-
-.toastui-editor-defaultUI .toastui-editor-main {
-  background: #fff;
-}
-
-/* 작성/미리보기 공통 본문 스타일 (실제 렌더와 최대한 동일) */
-.toastui-editor-contents,
-.tui-editor-contents,
+/* ===== preview typography (너가 요구한 기준: 임의로 간격/heading 수정 X)
+   -> 여기서는 기본값만 유지. 필요하면 club.jsx에서만 조정. */
 .club_description {
-  font-size: 14px;
-  line-height: 1.65;
-  color: #111827;
   word-break: break-word;
+  white-space: normal;
 }
 
-.toastui-editor-contents h1,
-.tui-editor-contents h1,
-.club_description h1 {
-  font-size: 22px;
-  margin: 18px 0 10px;
-  font-weight: 800;
+/* ===== 폰트만 고정 (타이포 간격/heading은 손대지 않음) ===== */
+.toastui-editor-contents,
+.toastui-editor-contents *,
+.toastui-editor-md-preview,
+.toastui-editor-md-preview * {
+  font-family:
+    "Pretendard",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    sans-serif !important;
 }
 
-.toastui-editor-contents h2,
-.tui-editor-contents h2,
-.club_description h2 {
-  font-size: 18px;
-  margin: 16px 0 8px;
-  font-weight: 750;
-}
-
-.toastui-editor-contents h3,
-.tui-editor-contents h3,
-.club_description h3 {
-  font-size: 16px;
-  margin: 14px 0 8px;
-  font-weight: 700;
-}
-
-.toastui-editor-contents p,
-.tui-editor-contents p,
-.club_description p {
-  margin: 10px 0;
-}
-
-.toastui-editor-contents ul,
-.toastui-editor-contents ol,
-.tui-editor-contents ul,
-.tui-editor-contents ol,
-.club_description ul,
-.club_description ol {
-  padding-left: 18px;
-  margin: 10px 0;
-}
-
-.toastui-editor-contents img,
-.tui-editor-contents img,
-.club_description img {
+/* ✅ 기준(카드 450 / 텍스트 340) 프리뷰에도 적용 */
+.preview_col .club_description.preview_box {
+  width: 450px;
   max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  display: block;
-  margin: 10px 0;
-}
-
-.toastui-editor-contents a,
-.tui-editor-contents a,
-.club_description a {
-  color: #0e207f;
-  text-decoration: underline;
-}
-
-.toastui-editor-contents blockquote,
-.tui-editor-contents blockquote,
-.club_description blockquote {
-  border-left: 4px solid rgba(14, 32, 127, 0.35);
-  margin: 12px 0;
-  padding: 10px 12px;
-  background: rgba(14, 32, 127, 0.06);
-  border-radius: 10px;
-}
-
-.toastui-editor-contents pre,
-.tui-editor-contents pre,
-.club_description pre {
-  background: #0b1020;
-  color: #e5e7eb;
-  border-radius: 12px;
-  padding: 12px;
-  overflow: auto;
-  margin: 12px 0;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.toastui-editor-contents code,
-.tui-editor-contents code,
-.club_description code {
-  background: rgba(17, 24, 39, 0.06);
-  border-radius: 6px;
-  padding: 2px 6px;
-  font-size: 13px;
-}
-
-.toastui-editor-contents table,
-.tui-editor-contents table,
-.club_description table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 12px 0;
-  overflow: hidden;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-}
-
-.toastui-editor-contents th,
-.toastui-editor-contents td,
-.tui-editor-contents th,
-.tui-editor-contents td,
-.club_description th,
-.club_description td {
-  border: 1px solid #e5e7eb;
-  padding: 10px;
-  font-size: 13px;
-}
-
-.toastui-editor-contents th,
-.tui-editor-contents th,
-.club_description th {
-  background: #f3f4f6;
-  font-weight: 700;
-}
-
-.toastui-editor-defaultUI .toastui-editor-main .toastui-editor-ww-container,
-.toastui-editor-defaultUI .toastui-editor-main .toastui-editor-md-container {
-  min-height: 320px;
-}
-/* ✅ club_manage / club_edit 쪽(에디터 있는 페이지) CSS 맨 아래에 추가
-   목적: editor_shell(흰 박스) 안에서 ToastUI 에디터가 "가로/세로 꽉 차게" */
-
-.club_card.editor_shell {
-  padding: 0 !important; /* 바깥 여백 제거 */
-}
-
-.club_card.editor_shell .toastui-editor-defaultUI {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* 에디터 전체 높이 고정(원하는 값으로 조절) */
-.club_card.editor_shell .toastui-editor-defaultUI {
-  min-height: 560px !important; /* ✅ 여기만 취향대로 */
-}
-
-/* WYSIWYG/Markdown 컨텐츠 영역이 남는 높이를 전부 먹게 */
-.club_card.editor_shell .toastui-editor-main {
-  height: calc(100% - 40px) !important; /* 탭/툴바 제외 대충 */
-}
-
-/* 실제 글 쓰는 영역(파란 부분)이 카드 안을 꽉 채우게 */
-.club_card.editor_shell .toastui-editor-contents {
-  height: 100% !important;
+  margin: 0 auto;
   box-sizing: border-box;
 }
 
-/* (선택) 스크롤은 에디터 내부로만 */
-.club_card.editor_shell .toastui-editor-main-container {
-  height: 100% !important;
+/* club.jsx에서 rich_desc에 width 340 준 것과 동일 효과 */
+.preview_col .club_description.preview_box > * {
+  width: 340px;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+/* ✅ 튀는 것만 방지 (스타일/간격은 건들지 않음) */
+.preview_col .club_description.preview_box img,
+.preview_col .club_description.preview_box table {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+/* 카드(프리뷰 박스) 폭 = 450 */
+.preview_col .preview_box {
+  width: 450px;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* 텍스트 영역 폭 = 340 (club.jsx 기준과 동일) */
+.preview_col .preview_box .desc.rich_desc {
+  width: 340px;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
 }

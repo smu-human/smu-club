@@ -99,275 +99,52 @@
 .primary_btn:hover {
   filter: brightness(1.05);
 }
+/* src/pages/club_edit/club_edit.css 맨 아래에 추가 */
 
-/* =========================
-   Editor UX: topbar / grid / fullscreen
-   ========================= */
-/* 1) WYSIWYG(작성 중) */
-.toastui-editor-contents,
-.toastui-editor-contents * {
-  font-family: "Pretendard", -apple-system, BlinkMacSystemFont,
-    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif !important;
-  line-height: 1.6;
-  letter-spacing: -0.01em;
-}
-
-/* 2) Markdown 프리뷰 */
-.toastui-editor-md-preview,
-.toastui-editor-md-preview * {
-  font-family: "Pretendard", -apple-system, BlinkMacSystemFont,
-    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif !important;
-  line-height: 1.6;
-  letter-spacing: -0.01em;
-}
-.toastui-editor-contents,
-.toastui-editor-md-preview {
-  font-size: 14px;
-}
-.toastui-editor-contents p,
-.toastui-editor-md-preview p {
-  margin: 0 0 8px;
-}
-
-.editor_shell {
-  position: relative;
-  padding: 0px;
-}
-
-.editor_topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.toastui-editor-contents {
-  padding: 0px !important; /* 원하는 값으로 조절 */
-}
-.mini_btn {
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #111827;
-  border-radius: 9999px;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-}
-
-.mini_btn:hover {
-  filter: brightness(1.03);
-}
-
-.editor_grid {
-  display: grid;
-  gap: 12px;
-}
-
-.editor_grid.with_preview {
-  grid-template-columns: 1fr;
-}
-
-.editor_grid.no_preview {
-  grid-template-columns: 1fr;
-}
-
-.editor_col {
-  min-width: 0;
-}
-
-.preview_col {
-  min-width: 0;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-}
-
-.preview_title {
-  font-size: 13px;
-  font-weight: 700;
-  padding: 10px 12px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f8fafc;
-}
-
-/* “실제 렌더” 프리뷰 박스 */
-.preview_box {
-  padding: 0px !important;
-  max-height: 520px;
-  overflow: auto;
-}
-
-/* 풀스크린 모드 */
-.editor_fullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: #ffffff;
-  padding: 16px;
+/* ✅ 전체화면(Fullscreen)에서 '실제 렌더 미리보기'를 club.jsx의 동아리 소개 카드와 동일하게 */
+.editor_fullscreen .preview_col {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
   border-radius: 0;
+}
+
+.editor_fullscreen .preview_title {
+  display: none;
+}
+
+/* club.jsx 카드(.card)와 동일한 박스 */
+.editor_fullscreen .preview_box.club_description {
+  width: 100%;
+  max-width: 420px; /* club.jsx 카드 폭과 동일 */
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  padding: 12px !important; /* club.jsx .card padding과 맞춤 */
+  box-sizing: border-box;
+  max-height: none; /* fullscreen에서는 높이 제한 제거 */
   overflow: auto;
 }
 
-.editor_fullscreen .editor_grid.with_preview {
-  grid-template-columns: 1.2fr 1fr;
-  align-items: start;
+/* ✅ ToastUI가 프리뷰 내부에서 폭/패딩을 건드리는 것 무력화 */
+.editor_fullscreen .preview_box.club_description .toastui-editor-contents,
+.editor_fullscreen .preview_box.club_description .toastui-editor-contents * {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.editor_fullscreen .preview_box {
-  max-height: calc(74vh + 56px);
-}
-
-/* =========================
-   Toast UI Editor Styling
-   ========================= */
-.toastui-editor-defaultUI {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-}
-
-.toastui-editor-defaultUI .toastui-editor-toolbar {
-  border-bottom: 1px solid #e5e7eb;
-  background: #f8fafc;
-}
-
-.toastui-editor-defaultUI .toastui-editor-main {
-  background: #fff;
-}
-
-/* 작성/미리보기 공통 본문 스타일 */
-.toastui-editor-contents,
-.tui-editor-contents,
-.club_description {
+/* (선택) club.jsx와 같은 타이포 강제(이미 토큰 쓰고 있어도 안전하게 고정) */
+.editor_fullscreen .preview_box.club_description {
   font-size: 14px;
   line-height: 1.65;
   color: #111827;
   word-break: break-word;
 }
 
-.toastui-editor-contents h1,
-.tui-editor-contents h1,
-.club_description h1 {
-  font-size: 22px;
-  margin: 18px 0 10px;
-  font-weight: 800;
-}
-
-.toastui-editor-contents h2,
-.tui-editor-contents h2,
-.club_description h2 {
-  font-size: 18px;
-  margin: 16px 0 8px;
-  font-weight: 750;
-}
-
-.toastui-editor-contents h3,
-.tui-editor-contents h3,
-.club_description h3 {
-  font-size: 16px;
-  margin: 14px 0 8px;
-  font-weight: 700;
-}
-
-.toastui-editor-contents p,
-.tui-editor-contents p,
-.club_description p {
-  margin: 10px 0;
-}
-
-.toastui-editor-contents ul,
-.toastui-editor-contents ol,
-.tui-editor-contents ul,
-.tui-editor-contents ol,
-.club_description ul,
-.club_description ol {
-  padding-left: 18px;
-  margin: 10px 0;
-}
-
-.toastui-editor-contents img,
-.tui-editor-contents img,
-.club_description img {
+.editor_fullscreen .preview_box.club_description {
+  width: 450px;
   max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  display: block;
-  margin: 10px 0;
-}
-
-.toastui-editor-contents a,
-.tui-editor-contents a,
-.club_description a {
-  color: #0e207f;
-  text-decoration: underline;
-}
-
-.toastui-editor-contents blockquote,
-.tui-editor-contents blockquote,
-.club_description blockquote {
-  border-left: 4px solid rgba(14, 32, 127, 0.35);
-  margin: 12px 0;
-  padding: 10px 12px;
-  background: rgba(14, 32, 127, 0.06);
-  border-radius: 10px;
-}
-
-.toastui-editor-contents pre,
-.tui-editor-contents pre,
-.club_description pre {
-  background: #0b1020;
-  color: #e5e7eb;
-  border-radius: 12px;
-  padding: 12px;
-  overflow: auto;
-  margin: 12px 0;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.toastui-editor-contents code,
-.tui-editor-contents code,
-.club_description code {
-  background: rgba(17, 24, 39, 0.06);
-  border-radius: 6px;
-  padding: 2px 6px;
-  font-size: 13px;
-}
-
-.toastui-editor-contents table,
-.tui-editor-contents table,
-.club_description table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 12px 0;
-  overflow: hidden;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-}
-
-.toastui-editor-contents th,
-.toastui-editor-contents td,
-.tui-editor-contents th,
-.tui-editor-contents td,
-.club_description th,
-.club_description td {
-  border: 1px solid #e5e7eb;
-  padding: 10px;
-  font-size: 13px;
-}
-
-.toastui-editor-contents th,
-.tui-editor-contents th,
-.club_description th {
-  background: #f3f4f6;
-  font-weight: 700;
-}
-
-.toastui-editor-defaultUI .toastui-editor-main .toastui-editor-ww-container,
-.toastui-editor-defaultUI .toastui-editor-main .toastui-editor-md-container {
-  min-height: 320px;
+  box-sizing: border-box;
 }

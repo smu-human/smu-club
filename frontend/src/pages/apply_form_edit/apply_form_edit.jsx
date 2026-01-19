@@ -163,7 +163,7 @@ export default function ApplyFormEdit() {
   const removeQuestion = (qid) => {
     setQuestions((prev) => {
       const filtered = (prev || []).filter(
-        (q) => String(q.questionId) !== String(qid)
+        (q) => String(q.questionId) !== String(qid),
       );
       return filtered.map((q, idx) => ({ ...q, orderNum: idx }));
     });
@@ -172,7 +172,7 @@ export default function ApplyFormEdit() {
   const updateQuestionContent = (qid, content) => {
     setQuestions((prev) => {
       const next = (prev || []).map((q) =>
-        String(q.questionId) === String(qid) ? { ...q, content } : q
+        String(q.questionId) === String(qid) ? { ...q, content } : q,
       );
       return next.map((q, idx) => ({ ...q, orderNum: idx }));
     });
@@ -219,7 +219,7 @@ export default function ApplyFormEdit() {
           orderNum: idx,
           content: c,
           type: "text",
-        }))
+        })),
       );
     } catch (e) {
       set_error_msg(e?.message || "저장에 실패했습니다.");
@@ -268,7 +268,6 @@ export default function ApplyFormEdit() {
                 <p className="desc">
                   지원자가 보게 될 질문들을 추가·수정하세요.
                 </p>
-
                 <label className="field_label" htmlFor="dept">
                   학과
                 </label>
@@ -280,7 +279,6 @@ export default function ApplyFormEdit() {
                   readOnly
                   disabled
                 />
-
                 <label className="field_label" htmlFor="sid">
                   학번
                 </label>
@@ -292,7 +290,6 @@ export default function ApplyFormEdit() {
                   readOnly
                   disabled
                 />
-
                 <label className="field_label" htmlFor="uname">
                   이름
                 </label>
@@ -304,7 +301,6 @@ export default function ApplyFormEdit() {
                   readOnly
                   disabled
                 />
-
                 <label className="field_label" htmlFor="phone">
                   전화번호
                 </label>
@@ -316,7 +312,7 @@ export default function ApplyFormEdit() {
                   readOnly
                   disabled
                 />
-
+                {/*
                 <fieldset className="fieldset">
                   <legend className="field_label">성별</legend>
 
@@ -353,7 +349,7 @@ export default function ApplyFormEdit() {
                     기타
                   </label>
                 </fieldset>
-
+                */}
                 {(questions || []).length > 0 && (
                   <div className="custom_list">
                     {questions
@@ -370,7 +366,7 @@ export default function ApplyFormEdit() {
                             onChange={(e) =>
                               updateQuestionContent(
                                 q.questionId,
-                                e.target.value
+                                e.target.value,
                               )
                             }
                           />
@@ -386,7 +382,6 @@ export default function ApplyFormEdit() {
                       ))}
                   </div>
                 )}
-
                 {!adding ? (
                   <button
                     type="button"
@@ -424,7 +419,6 @@ export default function ApplyFormEdit() {
                     </div>
                   </div>
                 )}
-
                 {/* ✅ 오너 양식 편집 화면에서는 업로드 동작 X (존재만 안내) */}
                 <div className="file_upload_section">
                   <label className="field_label">첨부파일</label>
@@ -436,7 +430,6 @@ export default function ApplyFormEdit() {
                     </span>
                   </div>
                 </div>
-
                 <div className="form_actions">
                   <button
                     className="primary_btn save_btn"

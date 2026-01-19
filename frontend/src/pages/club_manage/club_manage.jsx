@@ -465,12 +465,15 @@ export default function ClubManage() {
               {show_live_preview && (
                 <div className="preview_col">
                   <div className="preview_title">실제 화면 미리보기</div>
-                  <div
-                    className="club_description preview_box"
-                    dangerouslySetInnerHTML={{
-                      __html: preview_html || "<p></p>",
-                    }}
-                  />
+
+                  <div className="club_description preview_box">
+                    <div
+                      className="desc rich_desc"
+                      dangerouslySetInnerHTML={{
+                        __html: preview_html || "<p></p>",
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>

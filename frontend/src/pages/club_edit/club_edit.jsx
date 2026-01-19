@@ -317,7 +317,6 @@ export default function ClubEdit() {
                   onChange={sync_preview_from_editor}
                 />
               </div>
-
               {show_live_preview && (
                 <div className="preview_col">
                   <div className="preview_title">실제 화면 미리보기</div>
