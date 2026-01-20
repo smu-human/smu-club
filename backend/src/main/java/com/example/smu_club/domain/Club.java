@@ -49,9 +49,6 @@ public class Club {
     @Column(name = "recruit_priority")
     private int recruitPriority = recruitingStatus.getPriority();
 
-    @Column(name = "recruiting_start")
-    private LocalDate recruitingStart;
-
     @Column(name = "recruiting_end")
     private LocalDate recruitingEnd;
 
@@ -98,7 +95,6 @@ public class Club {
             if (this.recruitingStatus != RecruitingStatus.CLOSED) {
                 throw new IllegalClubStateException("모집 예정 상태인 동아리만 모집을 시작 할 수 있습니다.");
             }
-            this.recruitingStart = LocalDate.now();
         }
 
         this.recruitingStatus = status;
@@ -115,7 +111,6 @@ public class Club {
         this.contact = request.getContact();
         this.clubRoom = request.getClubRoom();
         this.thumbnailFileKey = newThumbnailFileKey;
-        this.recruitingStart = request.getRecruitingStart();
         this.recruitingEnd = request.getRecruitingEnd();
 
     }

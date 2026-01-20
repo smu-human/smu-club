@@ -70,32 +70,5 @@ public class RecruitmentServiceTest {
         assertThat(updatedActiveClub.getRecruitingStatus()).isEqualTo(RecruitingStatus.OPEN);
     }
 
-    @Test
-    @DisplayName("보류 중인 멤버를 조회하면 상태가 PROCESSING으로 변경되고 ID 리스트를 반환한다")
-    void fetchPendingAndMarkAsProcessing_Success() {
-        // given
-        Long clubId = 1L;
-        Club club = mock(Club.class);
 
-        // 모집 종료 및 확정 상태라고 가정 (isClosedAndConfirmed가 true를 반환하도록 설정)
-        //given(club.isClosed()).willReturn(true);
-        given(clubRepository.findById(clubId)).willReturn(Optional.of(club));
-
-        ClubMember member1 = spy(ClubMember.builder().id(10L).emailStatus(EmailStatus.READY).build());
-        ClubMember member2 = spy(ClubMember.builder().id(11L).emailStatus(EmailStatus.READY).build());
-        List<ClubMember> targets = List.of(member1, member2);
-
-        given(clubMemberRepository.findByClubAndEmailStatus(club, EmailStatus.READY)).willReturn(targets);
-
-        // when
-        List<Long> resultIds = ownerClubService.fetchPendingAndMarkAsProcessing(clubId);
-
-        // then
-        assertThat(resultIds).containsExactlyInAnyOrder(10L, 11L);
-        assertThat(member1.getEmailStatus()).isEqualTo(EmailStatus.PROCESSING);
-        assertThat(member2.getEmailStatus()).isEqualTo(EmailStatus.PROCESSING);
-
-        // Dirty Checking에 의해 상태가 변경되었는지 확인
-        verify(member1).setEmailStatus(EmailStatus.PROCESSING);
-    }
 }

@@ -6,6 +6,7 @@ import com.example.smu_club.club.service.OwnerClubService;
 import com.example.smu_club.domain.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -26,7 +27,7 @@ public class ClubRepositoryTest {
     private ClubRepository clubRepository;
     @Mock
     private ClubMemberRepository clubMemberRepository;
-    @Mock
+    @InjectMocks //테스트 대상은 Inject한다.
     private OwnerClubService ownerClubService;
 
     @Test
@@ -45,8 +46,8 @@ public class ClubRepositoryTest {
         //given(club.isClosed()).willReturn(true);
         given(clubRepository.findById(clubId)).willReturn(Optional.of(club));
 
-        ClubMember member1 = spy(ClubMember.builder().id(10L).emailStatus(EmailStatus.READY).build());
-        ClubMember member2 = spy(ClubMember.builder().id(11L).emailStatus(EmailStatus.READY).build());
+        ClubMember member1 = spy(ClubMember.builder().id(10L).emailStatus(EmailStatus.READY).status(ClubMemberStatus.PENDING).build());
+        ClubMember member2 = spy(ClubMember.builder().id(11L).emailStatus(EmailStatus.READY).status(ClubMemberStatus.PENDING).build());
         List<ClubMember> targets = List.of(member1, member2);
 
         given(clubMemberRepository.findByClubAndEmailStatus(club, EmailStatus.READY)).willReturn(targets);

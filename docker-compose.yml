@@ -78,6 +78,7 @@ services:
       - db
     environment:
       SPRING_PROFILES_ACTIVE: prod
+
     networks:
       - smu-network
     profiles: ["prod"]

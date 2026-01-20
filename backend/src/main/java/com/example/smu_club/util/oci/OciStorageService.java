@@ -6,6 +6,9 @@ import com.example.smu_club.exception.custom.OciDeletionException;
 import com.example.smu_club.exception.custom.OciSearchException;
 import com.example.smu_club.exception.custom.OciUploadException;
 import com.example.smu_club.util.PreSignedUrlResponse;
+import com.oracle.bmc.Region;
+import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.model.CreatePreauthenticatedRequestDetails;
 import com.oracle.bmc.objectstorage.requests.CreatePreauthenticatedRequestRequest;
@@ -19,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +32,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
@@ -38,18 +45,45 @@ public class OciStorageService {
     private final String bucketName;
     private final String region;
 
-    // ✅ 변경된 생성자: 복잡한 인증 로직 싹 제거!
-    // 스프링이 'instance-principal'로 로그인된 client를 알아서 넣어줍니다.
+
     public OciStorageService(
-            ObjectStorageClient client,
+            @Value("${oci.config.tenancy-id}") String tenancyId,
+            @Value("${oci.config.user-id}") String userId,
+            @Value("${oci.config.fingerprint}") String fingerprint,
+            @Value("${oci.config.private-key-path}") String privateKeyPath,
             @Value("${oci.config.region}") String region,
             @Value("${oci.bucket.namespace}") String namespace,
             @Value("${oci.bucket.name}") String bucketName
     ) {
-        this.client = client;
-        this.region = region;
+
+
+        Supplier<InputStream> privateKeySupplier = () -> {
+            try {
+                InputStream inputStream = getClass().getClassLoader().getResourceAsStream(privateKeyPath);
+                if (inputStream == null) {
+                    throw new IOException("Private key file not found at: " + privateKeyPath);
+                }
+                return inputStream;
+            } catch (IOException e) {
+                log.error("OCI Private Key 파일 읽기 실패. Cause: {}", e.getMessage(), e);
+                throw new OciUploadException("OCI Private Key 파일을 읽는데 실패했습니다. (서버 시작 불가)");
+            }
+        };
+
+        AuthenticationDetailsProvider provider = SimpleAuthenticationDetailsProvider.builder()
+                .tenantId(tenancyId)
+                .userId(userId)
+                .fingerprint(fingerprint)
+                .privateKeySupplier(privateKeySupplier)
+                .build();
+
+        this.client = ObjectStorageClient.builder()
+                .region(Region.fromRegionId(region))
+                .build(provider);
+
         this.namespace = namespace;
         this.bucketName = bucketName;
+        this.region = region;
     }
 
     public PreSignedUrlResponse createUploadPreSignedUrl(String uniqueFileName, String contentType) {
@@ -68,15 +102,17 @@ public class OciStorageService {
             throw new NotAllowedFileType("파일 확장자와 MIME 타입이 일치하지 않습니다.");
         }
 
+
+
         // 한시간 만료 설정
         Date expirationDate = new Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
 
         CreatePreauthenticatedRequestDetails details =
                 CreatePreauthenticatedRequestDetails.builder()
-                        .name("Upload-PAR-" + uniqueFileName.substring(0, 10))
-                        .accessType(CreatePreauthenticatedRequestDetails.AccessType.ObjectWrite)
-                        .objectName(uniqueFileName)
-                        .timeExpires(expirationDate)
+                        .name("Upload-PAR-" + UUID.randomUUID().toString()) // PAR(Pre Authenticated Request)의 이름 (관리 용도)
+                        .accessType(CreatePreauthenticatedRequestDetails.AccessType.ObjectWrite) // 접근 유형: 객체 쓰기 (PUT 요청 허용)
+                        .objectName(uniqueFileName) // PAR이 적용될 객체 이름
+                        .timeExpires(expirationDate) // 만료 시간
                         .build();
 
         CreatePreauthenticatedRequestRequest request =
@@ -87,7 +123,9 @@ public class OciStorageService {
                         .build();
 
         try {
+
             CreatePreauthenticatedRequestResponse response = client.createPreauthenticatedRequest(request);
+
             String accessUrl = response.getPreauthenticatedRequest().getAccessUri();
 
             String parUrl = String.format(
@@ -105,12 +143,16 @@ public class OciStorageService {
 
     // 파일을 다운로드 하거나 사진을 조회할 때 쓰여야할듯
     public String createFinalOciUrl(String uniqueFileName) {
+
         if (uniqueFileName == null || uniqueFileName.isBlank()) {
             return null;
         }
 
         try {
             String encodedFileName = URLEncoder.encode(uniqueFileName, StandardCharsets.UTF_8);
+
+            encodedFileName = encodedFileName.replace("+", "%20");
+
             return String.format(
                     "https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
                     region,
@@ -132,6 +174,7 @@ public class OciStorageService {
                 String objectName = extractObjectNameFromUrl(url);
                 deleteObject(objectName);
                 ssuccess++;
+
             } catch(Exception e){
                 log.error("OCI URL 삭제 중 오류 발생(건너 뜀): url = {}, cause = {}", url, e.getMessage());
                 fail++;
@@ -182,25 +225,31 @@ public class OciStorageService {
 
     public List<String> getOldFileKeys(int hours) {
         List<String> oldFiles = new ArrayList<>();
+
+
+        //현재 기준시간 - hours 이전 시간
         Date timeThreshold = Date.from(Instant.now().minus(hours, ChronoUnit.HOURS));
-        String nextToken = null;
+
+        String nextToken = null; // 페이지네이션용 토큰
 
         try{
+            //파일 수가 많을 걸 대비하여 do-while로 모든 페이지 조회
             do{
                 ListObjectsRequest request = ListObjectsRequest.builder()
                         .namespaceName(namespace)
                         .bucketName(bucketName)
-                        .fields("name,timeCreated")
+                        .fields("name,timeCreated") //필요한 필드만 조회 (최적화)
                         .start(nextToken)
                         .build();
 
                 ListObjectsResponse response = client.listObjects(request);
 
                 for(var obj : response.getListObjects().getObjects()) {
-                    if(obj.getTimeCreated().before(timeThreshold)) {
-                        oldFiles.add(obj.getName());
+                    if(obj.getTimeCreated().before(timeThreshold)) { //임계값 이전 파일이면
+                        oldFiles.add(obj.getName()); //파일명 추가
                     }
                 }
+                //다음 페이지 토큰 갱신
                 nextToken = response.getListObjects().getNextStartWith();
 
             } while(nextToken != null);
@@ -208,6 +257,9 @@ public class OciStorageService {
             log.error("OCI 오래된 파일 조회 실패. Cause: {}", e.getMessage(), e);
             throw new OciSearchException("OCI 오래된 파일 조회 중 서버 오류가 발생했습니다.");
         }
+
         return oldFiles;
+
     }
+
 }

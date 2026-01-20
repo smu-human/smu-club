@@ -63,7 +63,6 @@ public class ClubMemberRepositoryTest {
                 .description("This club is created for testing purposes.")
                 .createdAt(java.time.LocalDateTime.now())
                 .recruitPriority(1)
-                .recruitingStart(java.time.LocalDate.now().minusMonths(3))
                 .recruitingEnd(java.time.LocalDate.now().minusMonths(2))
                 .president("Test President")
                 .contact("010-0000-0000")
@@ -87,10 +86,10 @@ public class ClubMemberRepositoryTest {
 
         //When & Then
         List<ClubMember> result = batchClubMemberRepository.findExpiredClubMembers(LocalDate.now().minusMonths(1));
-        assertThat(result.size()).isEqualTo(0);
+        assertThat(result.size()).isEqualTo(1);
 
         int num = batchClubMemberRepository.deleteAllInBatchWithCount(result);
-        assertThat(num).isEqualTo(0);
+        assertThat(num).isEqualTo(1);
 
     }
 
