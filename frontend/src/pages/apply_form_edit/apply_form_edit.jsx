@@ -65,7 +65,7 @@ export default function ApplyFormEdit() {
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState("male");
+  const [gender, setGender] = useState("");
 
   const [questions, setQuestions] = useState([]); // text only in UI
   const [has_file_upload, set_has_file_upload] = useState(false); // file fixed item
@@ -106,7 +106,6 @@ export default function ApplyFormEdit() {
 
         const deduped = dedupe_questions(normalized);
 
-        // ✅ 파일추가는 "질문 리스트"에서 빼고, 별도 섹션으로만 보이게
         const file_item = deduped.find((q) => q.type === "file");
         set_has_file_upload(!!file_item);
 
@@ -129,7 +128,7 @@ export default function ApplyFormEdit() {
     if (!content) return;
 
     if (is_file_question_content(content)) {
-      alert("파일 업로드 항목은 기본으로 제공됩니다.");
+      alert("파일 업로드 항목은 지원서에 표시되는 고정 항목입니다.");
       return;
     }
 
@@ -144,7 +143,6 @@ export default function ApplyFormEdit() {
         },
       ];
 
-      // text 중복 제거 + orderNum 재정렬
       const out = [];
       const seen = new Set();
       for (const q of merged) {
@@ -165,7 +163,7 @@ export default function ApplyFormEdit() {
   const removeQuestion = (qid) => {
     setQuestions((prev) => {
       const filtered = (prev || []).filter(
-        (q) => String(q.questionId) !== String(qid)
+        (q) => String(q.questionId) !== String(qid),
       );
       return filtered.map((q, idx) => ({ ...q, orderNum: idx }));
     });
@@ -174,7 +172,7 @@ export default function ApplyFormEdit() {
   const updateQuestionContent = (qid, content) => {
     setQuestions((prev) => {
       const next = (prev || []).map((q) =>
-        String(q.questionId) === String(qid) ? { ...q, content } : q
+        String(q.questionId) === String(qid) ? { ...q, content } : q,
       );
       return next.map((q, idx) => ({ ...q, orderNum: idx }));
     });
@@ -187,7 +185,6 @@ export default function ApplyFormEdit() {
     set_error_msg("");
 
     try {
-      // text 질문 정리 + 중복 제거
       const cleaned = (questions || [])
         .map((q) => normalize_content(q.content))
         .filter((c) => c.length > 0);
@@ -201,7 +198,6 @@ export default function ApplyFormEdit() {
         unique_texts.push(c);
       }
 
-      // ✅ 백엔드 요구: 파일추가를 마지막에 항상 포함
       const payload = [
         ...unique_texts.map((content, idx) => ({ orderNum: idx, content })),
         ...(has_file_upload
@@ -209,7 +205,6 @@ export default function ApplyFormEdit() {
           : []),
       ];
 
-      // 질문이 0개 + 파일추가만 있는 경우도 저장 허용(원하면 막아도 됨)
       if (payload.length === 0) {
         alert("저장할 항목이 없습니다.");
         return;
@@ -218,14 +213,13 @@ export default function ApplyFormEdit() {
       await owner_update_club_questions(club_id, payload);
       alert("저장되었습니다.");
 
-      // 화면 동기화
       setQuestions(
         unique_texts.map((c, idx) => ({
           questionId: `saved-${idx}-${crypto.randomUUID()}`,
           orderNum: idx,
           content: c,
           type: "text",
-        }))
+        })),
       );
     } catch (e) {
       set_error_msg(e?.message || "저장에 실패했습니다.");
@@ -255,7 +249,7 @@ export default function ApplyFormEdit() {
                 <path d="M12 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1>지원서 수정</h1>
+            <h1>지원서 양식 수정</h1>
           </div>
         </div>
       </div>
@@ -274,8 +268,6 @@ export default function ApplyFormEdit() {
                 <p className="desc">
                   지원자가 보게 될 질문들을 추가·수정하세요.
                 </p>
-
-                {/* 기본 항목(UI 유지용) */}
                 <label className="field_label" htmlFor="dept">
                   학과
                 </label>
@@ -284,9 +276,9 @@ export default function ApplyFormEdit() {
                   className="field_input"
                   placeholder="소속 학과를 입력하세요"
                   value={dept}
-                  onChange={(e) => setDept(e.target.value)}
+                  readOnly
+                  disabled
                 />
-
                 <label className="field_label" htmlFor="sid">
                   학번
                 </label>
@@ -295,9 +287,9 @@ export default function ApplyFormEdit() {
                   className="field_input"
                   placeholder="학번을 입력하세요 (예: 202012345)"
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
+                  readOnly
+                  disabled
                 />
-
                 <label className="field_label" htmlFor="uname">
                   이름
                 </label>
@@ -306,9 +298,9 @@ export default function ApplyFormEdit() {
                   className="field_input"
                   placeholder="이름을 입력하세요"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  readOnly
+                  disabled
                 />
-
                 <label className="field_label" htmlFor="phone">
                   전화번호
                 </label>
@@ -317,45 +309,48 @@ export default function ApplyFormEdit() {
                   className="field_input"
                   placeholder="- 제외 번호만 입력해주세요"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  readOnly
+                  disabled
                 />
-
+                {/*
                 <fieldset className="fieldset">
                   <legend className="field_label">성별</legend>
+
                   <label className="radio_item">
                     <input
                       type="radio"
                       name="gender"
                       value="male"
                       checked={gender === "male"}
-                      onChange={(e) => setGender(e.target.value)}
+                      disabled
                     />
                     남성
                   </label>
+
                   <label className="radio_item">
                     <input
                       type="radio"
                       name="gender"
                       value="female"
                       checked={gender === "female"}
-                      onChange={(e) => setGender(e.target.value)}
+                      disabled
                     />
                     여성
                   </label>
+
                   <label className="radio_item">
                     <input
                       type="radio"
                       name="gender"
                       value="other"
                       checked={gender === "other"}
-                      onChange={(e) => setGender(e.target.value)}
+                      disabled
                     />
                     기타
                   </label>
                 </fieldset>
-
-                {/* ✅ 커스텀 텍스트 질문만 렌더 */}
-                {questions.length > 0 && (
+                */}
+                {(questions || []).length > 0 && (
                   <div className="custom_list">
                     {questions
                       .slice()
@@ -371,7 +366,7 @@ export default function ApplyFormEdit() {
                             onChange={(e) =>
                               updateQuestionContent(
                                 q.questionId,
-                                e.target.value
+                                e.target.value,
                               )
                             }
                           />
@@ -387,7 +382,6 @@ export default function ApplyFormEdit() {
                       ))}
                   </div>
                 )}
-
                 {!adding ? (
                   <button
                     type="button"
@@ -425,15 +419,17 @@ export default function ApplyFormEdit() {
                     </div>
                   </div>
                 )}
-                {/* ✅ 파일 업로드 섹션(질문 리스트 밖으로 분리) */}
-                {has_file_upload && (
-                  <div className="file_upload_section">
-                    <label className="field_label"></label>
-                    <button type="button" className="outline_btn" disabled>
-                      파일 업로드 버튼
-                    </button>
+                {/* ✅ 오너 양식 편집 화면에서는 업로드 동작 X (존재만 안내) */}
+                <div className="file_upload_section">
+                  <label className="field_label">첨부파일</label>
+                  <div className="file_row view_only">
+                    <span className="file_name">
+                      {has_file_upload
+                        ? "지원서에 파일 업로드 항목이 포함됩니다."
+                        : "파일 업로드 항목"}
+                    </span>
                   </div>
-                )}
+                </div>
                 <div className="form_actions">
                   <button
                     className="primary_btn save_btn"

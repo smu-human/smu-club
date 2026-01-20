@@ -114,5 +114,19 @@ public class Club {
         this.recruitingEnd = request.getRecruitingEnd();
 
     }
+
+
+    // [OWNER} 클럽 모집 마감
+    public void closeRecruitment(LocalDate closeDate) {
+
+        if (this.recruitingStatus != RecruitingStatus.OPEN) {
+            throw new IllegalClubStateException("모집 중(OPEN)인 상태에서만 마감할 수 있습니다.");
+        }
+
+        this.recruitingStatus = RecruitingStatus.CLOSED;
+        this.recruitingEnd = closeDate;
+
+        syncRecruitPriority();
+    }
 }
 

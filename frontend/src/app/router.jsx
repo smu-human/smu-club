@@ -35,5 +35,5 @@ export const router = createBrowserRouter([
   { path: "/apply_form_edit/:id", element: <ApplyFormEdit /> },
   { path: "/apply_form", element: <ApplyForm /> },
   { path: "/apply_form_submit", element: <ApplyFormSubmit /> },
-  { path: "/apply_form_change", element: <ApplyFormChange /> },
+  { path: "/apply_form_change/:id", element: <ApplyFormChange /> },
 ]);

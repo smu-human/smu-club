@@ -8,6 +8,7 @@ import com.example.smu_club.club.dto.ApplicationResponseDto;
 import com.example.smu_club.club.dto.UploadUrlRequest;
 import com.example.smu_club.club.service.MemberClubService;
 import com.example.smu_club.common.ApiResponseDto;
+import com.example.smu_club.common.file.FileUploadService;
 import com.example.smu_club.util.PreSignedUrlResponse;
 import com.example.smu_club.util.oci.OciStorageService;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ import java.util.List;
 public class MemberClubController {
 
     private final MemberClubService memberClubService;
-    private final OciStorageService ociStorageService;
+    private final FileUploadService fileUploadService;
 
     @GetMapping("/{clubId}/apply")
     public ResponseEntity<ApiResponseDto<ApplicationFormResponseDto>> getApplication(
@@ -70,7 +71,7 @@ public class MemberClubController {
     public ResponseEntity<ApiResponseDto<PreSignedUrlResponse>> getUploadUrl(
             @RequestBody UploadUrlRequest request
     ) {
-        PreSignedUrlResponse urlResponse = ociStorageService.createUploadPreSignedUrl(
+        PreSignedUrlResponse urlResponse = fileUploadService.createPendingFileAndUrl(
                 request.getOriginalFileName(),
                 request.getContentType()
         );

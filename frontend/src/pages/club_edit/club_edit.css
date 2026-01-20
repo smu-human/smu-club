@@ -10,7 +10,7 @@
 
 .club_section {
   width: 100%;
-  max-width: 420px; /* ✅ 기존 카드들과 동일 너비 */
+  max-width: 420px;
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -24,12 +24,12 @@
   padding: 8px;
   border-radius: 14px 14px 0 0;
   text-align: center;
-  margin: 0; /* ✅ 여백 제거 */
+  margin: 0;
 }
 
 .club_card {
   background: #fff;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 12px 12px !important;
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -79,12 +79,6 @@
   box-shadow: 0 0 0 3px rgba(14, 32, 127, 0.15);
 }
 
-/* Toast UI editor container harmonize with card */
-.tui-editor-contents,
-.toastui-editor-contents {
-  font-size: 14px;
-}
-
 .club_save_btn {
   width: 100%;
   max-width: 420px;
@@ -104,4 +98,53 @@
 
 .primary_btn:hover {
   filter: brightness(1.05);
+}
+/* src/pages/club_edit/club_edit.css 맨 아래에 추가 */
+
+/* ✅ 전체화면(Fullscreen)에서 '실제 렌더 미리보기'를 club.jsx의 동아리 소개 카드와 동일하게 */
+.editor_fullscreen .preview_col {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.editor_fullscreen .preview_title {
+  display: none;
+}
+
+/* club.jsx 카드(.card)와 동일한 박스 */
+.editor_fullscreen .preview_box.club_description {
+  width: 100%;
+  max-width: 420px; /* club.jsx 카드 폭과 동일 */
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  padding: 12px !important; /* club.jsx .card padding과 맞춤 */
+  box-sizing: border-box;
+  max-height: none; /* fullscreen에서는 높이 제한 제거 */
+  overflow: auto;
+}
+
+/* ✅ ToastUI가 프리뷰 내부에서 폭/패딩을 건드리는 것 무력화 */
+.editor_fullscreen .preview_box.club_description .toastui-editor-contents,
+.editor_fullscreen .preview_box.club_description .toastui-editor-contents * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* (선택) club.jsx와 같은 타이포 강제(이미 토큰 쓰고 있어도 안전하게 고정) */
+.editor_fullscreen .preview_box.club_description {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #111827;
+  word-break: break-word;
+}
+
+.editor_fullscreen .preview_box.club_description {
+  width: 450px;
+  max-width: 100%;
+  box-sizing: border-box;
 }

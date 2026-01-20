@@ -13,6 +13,7 @@ public class ApplicationFormResponseDto {
     private Long memberId;
     private String studentId;
     private String name;
+    private String department;
     private String phone;
     private List<QuestionResponse> questions;
 

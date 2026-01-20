@@ -155,3 +155,12 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+/* src/pages/mypage/mypage.css */
+/* ✅ 두번째 버전 쓸 때만 추가 */
+
+.is_disabled_btn {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: auto; /* ✅ 클릭 이벤트는 받게 */
+  filter: none;
+}

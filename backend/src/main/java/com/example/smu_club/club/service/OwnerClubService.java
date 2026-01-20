@@ -213,6 +213,17 @@ public class OwnerClubService {
         club.updateRecruitment(OPEN);
     }
 
+    @Transactional
+    public void closeRecruitment(Long clubId, String studentId) {
+
+        Club club = getValidatedClubAsOwner(clubId, studentId);
+
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
+        // 3. 비즈니스 로직 위임
+        club.closeRecruitment(today);
+    }
+
     @Transactional(readOnly = true)
     public ClubInfoResponse getClubInfo(Long clubId, String studentId) {
 
@@ -262,31 +273,33 @@ public class OwnerClubService {
                 .phoneNumber(applicationMember.getPhoneNumber())
                 .email(applicationMember.getEmail())
                 .appliedAt(application.getAppliedAt())
+                .status(application.getStatus())
                 .build();
 
         // 3. 질문+답변 만들기
         List<Answer> answers = answerRepository.findByMemberAndClubWithQuestions(applicationMember, club);
 
-        List<AnswerResponseDto> applicationForm = answers.stream()
-                .map(answer -> {
-                    Question question = answer.getQuestion();
-                    String content = (question.getQuestionContentType() == QuestionContentType.FILE)
-                            ? answer.getFileKey()
-                            : answer.getAnswerContent();
+        String fileUrl = answers.stream()
+                .filter(answer -> answer.getQuestion().getQuestionContentType() == QuestionContentType.FILE)
+                .findFirst() // 파일은 하나임
+                .map(answer -> ociStorageService.createFinalOciUrl(answer.getFileKey()))
+                .orElse(null);
 
-                    return new AnswerResponseDto(
-                            question.getId(),
-                            question.getOrderNum(),
-                            question.getContent(),
-                            content
-                    );
-                })
+        List<AnswerResponseDto> applicationForm = answers.stream()
+                .filter(answer -> answer.getQuestion().getQuestionContentType() != QuestionContentType.FILE)
+                .map(answer -> new AnswerResponseDto(
+                        answer.getQuestion().getId(),
+                        answer.getQuestion().getOrderNum(),
+                        answer.getQuestion().getContent(),
+                        answer.getAnswerContent()
+                ))
                 .collect(Collectors.toList());
 
         // 최종 DTO 반환
         return ApplicantDetailViewResponse.builder()
                 .applicantInfo(applicantInfo)
                 .applicationForm(applicationForm)
+                .fileKeyUrl(fileUrl)
                 .build();
     }
 
@@ -473,5 +486,7 @@ public class OwnerClubService {
 
         return excelService.createApplicantExcel(excelDtos);
     }
+
+
 }
 

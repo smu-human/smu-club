@@ -112,6 +112,18 @@ public class OwnerClubController {
         return ResponseEntity.ok(response);
     }
 
+    // 동아리 상태 변겨 ㅇ( OPEN -> CLOSED)
+    @PostMapping("/{clubId}/close-recruitment")
+    public ResponseEntity<ApiResponseDto<Void>> closeRecruitment(
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal User user
+    ) {
+
+        ownerClubService.closeRecruitment(clubId, user.getUsername());
+
+        return ResponseEntity.ok(ApiResponseDto.success("[OWNER] 동아리 모집을 성공적으로 마감했습니다."));
+    }
+
     // 동아리 지원자 리스트 조회
     @GetMapping("/{clubId}/applicants")
     public ResponseEntity<ApiResponseDto<List<ApplicantResponse>>> getClubApplicants(

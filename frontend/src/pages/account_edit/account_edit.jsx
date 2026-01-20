@@ -169,7 +169,7 @@ export default function AccountEdit() {
             />
 
             <label className="field_label" htmlFor="newPhone">
-              새 전화번호
+              새 전화번호 (- 없이 숫자만 입력)
             </label>
             <input
               className="field_input"

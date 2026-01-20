@@ -239,13 +239,18 @@ export async function fetch_application_result(club_id) {
   return res.data;
 }
 
+// ✅ 스웨거 기준: POST /member/mypage/application/{clubId}/delete (singular application)
 export async function delete_application(club_id) {
-  const res = await apiJson(`/member/mypage/applications/${club_id}/delete`, {
+  const res = await apiJson(`/member/mypage/application/${club_id}/delete`, {
     method: "POST",
   });
   return res;
 }
 
+// ✅ alias (optional)
+export const delete_member_application = delete_application;
+
+// ✅ 스웨거 기준: GET/PUT /member/mypage/applications/{clubId}/update
 export async function fetch_application_for_update(club_id) {
   const res = await apiJson(`/member/mypage/applications/${club_id}/update`, {
     method: "GET",
@@ -342,10 +347,10 @@ export async function owner_register_club(payload) {
       title: payload?.title ?? "",
       president: payload?.president ?? "",
       contact: payload?.contact ?? "",
+      recruitingStart: payload?.recruitingStart ?? null,
       recruitingEnd: payload?.recruitingEnd ?? null,
       clubRoom: payload?.clubRoom ?? "",
       description: payload?.description ?? "",
-      // recruitingStart: payload?.recruitingStart ?? null,
     }),
   });
 
@@ -375,6 +380,12 @@ export async function owner_update_club(club_id, payload) {
 // ===== OWNER: 모집 시작(토글) =====
 export async function owner_start_recruitment(club_id) {
   return apiJson(`/owner/club/${club_id}/start-recruitment`, {
+    method: "POST",
+  });
+}
+
+export async function owner_close_recruitment(club_id) {
+  return apiJson(`/owner/club/${club_id}/close-recruitment`, {
     method: "POST",
   });
 }
@@ -435,7 +446,6 @@ export async function owner_download_applicants_excel(club_id) {
 
   const content_type = (res.headers.get("content-type") || "").toLowerCase();
 
-  // json으로 오는 경우(스웨거 example: string)
   if (content_type.includes("application/json")) {
     const json = await res.json().catch(() => null);
 
@@ -450,13 +460,11 @@ export async function owner_download_applicants_excel(club_id) {
 
     const maybe_string = json?.data;
 
-    // url이면 새창
     if (typeof maybe_string === "string" && /^https?:\/\//.test(maybe_string)) {
       window.open(maybe_string, "_blank", "noopener,noreferrer");
       return true;
     }
 
-    // 그냥 string이면 파일로 저장 fallback
     const blob = new Blob([maybe_string ?? ""], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
@@ -471,7 +479,6 @@ export async function owner_download_applicants_excel(club_id) {
     return true;
   }
 
-  // 바이너리로 오는 경우
   if (!res.ok) {
     let msg = "엑셀 다운로드에 실패했습니다.";
     try {
@@ -505,34 +512,10 @@ export async function owner_download_applicants_excel(club_id) {
 }
 
 // ===== OWNER: 합불 결과 메일 발송 =====
-// ✅ 백엔드 실제 엔드포인트가 확실치 않아서, 흔한 후보 2~3개를 순차로 시도
 export async function owner_send_result_email(club_id) {
-  const candidates = [
-    `/owner/club/${club_id}/applicants/send-result-email`,
-    `/owner/club/${club_id}/applicants/result-email`,
-    `/owner/club/${club_id}/applicants/send-email`,
-  ];
-
-  let last_error = null;
-
-  for (const path of candidates) {
-    try {
-      const res = await apiJson(path, { method: "POST" });
-      return res;
-    } catch (e) {
-      last_error = e;
-      const code = String(e?.code || "").toUpperCase();
-      const status = Number(e?.status || 0);
-
-      // 404/405 계열은 다음 후보로 시도
-      if (status === 404 || status === 405 || code === "NOT_FOUND") continue;
-
-      // 그 외 에러는 즉시 throw
-      throw e;
-    }
-  }
-
-  throw last_error || new Error("메일 발송 API를 찾지 못했습니다.");
+  return apiJson(`/owner/club/email/${club_id}`, {
+    method: "POST",
+  });
 }
 
 // ===== MEMBER: 지원서 파일 업로드용 presigned url 발급 =====
@@ -569,4 +552,66 @@ export async function member_apply_club(club_id, payload) {
     body: JSON.stringify(payload),
   });
   return res?.data || null;
+}
+// src/lib/api.js (추가)
+export async function member_issue_application_download_url(file_key) {
+  const q = encodeURIComponent(String(file_key || ""));
+  const candidates = [
+    `/api/v1/member/mypage/applications/file-url?fileKey=${q}`,
+    `/api/v1/member/mypage/applications/file-url?file_key=${q}`,
+    `/api/v1/member/applications/file-url?fileKey=${q}`,
+    `/api/v1/files/presigned-download?fileKey=${q}`,
+    `/api/v1/file/presigned-download?fileKey=${q}`,
+  ];
+
+  let last_err = null;
+
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error(`download url failed: ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      return data;
+    } catch (e) {
+      last_err = e;
+    }
+  }
+
+  throw last_err || new Error("download url api not found");
+}
+// src/lib/api.js (추가)
+export async function owner_issue_application_download_url(
+  club_id,
+  club_member_id,
+  file_key
+) {
+  const q = encodeURIComponent(String(file_key || ""));
+  const candidates = [
+    `/api/v1/owner/club/${club_id}/applicants/${club_member_id}/file-url?fileKey=${q}`,
+    `/api/v1/owner/club/${club_id}/applicants/${club_member_id}/file-url?file_key=${q}`,
+    `/api/v1/owner/files/presigned-download?fileKey=${q}`,
+    `/api/v1/files/presigned-download?fileKey=${q}`,
+  ];
+
+  let last_err = null;
+
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`download url failed: ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      return data;
+    } catch (e) {
+      last_err = e;
+    }
+  }
+
+  throw last_err || new Error("download url api not found");
 }
