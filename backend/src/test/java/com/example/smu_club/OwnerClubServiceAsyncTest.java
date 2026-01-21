@@ -75,7 +75,6 @@ public class OwnerClubServiceAsyncTest {
                 .description("This club is created for testing purposes.")
                 .createdAt(java.time.LocalDateTime.now())
                 .recruitPriority(1)
-                .recruitingStart(java.time.LocalDate.now().minusDays(3))
                 .recruitingEnd(java.time.LocalDate.now().minusDays(1))
                 .president("Test President")
                 .contact("010-0000-0000")

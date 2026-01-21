@@ -20,7 +20,6 @@ public class ClubInfoRequest {
     private String title;
     private String president;
     private String contact;
-    private LocalDate recruitingStart;
     private LocalDate recruitingEnd;
     private String clubRoom;
     private String description;

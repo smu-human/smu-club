@@ -26,7 +26,6 @@ public class ClubResponseDto {
     private String name;
     private LocalDateTime createdAt;
     private RecruitingStatus recruitingStatus;
-    private LocalDate recruitingStart;
     private LocalDate recruitingEnd;
     private String president;
     private String title;
@@ -52,7 +51,6 @@ public class ClubResponseDto {
                 .name(findClub.getName())
                 .createdAt(findClub.getCreatedAt())
                 .recruitingStatus(findClub.getRecruitingStatus())
-                .recruitingStart(findClub.getRecruitingStart())
                 .recruitingEnd(findClub.getRecruitingEnd())
                 .president(findClub.getPresident())
                 .title(findClub.getTitle())

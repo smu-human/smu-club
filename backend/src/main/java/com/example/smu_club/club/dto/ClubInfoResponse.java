@@ -20,7 +20,6 @@ public class ClubInfoResponse {
     private String title;
     private String president;
     private String contact;
-    private LocalDate recruitingStart;
     private LocalDate recruitingEnd;
     private String clubRoom;
     private String description;
@@ -43,7 +42,6 @@ public class ClubInfoResponse {
                 .title(club.getTitle())
                 .president(club.getPresident())
                 .contact(club.getContact())
-                .recruitingStart(club.getRecruitingStart())
                 .recruitingEnd(club.getRecruitingEnd())
                 .clubRoom(club.getClubRoom())
                 .description(club.getDescription())
