@@ -22,7 +22,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    restart: always
+    #restart: always
+    entrypoint: ["tail", "-f", "/dev/null"]
     ports:
       - 8080:8080
     depends_on:
