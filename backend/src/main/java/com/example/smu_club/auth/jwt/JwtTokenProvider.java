@@ -39,13 +39,6 @@
                 @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds,
                 @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityInSeconds) {
 
-            log.info("JWT 키 초기화를 시작합니다. (OCI Vault 데이터 사용)");
-
-            // 데이터 검증
-            if (secretKey == null || secretKey.isEmpty()) {
-                throw new IllegalArgumentException("Vault에서 'jwt.secret'을 로드하지 못했습니다.");
-            }
-
             byte[] keyBytes = Decoders.BASE64.decode(secretKey);
             this.key = Keys.hmacShaKeyFor(keyBytes);
 
