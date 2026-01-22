@@ -27,6 +27,8 @@ services:
       - 8080:8080
     depends_on:
       - db
+    volumes:
+      - ./oci_api_key.pem:/app/oci_api_key.pem
     environment:
       SPRING_PROFILES_ACTIVE: dev
       # DB 설정 (컨테이너 이름 'db'로 연결)
@@ -41,7 +43,7 @@ services:
       OCI_CONFIG_TENANCY_ID: ${OCI_CONFIG_TENANCY_ID}
       OCI_CONFIG_USER_ID: ${OCI_CONFIG_USER_ID}
       OCI_CONFIG_FINGERPRINT: ${OCI_CONFIG_FINGERPRINT}
-      OCI_PRIVATE_KEY_PATH: ${OCI_PRIVATE_KEY_PATH:-oci_api_key.pem}
+      OCI_PRIVATE_KEY_PATH: /app/oci_api_key.pem
       OCI_CONFIG_REGION: ${OCI_CONFIG_REGION:-ap-osaka-1}
       OCI_BUCKET_NAME: ${OCI_BUCKET_NAME:-smu-club-files}
       OCI_BUCKET_NAMESPACE: ${OCI_BUCKET_NAMESPACE:-axxgrlwqvcxn}
@@ -89,6 +91,8 @@ services:
     restart: always
     depends_on:
       - db
+    volumes:
+      - ./oci_api_key.pem:/app/oci_api_key.pem
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
@@ -101,7 +105,7 @@ services:
       OCI_CONFIG_TENANCY_ID: ${OCI_CONFIG_TENANCY_ID}
       OCI_CONFIG_USER_ID: ${OCI_CONFIG_USER_ID}
       OCI_CONFIG_FINGERPRINT: ${OCI_CONFIG_FINGERPRINT}
-      OCI_PRIVATE_KEY_PATH: ${OCI_PRIVATE_KEY_PATH:-oci_api_key.pem}
+      OCI_PRIVATE_KEY_PATH: /app/oci_api_key.pem
       OCI_CONFIG_REGION: ${OCI_CONFIG_REGION:-ap-osaka-1}
       OCI_BUCKET_NAME: ${OCI_BUCKET_NAME:-smu-club-files}
       OCI_BUCKET_NAMESPACE: ${OCI_BUCKET_NAMESPACE:-axxgrlwqvcxn}
