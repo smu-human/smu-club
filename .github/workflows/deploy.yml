@@ -27,37 +27,31 @@ jobs:
             git reset --hard origin/master
             
             # 2. .env 파일 생성 (환경변수 주입)
-            # 깃허브 시크릿에 저장된 값들을 실제 .env 파일로 변환합니다.
-            echo "SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}" > .env
-            echo "SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}" >> .env
-            echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}" >> .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-            echo "OCI_CONFIG_TENANCY_ID=${{ secrets.OCI_CONFIG_TENANCY_ID }}" >> .env
-            echo "OCI_CONFIG_USER_ID=${{ secrets.OCI_CONFIG_USER_ID }}" >> .env
-            echo "OCI_CONFIG_FINGERPRINT=${{ secrets.OCI_CONFIG_FINGERPRINT }}" >> .env
-            echo "OCI_CONFIG_REGION=${{ secrets.OCI_CONFIG_REGION }}" >> .env
-            echo "OCI_BUCKET_NAME=${{ secrets.OCI_BUCKET_NAME }}" >> .env
-            echo "OCI_BUCKET_NAMESPACE=${{ secrets.OCI_BUCKET_NAMESPACE }}" >> .env
-            echo "OCI_SMTP_USERNAME=${{ secrets.OCI_SMTP_USERNAME }}" >> .env
-            echo "OCI_SMTP_PASSWORD=${{ secrets.OCI_SMTP_PASSWORD }}" >> .env
-            echo "DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}" >> .env
-            echo "DDL_AUTO_MODE=${{ secrets.DDL_AUTO_MODE }}" >> .env
-            echo "OCI_PRIVATE_KEY_PATH=${{secrets.OCI_PRIVATE_KEY_PATH}}" >> .env
+            cat <<EOF > .env
+            SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}
+            SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            OCI_CONFIG_TENANCY_ID=${{ secrets.OCI_CONFIG_TENANCY_ID }}
+            OCI_CONFIG_USER_ID=${{ secrets.OCI_CONFIG_USER_ID }}
+            OCI_CONFIG_FINGERPRINT=${{ secrets.OCI_CONFIG_FINGERPRINT }}
+            OCI_CONFIG_REGION=${{ secrets.OCI_CONFIG_REGION }}
+            OCI_BUCKET_NAME=${{ secrets.OCI_BUCKET_NAME }}
+            OCI_BUCKET_NAMESPACE=${{ secrets.OCI_BUCKET_NAMESPACE }}
+            OCI_SMTP_USERNAME=${{ secrets.OCI_SMTP_USERNAME }}
+            OCI_SMTP_PASSWORD=${{ secrets.OCI_SMTP_PASSWORD }}
+            DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}
+            DDL_AUTO_MODE=${{ secrets.DDL_AUTO_MODE }}
+            EOF
             
             # 3. OCI API Key (.pem) 파일 복원
             # 시크릿에 저장된 텍스트를 파일로 만듭니다.
             echo "${{ secrets.OCI_PRIVATE_KEY }}" > oci_api_key.pem
             chmod 600 oci_api_key.pem
 
-            # 4. 기존 컨테이너 중지 및 제거
-            docker-compose --profile prod down
-            
-            # 5. 도커 빌드 캐시 클리어 및 이미지 제거
+            docker-compose --profile prod down || true
             docker builder prune -af
             docker-compose --profile prod build --no-cache
-            
-            # 6. 새 컨테이너 실행
             docker-compose --profile prod up -d
             
-            # 미사용 이미지 정리 (용량 확보)
             docker image prune -f
