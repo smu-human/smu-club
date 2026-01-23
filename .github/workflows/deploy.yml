@@ -23,7 +23,8 @@ jobs:
             cd /home/opc/smu-club 
             
             # 소스 코드 업데이트 (Git이 설치된 경우)
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/master
             
             # 2. .env 파일 생성 (환경변수 주입)
             # 깃허브 시크릿에 저장된 값들을 실제 .env 파일로 변환합니다.
@@ -40,16 +41,22 @@ jobs:
             echo "OCI_SMTP_USERNAME=${{ secrets.OCI_SMTP_USERNAME }}" >> .env
             echo "OCI_SMTP_PASSWORD=${{ secrets.OCI_SMTP_PASSWORD }}" >> .env
             echo "DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}" >> .env
+            echo "DDL_AUTO_MODE=${{ secrets.DDL_AUTO_MODE }}" >> .env
             
             # 3. OCI API Key (.pem) 파일 복원
             # 시크릿에 저장된 텍스트를 파일로 만듭니다.
             echo "${{ secrets.OCI_PRIVATE_KEY }}" > oci_api_key.pem
             chmod 600 oci_api_key.pem
 
-            # 4. 도커 컴포즈 실행 (PROD 프로필)
-            # 기존 컨테이너를 내리고, 새로 빌드하여 실행합니다.
+            # 4. 기존 컨테이너 중지 및 제거
             docker-compose --profile prod down
-            docker-compose --profile prod up -d --build
+            
+            # 5. 도커 빌드 캐시 클리어 및 이미지 제거
+            docker builder prune -af
+            docker-compose --profile prod build --no-cache
+            
+            # 6. 새 컨테이너 실행
+            docker-compose --profile prod up -d
             
             # 미사용 이미지 정리 (용량 확보)
             docker image prune -f
