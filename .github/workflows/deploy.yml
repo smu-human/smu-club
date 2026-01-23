@@ -42,6 +42,7 @@ jobs:
             echo "OCI_SMTP_PASSWORD=${{ secrets.OCI_SMTP_PASSWORD }}" >> .env
             echo "DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}" >> .env
             echo "DDL_AUTO_MODE=${{ secrets.DDL_AUTO_MODE }}" >> .env
+            echo "OCI_PRIVATE_KEY_PATH=${{secrets.OCI_PRIVATE_KEY_PATH}}" >> .env
             
             # 3. OCI API Key (.pem) 파일 복원
             # 시크릿에 저장된 텍스트를 파일로 만듭니다.
