@@ -68,6 +68,8 @@ public class Club {
 
 
 
+
+
     /*
     recruitingStatus가 변경 될 때마다
     정렬용 'recruitPriority' 컬럼을 자동으로 동기화한다.
@@ -128,5 +130,7 @@ public class Club {
 
         syncRecruitPriority();
     }
+
+
 }
 
