@@ -11,18 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+
 @Entity
 @Getter
-@Setter // 테스트 용 초기 값는 넣는 용
 @Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // 기본 생성자 접근 제어
 @AllArgsConstructor
 //인덱스의 효율성을 위해 "작업 범위 결정 조건", "이름" 순으로 인덱스 생성
 //인덱스의 정렬은 왼쪽 컬럼 기준으로 진행하기 때문에 Unique한 값이 적을수록 인덱스 스킵 스캔 활용도가 높아진다.
 //현재는 쓸 일이 없겠지만 추후에 특정 범위의 레코드를 검색할 때 좋은 효율이 나온다.
 @Table(name = "club", indexes ={
-    @Index(name = "idx_club_priority_name", columnList = "recruit_priority ASC, name ASC"),
-    @Index(name = "idx_club_recruiting_closure", columnList = "recruiting_status, recruiting_end ASC")
+        @Index(name = "idx_club_priority_name", columnList = "recruit_priority ASC, name ASC"),
+        @Index(name = "idx_club_recruiting_closure", columnList = "recruiting_status, recruiting_end ASC")
 })
 public class Club {
     @Id
@@ -33,79 +33,64 @@ public class Club {
     @Column(nullable = false, unique = true)
     private String name;
 
-    // 대표 메인화면에 표시되면 동아리 설명에 해당합니다.
     private String title;
 
-    @Lob // Toast UI 에디터 내용은 길이를 예측할 수 없으므로 @Lob 추가 (TEXT 타입)
+    @Lob// Toast UI 에디터 내용은 길이를 예측할 수 없으므로 @Lob 추가 (TEXT 타입)
     private String description;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Builder.Default
     @Column(name = "recruiting_status", nullable = false)
-    @Enumerated(EnumType.STRING) //ORDINARY 사용 금지
-    private RecruitingStatus recruitingStatus = RecruitingStatus.CLOSED; //짝이 되는 priority에게 Sync를 맞추기 위해 CLOSED로 초기화
+    @Enumerated(EnumType.STRING)
+    private RecruitingStatus recruitingStatus = RecruitingStatus.CLOSED; // 기본값 명시
 
     @Column(name = "recruit_priority")
-    private int recruitPriority = recruitingStatus.getPriority();
+    private int recruitPriority;
 
     @Column(name = "recruiting_end")
     private LocalDate recruitingEnd;
 
     private String president;
-
     private String contact;
-
     private String clubRoom;
 
     @Column(name = "thumbnail_filekey")
     private String thumbnailFileKey;
 
-    @OneToMany (mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default // 빌더를 사용하면 빌더가 컬렉션에 대해서 다 null로 바꾸는데 이거를 막기 위해서
+    @OneToMany(mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ClubImage> clubImages = new ArrayList<>();
 
+    // --- 생명주기 메서드 통합 ---
 
-
-
-
-
-    /*
-    recruitingStatus가 변경 될 때마다
-    정렬용 'recruitPriority' 컬럼을 자동으로 동기화한다.
-     */
-    private void syncRecruitPriority() {
-        //기본 값
-        this.recruitPriority = Objects.requireNonNullElse(this.recruitingStatus, RecruitingStatus.CLOSED).getPriority();
-    }
-
-    // JPA 생명주기: 저장(INSERT) 전에 호출
     @PrePersist
-    public void onPrePersist() {
-        syncRecruitPriority();
-    }
-
-    // JPA 생명주기: 수정(UPDATE) 전에 호출
     @PreUpdate
-    public void onPreUpdate() {
-        syncRecruitPriority();
-    }
-
-    //recruitingStatus를 변경할 때 recruitPriority도 같이 변경
-    public void updateRecruitment(RecruitingStatus status) {
-        if (status == RecruitingStatus.OPEN) {
-            if (this.recruitingStatus != RecruitingStatus.CLOSED) {
-                throw new IllegalClubStateException("모집 예정 상태인 동아리만 모집을 시작 할 수 있습니다.");
-            }
+    private void syncRecruitPriority() {
+        this.recruitPriority = Objects.requireNonNullElse(this.recruitingStatus, RecruitingStatus.CLOSED).getPriority();
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
         }
-
-        this.recruitingStatus = status;
-        syncRecruitPriority();
     }
 
-    //  [OWNER] 클럽 편집 기능
-    public void updateInfo(ClubInfoRequest request, String newThumbnailFileKey) {
+    // --- 비즈니스 로직 ---
 
+    /**
+     * 모집 상태 변경
+     */
+    public void updateRecruitment(RecruitingStatus status) {
+        if (status == RecruitingStatus.OPEN && this.recruitingStatus != RecruitingStatus.CLOSED) {
+            throw new IllegalClubStateException("모집을 시작하려면 현재 닫힘 상태여야 합니다.");
+        }
+        this.recruitingStatus = status;
+        // syncRecruitPriority는 JPA가 자동으로 호출하므로 여기서 직접 호출하지 않아도 됨 (영속성 컨텍스트 관리 하에 있을 때)
+    }
+
+    /**
+     * 클럽 정보 수정
+     */
+    public void updateInfo(ClubInfoRequest request, String newThumbnailFileKey) {
         this.name = request.getName();
         this.title = request.getTitle();
         this.description = request.getDescription();
@@ -114,23 +99,16 @@ public class Club {
         this.clubRoom = request.getClubRoom();
         this.thumbnailFileKey = newThumbnailFileKey;
         this.recruitingEnd = request.getRecruitingEnd();
-
     }
 
-
-    // [OWNER} 클럽 모집 마감
+    /**
+     * 모집 마감
+     */
     public void closeRecruitment(LocalDate closeDate) {
-
         if (this.recruitingStatus != RecruitingStatus.OPEN) {
             throw new IllegalClubStateException("모집 중(OPEN)인 상태에서만 마감할 수 있습니다.");
         }
-
         this.recruitingStatus = RecruitingStatus.CLOSED;
         this.recruitingEnd = closeDate;
-
-        syncRecruitPriority();
     }
-
-
 }
-
