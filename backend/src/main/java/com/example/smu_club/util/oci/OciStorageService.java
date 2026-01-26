@@ -24,6 +24,8 @@ import org.springframework.retry.annotation.Retryable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -56,16 +58,14 @@ public class OciStorageService {
             @Value("${oci.bucket.name}") String bucketName
     ) {
 
-
         Supplier<InputStream> privateKeySupplier = () -> {
             try {
-                InputStream inputStream = getClass().getClassLoader().getResourceAsStream(privateKeyPath);
-                if (inputStream == null) {
-                    throw new IOException("Private key file not found at: " + privateKeyPath);
-                }
+                // 방법 1: 절대 경로로 파일 읽기 (권장)
+                InputStream inputStream = Files.newInputStream(Paths.get(privateKeyPath));
+                log.info("OCI Private Key 파일 로드 성공: {}", privateKeyPath);
                 return inputStream;
             } catch (IOException e) {
-                log.error("OCI Private Key 파일 읽기 실패. Cause: {}", e.getMessage(), e);
+                log.error("OCI Private Key 파일 읽기 실패. Path: {}, Cause: {}", privateKeyPath, e.getMessage(), e);
                 throw new OciUploadException("OCI Private Key 파일을 읽는데 실패했습니다. (서버 시작 불가)");
             }
         };
@@ -84,6 +84,8 @@ public class OciStorageService {
         this.namespace = namespace;
         this.bucketName = bucketName;
         this.region = region;
+
+        log.info("OciStorageService 초기화 완료 - Region: {}, Bucket: {}", region, bucketName);
     }
 
     public PreSignedUrlResponse createUploadPreSignedUrl(String uniqueFileName, String contentType) {
