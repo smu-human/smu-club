@@ -5,6 +5,23 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1";
 const ACCESS_TOKEN_KEY = "smu_access_token";
 const REFRESH_TOKEN_KEY = "smu_refresh_token";
 
+// ===== 세션 만료 이벤트(전역) =====
+const SESSION_EXPIRED_EVENT = "smu_session_expired_v1";
+
+function emit_session_expired(detail) {
+  try {
+    window.dispatchEvent(
+      new CustomEvent(SESSION_EXPIRED_EVENT, { detail: detail || {} }),
+    );
+  } catch {}
+}
+
+export function on_session_expired(handler) {
+  const h = (e) => handler?.(e?.detail || {});
+  window.addEventListener(SESSION_EXPIRED_EVENT, h);
+  return () => window.removeEventListener(SESSION_EXPIRED_EVENT, h);
+}
+
 // ===== 토큰 유틸 =====
 export function get_access_token() {
   return localStorage.getItem(ACCESS_TOKEN_KEY) || null;
@@ -62,7 +79,69 @@ function make_init(init = {}, access_token) {
   };
 }
 
-// ===== fetch 래퍼 (만료는 body의 EXPIRED_TOKEN일 때만 reissue) =====
+function is_reissue_call(path) {
+  const p = String(path || "");
+  return p.includes("/public/auth/reissue");
+}
+
+function is_expired_response(res, data) {
+  if (data?.status === "FAIL" && data?.errorCode === "EXPIRED_TOKEN")
+    return true;
+  if (res?.status === 401) return true;
+  return false;
+}
+
+let reissue_promise = null;
+
+async function do_reissue(prev_access_token) {
+  const refresh_token = get_refresh_token();
+
+  if (!refresh_token) {
+    clear_tokens();
+    emit_session_expired({ reason: "no_refresh_token" });
+    throw Object.assign(
+      new Error("세션이 만료되었습니다. 다시 로그인해 주세요."),
+      { code: "EXPIRED_TOKEN" },
+    );
+  }
+
+  const re_res = await fetch(resolve_url("/public/auth/reissue"), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      accessToken: prev_access_token,
+      refreshToken: refresh_token,
+    }),
+  });
+
+  const re_data = await re_res.json().catch(() => null);
+
+  if (!re_res.ok || re_data?.status === "FAIL") {
+    clear_tokens();
+    emit_session_expired({
+      reason: "reissue_failed",
+      status: re_res.status,
+      raw: re_data,
+    });
+    throw Object.assign(
+      new Error("세션이 만료되었습니다. 다시 로그인해 주세요."),
+      { code: "EXPIRED_TOKEN" },
+    );
+  }
+
+  const new_access = re_data?.data?.accessToken;
+  const new_refresh = re_data?.data?.refreshToken;
+
+  set_tokens(new_access, new_refresh);
+
+  return {
+    access_token: get_access_token(),
+    refresh_token: get_refresh_token(),
+  };
+}
+
+// ===== fetch 래퍼 (만료 시 reissue + 원요청 1회 재시도, 동시성 보호) =====
 export async function apiFetch(path, init = {}) {
   let access_token = get_access_token();
   const doFetch = () => fetch(resolve_url(path), make_init(init, access_token));
@@ -74,50 +153,52 @@ export async function apiFetch(path, init = {}) {
     data = await res.clone().json();
   } catch (_) {}
 
-  const expired =
-    data?.status === "FAIL" && data?.errorCode === "EXPIRED_TOKEN";
+  if (is_reissue_call(path)) return res;
 
-  if (expired) {
-    const refresh_token = get_refresh_token();
+  const expired = is_expired_response(res, data);
+  if (!expired) return res;
 
-    if (!refresh_token) {
+  try {
+    if (!reissue_promise) {
+      reissue_promise = do_reissue(access_token).finally(() => {
+        reissue_promise = null;
+      });
+    }
+
+    const renewed = await reissue_promise;
+    access_token = renewed.access_token;
+
+    res = await fetch(resolve_url(path), make_init(init, access_token));
+
+    // 재시도 후에도 만료/401이면 세션 종료 처리
+    let retry_data = null;
+    try {
+      retry_data = await res.clone().json();
+    } catch (_) {}
+
+    if (is_expired_response(res, retry_data)) {
       clear_tokens();
+      emit_session_expired({
+        reason: "retry_still_expired",
+        status: res.status,
+        raw: retry_data,
+      });
       throw Object.assign(
         new Error("세션이 만료되었습니다. 다시 로그인해 주세요."),
-        { code: "EXPIRED_TOKEN" }
+        { code: "EXPIRED_TOKEN" },
       );
     }
 
-    const re_res = await fetch(resolve_url("/public/auth/reissue"), {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        accessToken: access_token,
-        refreshToken: refresh_token,
-      }),
-    });
-
-    const re_data = await re_res.json().catch(() => null);
-
-    if (re_res.ok && re_data?.status !== "FAIL") {
-      const new_access = re_data?.data?.accessToken;
-      const new_refresh = re_data?.data?.refreshToken;
-
-      set_tokens(new_access, new_refresh);
-      access_token = new_access;
-
-      res = await fetch(resolve_url(path), make_init(init, access_token));
-    } else {
+    return res;
+  } catch (e) {
+    // do_reissue 안에서 이미 emit_session_expired 할 수 있음
+    // 여기서도 안전하게 한 번 더 보장
+    if (e?.code === "EXPIRED_TOKEN") {
       clear_tokens();
-      throw Object.assign(
-        new Error("세션이 만료되었습니다. 다시 로그인해 주세요."),
-        { code: "EXPIRED_TOKEN" }
-      );
+      emit_session_expired({ reason: "expired_token_throw" });
     }
+    throw e;
   }
-
-  return res;
 }
 
 // ===== JSON 헬퍼 =====
@@ -132,6 +213,17 @@ export async function apiJson(path, init) {
     err.code = code || (res.status === 401 ? "UNAUTHORIZED" : "ERROR");
     err.raw = data;
     err.status = res.status;
+
+    // 여기서도 만료를 확정하면 전역 이벤트 발행
+    if (err.code === "EXPIRED_TOKEN" || res.status === 401) {
+      clear_tokens();
+      emit_session_expired({
+        reason: "apiJson_error",
+        status: res.status,
+        raw: data,
+      });
+    }
+
     throw err;
   }
   return data;
@@ -148,6 +240,16 @@ async function owner_fetch_json(path, init = {}) {
       data?.errorCode || (res.status === 401 ? "UNAUTHORIZED" : "ERROR");
     err.status = res.status;
     err.raw = data;
+
+    if (err.code === "EXPIRED_TOKEN" || res.status === 401) {
+      clear_tokens();
+      emit_session_expired({
+        reason: "owner_fetch_json_error",
+        status: res.status,
+        raw: data,
+      });
+    }
+
     throw err;
   }
 
@@ -187,7 +289,6 @@ export async function fetch_public_clubs() {
   return res.data || [];
 }
 
-// ✅ 스웨거 기준: /public/clubs/{clubId} 응답 data 안에 clubImages 포함 + recruitingStart 포함
 export async function fetch_public_club(club_id) {
   const res = await apiJson(`/public/clubs/${club_id}`, { method: "GET" });
   return res.data;
@@ -239,7 +340,6 @@ export async function fetch_application_result(club_id) {
   return res.data;
 }
 
-// ✅ 스웨거 기준: POST /member/mypage/application/{clubId}/delete (singular application)
 export async function delete_application(club_id) {
   const res = await apiJson(`/member/mypage/application/${club_id}/delete`, {
     method: "POST",
@@ -247,10 +347,8 @@ export async function delete_application(club_id) {
   return res;
 }
 
-// ✅ alias (optional)
 export const delete_member_application = delete_application;
 
-// ✅ 스웨거 기준: GET/PUT /member/mypage/applications/{clubId}/update
 export async function fetch_application_for_update(club_id) {
   const res = await apiJson(`/member/mypage/applications/${club_id}/update`, {
     method: "GET",
@@ -347,7 +445,6 @@ export async function owner_register_club(payload) {
       title: payload?.title ?? "",
       president: payload?.president ?? "",
       contact: payload?.contact ?? "",
-      recruitingStart: payload?.recruitingStart ?? null,
       recruitingEnd: payload?.recruitingEnd ?? null,
       clubRoom: payload?.clubRoom ?? "",
       description: payload?.description ?? "",
@@ -417,7 +514,7 @@ export async function owner_update_club_questions(club_id, questions = []) {
 export async function fetch_owner_applicant_detail(club_id, club_member_id) {
   const res = await apiJson(
     `/owner/club/${club_id}/applicants/${club_member_id}`,
-    { method: "GET" }
+    { method: "GET" },
   );
   return res.data;
 }
@@ -426,14 +523,14 @@ export async function fetch_owner_applicant_detail(club_id, club_member_id) {
 export async function owner_update_applicant_status(
   club_id,
   club_member_id,
-  new_status
+  new_status,
 ) {
   const res = await apiJson(
     `/owner/club/${club_id}/applicants/${club_member_id}/status`,
     {
       method: "PATCH",
       body: JSON.stringify({ newStatus: new_status }),
-    }
+    },
   );
   return res;
 }
@@ -497,7 +594,7 @@ export async function owner_download_applicants_excel(club_id) {
   const match =
     /filename\*=utf-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd) || [];
   const filename = decodeURIComponent(
-    match[1] || match[2] || `applicants_${club_id}.xlsx`
+    match[1] || match[2] || `applicants_${club_id}.xlsx`,
   );
 
   const a = document.createElement("a");
@@ -553,28 +650,23 @@ export async function member_apply_club(club_id, payload) {
   });
   return res?.data || null;
 }
-// src/lib/api.js (추가)
+
+// ===== MEMBER: (지원서 첨부파일) 다운로드 URL 발급 =====
 export async function member_issue_application_download_url(file_key) {
   const q = encodeURIComponent(String(file_key || ""));
   const candidates = [
-    `/api/v1/member/mypage/applications/file-url?fileKey=${q}`,
-    `/api/v1/member/mypage/applications/file-url?file_key=${q}`,
-    `/api/v1/member/applications/file-url?fileKey=${q}`,
-    `/api/v1/files/presigned-download?fileKey=${q}`,
-    `/api/v1/file/presigned-download?fileKey=${q}`,
+    `/member/mypage/applications/file-url?fileKey=${q}`,
+    `/member/mypage/applications/file-url?file_key=${q}`,
+    `/member/applications/file-url?fileKey=${q}`,
+    `/files/presigned-download?fileKey=${q}`,
+    `/file/presigned-download?fileKey=${q}`,
   ];
 
   let last_err = null;
 
-  for (const url of candidates) {
+  for (const path of candidates) {
     try {
-      const res = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (!res.ok) throw new Error(`download url failed: ${res.status}`);
-      const data = await res.json().catch(() => ({}));
+      const data = await apiJson(path, { method: "GET" });
       return data;
     } catch (e) {
       last_err = e;
@@ -583,30 +675,26 @@ export async function member_issue_application_download_url(file_key) {
 
   throw last_err || new Error("download url api not found");
 }
-// src/lib/api.js (추가)
+
+// ===== OWNER: (지원서 첨부파일) 다운로드 URL 발급 =====
 export async function owner_issue_application_download_url(
   club_id,
   club_member_id,
-  file_key
+  file_key,
 ) {
   const q = encodeURIComponent(String(file_key || ""));
   const candidates = [
-    `/api/v1/owner/club/${club_id}/applicants/${club_member_id}/file-url?fileKey=${q}`,
-    `/api/v1/owner/club/${club_id}/applicants/${club_member_id}/file-url?file_key=${q}`,
-    `/api/v1/owner/files/presigned-download?fileKey=${q}`,
-    `/api/v1/files/presigned-download?fileKey=${q}`,
+    `/owner/club/${club_id}/applicants/${club_member_id}/file-url?fileKey=${q}`,
+    `/owner/club/${club_id}/applicants/${club_member_id}/file-url?file_key=${q}`,
+    `/owner/files/presigned-download?fileKey=${q}`,
+    `/files/presigned-download?fileKey=${q}`,
   ];
 
   let last_err = null;
 
-  for (const url of candidates) {
+  for (const path of candidates) {
     try {
-      const res = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error(`download url failed: ${res.status}`);
-      const data = await res.json().catch(() => ({}));
+      const data = await apiJson(path, { method: "GET" });
       return data;
     } catch (e) {
       last_err = e;

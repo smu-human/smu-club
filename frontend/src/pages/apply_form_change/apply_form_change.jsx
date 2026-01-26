@@ -344,7 +344,16 @@ export default function ApplyFormChange() {
 
   const on_download = () => {
     if (!file_url) return;
-    window.open(file_url, "_blank", "noopener,noreferrer");
+
+    const link = document.createElement("a");
+    link.href = file_url;
+
+    // 파일명 지정 (없어도 되지만 있으면 좋음)
+    link.download = display_file_name(file_key) || "download";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {

@@ -9,6 +9,7 @@ import {
   fetch_mypage_name,
   fetch_my_applications,
   fetch_owner_managed_clubs,
+  fetch_owner_club_detail,
   is_logged_in,
   apiLogout,
   api_member_withdraw,
@@ -19,9 +20,6 @@ import {
 } from "../../lib/api";
 
 const HIDDEN_CLUBS_KEY = "smu_hidden_club_ids_v1";
-
-const STARTED_KEY = "smu_recruiting_started_v1";
-const STOPPED_KEY = "smu_recruiting_stopped_v1";
 
 export default function MyPage() {
   const navigate = useNavigate();
@@ -37,8 +35,11 @@ export default function MyPage() {
   const [result_error, set_result_error] = useState("");
   const [result_data, set_result_data] = useState(null);
 
+  // { [clubId]: "start" | "close" | null }
   const [recruiting_loading_map, set_recruiting_loading_map] = useState({});
   const [is_owner, set_is_owner] = useState(false);
+  // ✅ 목록 API가 상태를 안 내려줘도 UI용 상태를 기억
+  const [local_recruit_status, set_local_recruit_status] = useState({}); // { [id]: "OPEN" | "CLOSED" }
 
   const [hidden_ids, set_hidden_ids] = useState(() => {
     try {
@@ -50,35 +51,9 @@ export default function MyPage() {
     }
   });
 
-  const [started_ids, set_started_ids] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STARTED_KEY);
-      const arr = raw ? JSON.parse(raw) : [];
-      return new Set(Array.isArray(arr) ? arr.map(String) : []);
-    } catch {
-      return new Set();
-    }
-  });
-
-  const [stopped_ids, set_stopped_ids] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STOPPED_KEY);
-      const arr = raw ? JSON.parse(raw) : [];
-      return new Set(Array.isArray(arr) ? arr.map(String) : []);
-    } catch {
-      return new Set();
-    }
-  });
-
   const persist_hidden = (nextSet) => {
     try {
       localStorage.setItem(HIDDEN_CLUBS_KEY, JSON.stringify([...nextSet]));
-    } catch {}
-  };
-
-  const persist_set = (key, setObj) => {
-    try {
-      localStorage.setItem(key, JSON.stringify([...setObj]));
     } catch {}
   };
 
@@ -167,35 +142,24 @@ export default function MyPage() {
     return Array.isArray(qs) && qs.length > 0;
   };
 
-  const mark_started = (club_id) => {
-    const id = String(club_id);
-    const next_started = new Set(started_ids);
-    next_started.add(id);
+  const get_recruitment_status = (club) => {
+    const id = get_id(club);
+    const local = id ? local_recruit_status[id] : null;
+    if (local) return String(local).trim().toUpperCase();
 
-    const next_stopped = new Set(stopped_ids);
-    next_stopped.delete(id);
+    const raw =
+      club?.recruitmentStatus ??
+      club?.recruitingStatus ??
+      club?.recruitStatus ??
+      club?.status ??
+      club?.recruitment_status ??
+      club?.recruiting_status ??
+      null;
 
-    set_started_ids(next_started);
-    set_stopped_ids(next_stopped);
-
-    persist_set(STARTED_KEY, next_started);
-    persist_set(STOPPED_KEY, next_stopped);
-  };
-
-  const mark_stopped = (club_id) => {
-    const id = String(club_id);
-
-    const next_stopped = new Set(stopped_ids);
-    next_stopped.add(id);
-
-    const next_started = new Set(started_ids);
-    next_started.delete(id);
-
-    set_stopped_ids(next_stopped);
-    set_started_ids(next_started);
-
-    persist_set(STOPPED_KEY, next_stopped);
-    persist_set(STARTED_KEY, next_started);
+    const s = String(raw || "")
+      .trim()
+      .toUpperCase();
+    return s || null;
   };
 
   const is_deadline_passed = (club) => {
@@ -211,34 +175,113 @@ export default function MyPage() {
 
   const is_recruiting_started = (club) => {
     const id = get_id(club);
-    if (!id) return false;
-    return started_ids.has(id);
+    if (id && recruiting_loading_map[id] === "start") return true;
+
+    const status = get_recruitment_status(club);
+    if (!status) return false;
+
+    return (
+      status === "OPEN" ||
+      status === "RECRUITING" ||
+      status === "ONGOING" ||
+      status === "IN_PROGRESS"
+    );
   };
 
   const is_recruiting_closed = (club) => {
-    const id = get_id(club);
-    if (!id) return false;
-    return is_deadline_passed(club) || stopped_ids.has(id);
+    const status = get_recruitment_status(club);
+    if (is_deadline_passed(club)) return true;
+    if (!status) return false;
+    return (
+      status === "CLOSED" ||
+      status === "CLOSE" ||
+      status === "ENDED" ||
+      status === "END" ||
+      status === "FINISHED"
+    );
+  };
+
+  const ensure_deadline_ok_for_start = async (club_id, club_fallback) => {
+    let detail = club_fallback;
+    try {
+      detail = await fetch_owner_club_detail(club_id);
+    } catch {}
+
+    const end_raw =
+      detail?.recruitingEnd ??
+      detail?.recruiting_end ??
+      detail?.recruitEnd ??
+      detail?.recruit_end ??
+      null;
+
+    if (
+      !end_raw ||
+      String(end_raw).trim() === "" ||
+      String(end_raw).toLowerCase() === "null"
+    ) {
+      return { ok: false, reason: "NO_DEADLINE" };
+    }
+
+    const end_date = new Date(String(end_raw));
+    if (!Number.isNaN(end_date.getTime())) {
+      const now = new Date();
+      if (now.getTime() >= end_date.getTime()) {
+        return { ok: false, reason: "DEADLINE_PASSED" };
+      }
+    }
+
+    return { ok: true };
+  };
+
+  const patch_status_local = (club_id, next_status) => {
+    set_managed_clubs((prev) =>
+      (prev || []).map((c) => {
+        const cid = get_id(c);
+        if (cid !== String(club_id)) return c;
+        return {
+          ...c,
+          recruitmentStatus: next_status,
+          recruitingStatus: next_status,
+          recruitStatus: next_status,
+          status: next_status,
+        };
+      }),
+    );
   };
 
   const start_recruiting = async (club) => {
     const id = get_id(club);
     if (!id) return;
 
-    if (is_recruiting_closed(club)) {
-      alert("모집이 종료된 동아리는 다시 시작할 수 없습니다.");
-      return;
-    }
-
     if (is_recruiting_started(club)) {
       alert("이미 모집을 시작한 동아리입니다.");
       return;
     }
 
+    const chk = await ensure_deadline_ok_for_start(id, club);
+    if (!chk.ok) {
+      if (chk.reason === "NO_DEADLINE") {
+        alert("모집 마감일을 먼저 설정해야 모집을 시작할 수 있습니다.");
+        return;
+      }
+      if (chk.reason === "DEADLINE_PASSED") {
+        alert(
+          "모집 마감일이 지난 동아리는 시작할 수 없습니다. 마감일을 수정해주세요.",
+        );
+        return;
+      }
+      alert("모집 시작 조건을 확인하지 못했습니다.");
+      return;
+    }
+
     const ok_confirm = window.confirm(
-      "정말 모집을 시작하시겠습니까? 모집 시작을 한 이후에는 지원 양식을 편집할 수 없으며 모집 종료 이후에만 지원서 상세조회가 가능합니다."
+      "정말 모집을 시작하시겠습니까? 모집 시작을 한 이후에는 지원 양식을 편집할 수 없으며 모집 종료 이후에만 지원서 상세조회가 가능합니다.",
     );
     if (!ok_confirm) return;
+
+    // ✅ 즉시 UI 반영: 글자 '모집중' + 시작 버튼 비활성 + 종료 버튼 활성
+    // ✅ 즉시 '모집중'으로 보이게
+    set_local_recruit_status((prev) => ({ ...prev, [id]: "OPEN" }));
 
     set_recruiting_loading_map((prev) => ({ ...prev, [id]: "start" }));
 
@@ -246,14 +289,27 @@ export default function MyPage() {
       const ok = await has_questions(id);
       if (!ok) {
         alert("지원서 양식을 먼저 등록해야 모집을 시작할 수 있습니다.");
+        // 롤백
+        set_local_recruit_status((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        await reload_owner_clubs();
         return;
       }
 
       await owner_start_recruitment(id);
-      mark_started(id);
       await reload_owner_clubs();
     } catch (e) {
       alert(e?.message || "모집 시작에 실패했습니다.");
+      // 실패 롤백
+      set_local_recruit_status((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      await reload_owner_clubs();
     } finally {
       set_recruiting_loading_map((prev) => ({ ...prev, [id]: null }));
     }
@@ -269,18 +325,28 @@ export default function MyPage() {
     }
 
     const ok_confirm = window.confirm(
-      "정말 모집을 종료하시겠습니까? 종료 후 다시 시작할 수 없습니다."
+      "정말 모집을 종료하시겠습니까? 종료 후에도 마감일을 수정하면 다시 시작할 수 있습니다.",
     );
     if (!ok_confirm) return;
+
+    // ✅ 즉시 UI 반영: 시작 불가 + 종료 완료 느낌
+    // ✅ 즉시 '종료' 상태로 보이게
+    set_local_recruit_status((prev) => ({ ...prev, [id]: "CLOSED" }));
 
     set_recruiting_loading_map((prev) => ({ ...prev, [id]: "close" }));
 
     try {
       await owner_close_recruitment(id);
-      mark_stopped(id);
       await reload_owner_clubs();
     } catch (e) {
       alert(e?.message || "모집 종료에 실패했습니다.");
+      // 실패 롤백(일단 서버 데이터로 재동기화)
+      set_local_recruit_status((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      await reload_owner_clubs();
     } finally {
       set_recruiting_loading_map((prev) => ({ ...prev, [id]: null }));
     }
@@ -439,7 +505,6 @@ export default function MyPage() {
                         동아리 페이지
                       </button>
 
-                      {/* ✅ 여기만 변경: 지원서 편집 -> apply_form_change 로 이동 */}
                       <button
                         onClick={() => {
                           if (!club_id)
@@ -504,11 +569,16 @@ export default function MyPage() {
                   const loading_kind = recruiting_loading_map[id];
 
                   const started = is_recruiting_started(club);
+                  const deadline_passed = is_deadline_passed(club);
                   const closed = is_recruiting_closed(club);
 
                   const edit_form_disabled = started;
-                  const start_disabled = started || closed;
-                  const stop_disabled = !started || closed;
+
+                  // 시작은: 이미 started면 불가, 마감일 지났으면 불가
+                  const start_disabled = started || deadline_passed;
+
+                  // 종료는: 모집중(started)일 때만 가능, 마감(혹은 마감일 지남)이면 불가
+                  const stop_disabled = !started || closed || deadline_passed;
 
                   return (
                     <div className="club_box" key={`owner-${id}`}>
@@ -529,7 +599,7 @@ export default function MyPage() {
                           onClick={() => {
                             if (edit_form_disabled) {
                               alert(
-                                "모집을 시작한 이후에는 지원양식을 편집할 수 없습니다."
+                                "모집을 시작한 이후에는 지원양식을 편집할 수 없습니다.",
                               );
                               return;
                             }
@@ -538,11 +608,13 @@ export default function MyPage() {
                         >
                           지원양식 편집
                         </button>
+
                         <button
                           onClick={() => navigate(`/applicant_manage/${id}`)}
                         >
                           지원자 관리
                         </button>
+
                         <button
                           className="recruit_btn start"
                           disabled={
@@ -554,12 +626,13 @@ export default function MyPage() {
                         >
                           {loading_kind === "start"
                             ? "처리중..."
-                            : closed
-                            ? "모집종료됨"
-                            : started
-                            ? "모집중"
-                            : "모집시작"}
+                            : deadline_passed
+                              ? "마감일 지남"
+                              : started
+                                ? "모집중"
+                                : "모집시작"}
                         </button>
+
                         <button
                           className="recruit_btn stop"
                           disabled={
@@ -572,9 +645,10 @@ export default function MyPage() {
                           {loading_kind === "close"
                             ? "처리중..."
                             : closed
-                            ? "종료완료"
-                            : "모집종료"}
+                              ? "종료완료"
+                              : "모집종료"}
                         </button>
+
                         <button onClick={() => hide_club(id)}>삭제</button>
                       </div>
                     </div>
