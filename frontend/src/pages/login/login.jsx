@@ -1,11 +1,32 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+// src/pages/login/login.jsx
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../../styles/globals.css";
 import "./login.css";
 import { apiLogin } from "../../lib/api";
 
+function safe_next_path(raw) {
+  if (!raw) return "/";
+  const s = String(raw);
+
+  // 내부 경로만 허용 (오픈리다이렉트 방지)
+  if (!s.startsWith("/")) return "/";
+  if (s.startsWith("//")) return "/";
+
+  // 로그인/회원가입으로 루프 방지
+  if (s.startsWith("/login") || s.startsWith("/signup")) return "/";
+
+  return s;
+}
+
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const next_path = useMemo(() => {
+    const sp = new URLSearchParams(location.search || "");
+    return safe_next_path(sp.get("next"));
+  }, [location.search]);
 
   // form state
   const [student_id, set_student_id] = useState("");
@@ -43,7 +64,7 @@ export default function Login() {
         localStorage.removeItem("smu_student_id");
       }
 
-      navigate("/");
+      navigate(next_path || "/");
     } catch (err) {
       if (err.code === "UNAUTHORIZED") {
         set_error_msg("인증이 필요합니다.");

@@ -70,7 +70,6 @@ export default function ClubManage() {
   const [leader_name, set_leader_name] = useState("");
   const [phone, set_phone] = useState("");
 
-  const [start_date, set_start_date] = useState("");
   const [deadline, set_deadline] = useState("");
 
   const [club_room, set_club_room] = useState("");
@@ -113,7 +112,6 @@ export default function ClubManage() {
     set_leader_name(detail?.president ?? "");
     set_phone(detail?.contact ?? "");
 
-    set_start_date((detail?.recruitingStart ?? "").slice(0, 10));
     set_deadline((detail?.recruitingEnd ?? "").slice(0, 10));
 
     set_club_room(detail?.clubRoom ?? "");
@@ -181,8 +179,8 @@ export default function ClubManage() {
     set_is_saving(true);
 
     try {
-      if (start_date && deadline && start_date > deadline) {
-        alert("모집 시작일은 모집 마감일보다 늦을 수 없습니다.");
+      if (!deadline) {
+        alert("모집 마감일을 설정해주세요.");
         return;
       }
 
@@ -212,7 +210,6 @@ export default function ClubManage() {
         title: club_one_line,
         president: leader_name,
         contact: phone,
-        recruitingStart: start_date || null,
         recruitingEnd: deadline || null,
         clubRoom: club_room,
         description: intro_html,
@@ -365,22 +362,6 @@ export default function ClubManage() {
               onChange={(e) => set_phone(e.target.value)}
             />
 
-            <label className="field_label" htmlFor="start_date">
-              모집 시작일
-            </label>
-            <input
-              id="start_date"
-              className="field_input"
-              type="date"
-              value={start_date}
-              min={today_str}
-              onChange={(e) => {
-                const v = e.target.value;
-                set_start_date(v);
-                if (deadline && v && deadline < v) set_deadline("");
-              }}
-            />
-
             <label className="field_label" htmlFor="deadline">
               모집 마감일
             </label>
@@ -389,7 +370,7 @@ export default function ClubManage() {
               className="field_input"
               type="date"
               value={deadline}
-              min={start_date || today_str}
+              min={today_str}
               onChange={(e) => set_deadline(e.target.value)}
             />
 
