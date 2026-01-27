@@ -168,41 +168,22 @@ public class OciStorageService {
         }
     }
 
-    public void deleteUrls(List<String> urls) {
-        int ssuccess = 0;
+    public void deleteUrls(List<String> fileKeys) {
+        int success = 0;
         int fail = 0;
-        for(String url : urls){
+        for(String fileKey : fileKeys){
             try{
-                String objectName = extractObjectNameFromUrl(url);
-                deleteObject(objectName);
-                ssuccess++;
+                deleteObject(fileKey);
+                success++;
 
             } catch(Exception e){
-                log.error("OCI URL 삭제 중 오류 발생(건너 뜀): url = {}, cause = {}", url, e.getMessage());
+                log.error("OCI URL 삭제 중 오류 발생(건너 뜀): url = {}, cause = {}", fileKey, e.getMessage());
                 fail++;
             }
         }
-        log.info("OCI URL 삭제 완료: 성공 {}건, 실패 {}건", ssuccess, fail);
+        log.info("OCI URL 삭제 완료: 성공 {}건, 실패 {}건", success, fail);
     }
 
-    private String extractObjectNameFromUrl(String fullUrl) {
-        final String OBJECT_PATH_DELIMITER = "/o/";
-        int startIndex = fullUrl.indexOf(OBJECT_PATH_DELIMITER);
-
-        if (startIndex == -1) {
-            log.error("Invalid OCI URL format for deletion: {}", fullUrl);
-            throw new IllegalArgumentException("OCI URL 형식이 잘못되었습니다: /o/ 구분이 없습니다.");
-        }
-
-        String encodedFileName = fullUrl.substring(startIndex + OBJECT_PATH_DELIMITER.length());
-
-        try {
-            return URLDecoder.decode(encodedFileName, StandardCharsets.UTF_8.name());
-        } catch (Exception e) {
-            log.error("URL Decode failed for: {}", encodedFileName, e);
-            throw new IllegalArgumentException("OCI 파일명 디코딩 실패: " + encodedFileName);
-        }
-    }
 
     @Retryable(
             value = {OciDeletionException.class},
