@@ -181,7 +181,8 @@ public class OwnerClubService {
         return managedClubRelations.stream()
                 .map(relation -> new ManagedClubResponse(
                         relation.getClub().getId(),
-                        relation.getClub().getName()
+                        relation.getClub().getName(),
+                        relation.getClub().getRecruitingStatus()
                 ))
                 .collect(Collectors.toList());
     }
