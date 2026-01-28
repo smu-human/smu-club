@@ -62,16 +62,68 @@ function infer_gender_value(answer_content) {
   return "other";
 }
 
-function display_file_name(fileKey) {
-  if (!fileKey) return "";
-  const s = String(fileKey);
-  const parts = s.split("/");
-  return parts[parts.length - 1];
-}
-
 function is_http_url(v) {
   const s = String(v || "").trim();
   return s.startsWith("http://") || s.startsWith("https://");
+}
+
+function try_decode_uri_component(s) {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
+function with_cache_bust(url) {
+  if (!url) return "";
+  const s = String(url);
+  const t = Date.now();
+  return s.includes("?") ? `${s}&_t=${t}` : `${s}?_t=${t}`;
+}
+
+// fileKey 형식이 "uuid_원본파일명(인코딩)" 같이 오는 케이스면 원본명 추정
+function infer_original_name_from_key(file_key) {
+  if (!file_key) return "";
+  const s = String(file_key);
+
+  if (is_http_url(s)) {
+    try {
+      const u = new URL(s);
+      const pathname = u.pathname || "";
+      const last = pathname.split("/").filter(Boolean).pop() || "";
+      return try_decode_uri_component(last);
+    } catch {
+      return "";
+    }
+  }
+
+  const last = s.split("/").filter(Boolean).pop() || "";
+  const idx = last.lastIndexOf("_");
+  if (idx >= 0 && idx < last.length - 1) {
+    const maybe = last.slice(idx + 1);
+    const decoded = try_decode_uri_component(maybe);
+    if (decoded) return decoded;
+  }
+  return try_decode_uri_component(last);
+}
+
+function pick_filename_from_content_disposition(cd) {
+  if (!cd) return "";
+
+  const s = String(cd);
+
+  const m1 = s.match(/filename\*\s*=\s*utf-8''([^;]+)/i);
+  if (m1 && m1[1]) {
+    return try_decode_uri_component(m1[1].trim().replace(/(^"|"$)/g, ""));
+  }
+
+  const m2 = s.match(/filename\s*=\s*("?)([^";]+)\1/i);
+  if (m2 && m2[2]) {
+    return try_decode_uri_component(m2[2].trim().replace(/(^"|"$)/g, ""));
+  }
+
+  return "";
 }
 
 export default function ApplyFormChange() {
@@ -96,11 +148,13 @@ export default function ApplyFormChange() {
 
   // 백엔드에서 fileKeyUrl로 내려오는 경우가 있어 통합 관리
   const [file_key, set_file_key] = useState(""); // (key or url)
+  const [file_display_name, set_file_display_name] = useState(""); // 화면 표시용(원본명)
 
   const [file_url, set_file_url] = useState("");
   const [file_url_loading, set_file_url_loading] = useState(false);
 
   const file_input_ref = useRef(null);
+  const latest_file_key_ref = useRef(""); // ✅ 추가
 
   const load = async () => {
     if (!club_id) {
@@ -134,7 +188,10 @@ export default function ApplyFormChange() {
         data?.file_key ??
         "";
 
-      set_file_key(server_file_key ? String(server_file_key) : "");
+      const next_key = server_file_key ? String(server_file_key) : "";
+      set_file_key(next_key);
+      latest_file_key_ref.current = next_key; // ✅ 추가
+      set_file_display_name(infer_original_name_from_key(next_key));
 
       const raw_qna =
         data?.questionAndAnswer ??
@@ -172,7 +229,11 @@ export default function ApplyFormChange() {
 
       // ✅ 서버 필드가 비어있고, file 질문의 answerContent에 키/URL이 들어오는 케이스 보정
       if (!server_file_key && file_item?.answerContent) {
-        set_file_key(String(file_item.answerContent));
+        const k = String(file_item.answerContent);
+        set_file_key(k);
+        latest_file_key_ref.current = k; // ✅ 추가
+
+        set_file_display_name(infer_original_name_from_key(k));
       }
 
       set_questions(list.filter((q) => q.type !== "file"));
@@ -188,6 +249,7 @@ export default function ApplyFormChange() {
       set_questions([]);
       set_has_file_upload(false);
       set_file_key("");
+      set_file_display_name("");
       set_file_url("");
     } finally {
       set_loading(false);
@@ -214,9 +276,9 @@ export default function ApplyFormChange() {
         return;
       }
 
-      // ✅ file_key가 이미 URL이면 그대로 열기
+      // ✅ file_key가 이미 URL이면 그대로 사용 (캐시 방지)
       if (is_http_url(file_key)) {
-        set_file_url(String(file_key));
+        set_file_url(with_cache_bust(String(file_key)));
         return;
       }
 
@@ -237,7 +299,7 @@ export default function ApplyFormChange() {
           raw?.downloadUrl ??
           "";
 
-        set_file_url(url ? String(url) : "");
+        set_file_url(url ? with_cache_bust(String(url)) : "");
       } catch {
         set_file_url("");
       } finally {
@@ -280,8 +342,18 @@ export default function ApplyFormChange() {
 
       await member_put_presigned_url(preSignedUrl, file);
 
+      // ✅ 캐시된 이전 다운로드 URL 끊어주기
+      set_file_url("");
+
       // ✅ 업로드 후 file_key 갱신 (다운로드 버튼 즉시 활성화)
       set_file_key(String(fileName));
+      latest_file_key_ref.current = String(fileName); // ✅ 추가
+
+      // ✅ 화면에는 원본 파일명 우선 표시
+      set_file_display_name(
+        file?.name ? String(file.name) : infer_original_name_from_key(fileName),
+      );
+
       alert("파일이 업로드되었습니다.");
     } catch (err) {
       alert(err?.message || "파일 업로드에 실패했습니다.");
@@ -305,12 +377,19 @@ export default function ApplyFormChange() {
           answerContent: String(q.answerContent ?? ""),
         }));
 
-      // ✅ 백엔드가 fileKeyUrl을 기대할 수도 있어 둘 다 넣어 호환
+      // ✅ 여기부터 추가/수정
+      console.log("[on_save] state file_key:", file_key);
+      console.log("[on_save] ref file_key:", latest_file_key_ref.current);
+
+      const final_file_key = has_file_upload
+        ? String(latest_file_key_ref.current || "")
+        : "";
+
       const payload = {
         answers,
-        fileKey: has_file_upload ? String(file_key || "") : "",
-        fileKeyUrl: has_file_upload ? String(file_key || "") : "",
+        fileKey: final_file_key,
       };
+      // ✅ 여기까지
 
       await update_application(club_id, payload);
 
@@ -342,18 +421,42 @@ export default function ApplyFormChange() {
     }
   };
 
-  const on_download = () => {
+  // ✅ 강제 다운로드 (가능하면 blob), 실패 시 새창 열기 fallback
+  const on_download = async () => {
     if (!file_url) return;
 
-    const link = document.createElement("a");
-    link.href = file_url;
+    const open_url = with_cache_bust(file_url);
 
-    // 파일명 지정 (없어도 되지만 있으면 좋음)
-    link.download = display_file_name(file_key) || "download";
+    const fallback_open = () => {
+      window.open(open_url, "_blank", "noopener,noreferrer");
+    };
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const res = await fetch(open_url, { method: "GET" });
+      if (!res.ok) throw new Error("download failed");
+
+      const cd = res.headers.get("content-disposition") || "";
+      const from_cd = pick_filename_from_content_disposition(cd);
+      const filename =
+        from_cd ||
+        file_display_name ||
+        infer_original_name_from_key(file_key) ||
+        "download";
+
+      const blob = await res.blob();
+      const object_url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = object_url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      URL.revokeObjectURL(object_url);
+    } catch {
+      fallback_open();
+    }
   };
 
   if (loading) {
@@ -557,7 +660,11 @@ export default function ApplyFormChange() {
 
                 <div className="file_row">
                   <span className="file_name">
-                    {file_key ? display_file_name(file_key) : "첨부 없음"}
+                    {file_key
+                      ? file_display_name ||
+                        infer_original_name_from_key(file_key) ||
+                        "첨부 있음"
+                      : "첨부 없음"}
                     {file_url_loading ? (
                       <span style={{ marginLeft: 8, opacity: 0.7 }}>
                         (링크 생성중...)
