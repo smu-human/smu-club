@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    defaults:
+      run:
+        working-directory: ./backend
     # CI 서버 내부에 독립적인 MySQL 컨테이너를 실행합니다.
     services:
       mysql:
