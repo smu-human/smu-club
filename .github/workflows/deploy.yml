@@ -2,10 +2,10 @@ name: SMU-CLUB CD
 
 on:
   push:
-    branches: [ "prod" ]
+    branches: [ "master" ]
 
 jobs:
-  build-and-push:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -38,10 +38,12 @@ jobs:
           username: ${{ secrets.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
-            cd /home/opc/smu-club
+            cd /home/opc/smu-club 
             
+            # Git 업데이트
             git fetch origin
-            git reset --hard origin/prod
+            git reset --hard origin/master
+            
             # .env 파일 생성 (환경변수 주입)
             cat <<EOF > .env
             SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}
@@ -70,11 +72,10 @@ jobs:
             echo "${{ secrets.OCI_API_KEY }}" > oci_api_key.pem
             chmod 755 oci_api_key.pem
             
-            # Docker Hub에서 최신 이미지 내려받기
-            docker-compose --profile prod pull
-            # 기존 컨테이너 중지 및 제거
+            # Docker Compose 실행
             docker-compose --profile prod down || true
-            # 새 이미지로 컨테이너 실행 (빌드 과정 없이 바로 실행)
+            docker builder prune -af
+            docker-compose --profile prod build --no-cache
             docker-compose --profile prod up -d
             
             docker image prune -f
