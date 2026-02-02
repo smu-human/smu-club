@@ -50,7 +50,7 @@ jobs:
             # OCI API Key (.pem) 파일 생성
             # 호스트 서버에 파일을 먼저 생성하고, docker-compose에서 볼륨으로 마운트
             echo "${{ secrets.OCI_API_KEY }}" > oci_api_key.pem
-            chmod 755 oci_api_key.pem
+            chmod 600 oci_api_key.pem
             
             # Docker Compose 실행
             docker-compose --profile prod down || true
@@ -59,3 +59,5 @@ jobs:
             docker-compose --profile prod up -d
             
             docker image prune -f
+            
+            rm -rf .env
