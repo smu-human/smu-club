@@ -25,7 +25,7 @@ jobs:
         with:
           context: ./backend
           file: ./backend/Dockerfile
-          pull: true
+          push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/smu-club-backend:latest
   deploy-to-oci:
     runs-on: ubuntu-latest
