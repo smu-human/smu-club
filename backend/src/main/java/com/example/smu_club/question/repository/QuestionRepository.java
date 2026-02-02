@@ -11,6 +11,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     List<Question> findAllByClubOrderByOrderNumAsc(Club club);
 
+    List<Question> findAllByClubAndQuestionContentTypeOrderByOrderNumAsc(Club club, QuestionContentType contentType);
+
     void deleteAllByClubAndQuestionContentType(Club club, QuestionContentType questionContentType);
 
     List<Question> findByClubIdOrderByOrderNumAsc(Long clubId);
