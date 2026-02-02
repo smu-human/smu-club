@@ -39,7 +39,7 @@ public class QuestionService {
             throw new AuthorizationException("[OWNER] 해당 동아리의 질문을 볼 권한이 없습니다.");
         }
 
-        List<Question> questions = questionRepository.findAllByClubOrderByOrderNumAsc(club);
+        List<Question> questions = questionRepository.findAllByClubAndQuestionContentTypeOrderByOrderNumAsc(club, QuestionContentType.TEXT);
 
         return questions.stream()
                 .map(question -> new QuestionResponse(question.getId(), question.getOrderNum(),question.getContent()))
