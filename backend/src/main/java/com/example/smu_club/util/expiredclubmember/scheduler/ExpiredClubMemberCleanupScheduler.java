@@ -17,7 +17,7 @@ class ExpiredClubMemberCleanupScheduler {
 
     private final BatchClubMemberService batchClubMemberService;
 
-    @Scheduled(cron = "0 30 2 * * *") // 매일 새벽 2시 30분에 실행
+    @Scheduled(cron = "* 10 0 * * *", zone = "Asia/Seoul") // 매일 새벽 12시 10분에 실행
     @DiscordAlert("만료된 동아리 회원 정리 스케줄러")
     public void cleanupExpiredClubMembers() {
         //1. 모집 종료된 이후 1달이 지난 동아리 조회
