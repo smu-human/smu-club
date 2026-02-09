@@ -203,16 +203,16 @@ export default function ApplyFormSubmit() {
     load();
   }, [club_id]);
 
-  const onPickFile = (e) => {
-    const f = e.target.files?.[0] || null;
-    set_picked_file(f);
-    setFileName(f ? f.name : "선택된 파일 없음");
-  };
+  // const onPickFile = (e) => {
+  //   const f = e.target.files?.[0] || null;
+  //   set_picked_file(f);
+  //   setFileName(f ? f.name : "선택된 파일 없음");
+  // };
 
-  const clearFile = () => {
-    set_picked_file(null);
-    setFileName("선택된 파일 없음");
-  };
+  // const clearFile = () => {
+  //   set_picked_file(null);
+  //   setFileName("선택된 파일 없음");
+  // };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -403,7 +403,7 @@ export default function ApplyFormSubmit() {
                 </fieldset>
                 */}
 
-                {has_file_upload && (
+                {/* {has_file_upload && (
                   <div className="file_upload_section">
                     <label className="field_label">
                       첨부파일 등 — 선택 사항
@@ -434,7 +434,7 @@ export default function ApplyFormSubmit() {
 
                     <p className="hint_text"></p>
                   </div>
-                )}
+                )} */}
 
                 {custom_questions.length > 0 && (
                   <div className="custom_list">

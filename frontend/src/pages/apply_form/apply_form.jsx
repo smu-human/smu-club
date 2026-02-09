@@ -32,6 +32,24 @@ function unwrap_api(res) {
   return res;
 }
 
+function normalize_content(s) {
+  return String(s || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function is_file_question_content(content) {
+  const t = normalize_content(content).toLowerCase();
+  if (!t) return false;
+  if (t === "파일추가") return true;
+  if (t.includes("파일")) return true;
+  if (t.includes("첨부")) return true;
+  if (t.includes("upload")) return true;
+  if (t.includes("attachment")) return true;
+  if (t.includes("포트폴리오")) return true;
+  return false;
+}
+
 function is_http_url(v) {
   const s = String(v || "").trim();
   return s.startsWith("http://") || s.startsWith("https://");
@@ -62,15 +80,14 @@ export default function ApplyForm() {
 
   const [applicant_name, set_applicant_name] = useState("지원서");
 
-  const [form, set_form] = useState({
+  const [applicant_info, set_applicant_info] = useState({
     dept: "",
     studentId: "",
     name: "",
     phone: "",
-    gender: "",
-    intro: "",
-    attachment: "",
   });
+
+  const [application_form_list, set_application_form_list] = useState([]); // [{questionId, orderNum, questionContent, answerContent}]
 
   const [decision, setDecision] = useState("pending");
   const [saving, set_saving] = useState(false);
@@ -120,38 +137,35 @@ export default function ApplyForm() {
       const phone_number =
         applicant?.phoneNumber ?? applicant?.phone_number ?? "";
 
-      const find_answer = (matcher) => {
-        const arr = Array.isArray(application_form) ? application_form : [];
-        const hit = arr.find((q) => matcher(String(q?.questionContent ?? "")));
-        return String(hit?.answerContent ?? "");
-      };
-
-      const gender_answer = find_answer((t) => t.includes("성별"));
-      const intro_answer = find_answer((t) => t.includes("자기소개"));
-
-      const attachment_answer =
-        find_answer((t) => t.includes("첨부")) ||
-        find_answer((t) => t.includes("포트폴리오")) ||
-        find_answer((t) => t.includes("파일"));
-
-      set_form({
-        dept: department,
-        studentId: student_id,
-        name,
-        phone: phone_number,
-        gender:
-          gender_answer === "남" || gender_answer === "남성"
-            ? "male"
-            : gender_answer === "여" || gender_answer === "여성"
-              ? "female"
-              : gender_answer
-                ? "other"
-                : "",
-        intro: intro_answer,
-        attachment: attachment_answer,
+      set_applicant_info({
+        dept: String(department || ""),
+        studentId: String(student_id || ""),
+        name: String(name || ""),
+        phone: String(phone_number || ""),
       });
 
       set_applicant_name(name ? `${name}님의 지원서` : "지원서");
+
+      const normalized_forms = (
+        Array.isArray(application_form) ? application_form : []
+      )
+        .map((q) => ({
+          questionId: q?.questionId ?? q?.question_id ?? q?.id ?? null,
+          orderNum: q?.orderNum ?? q?.order_num ?? q?.order ?? null,
+          questionContent: String(
+            q?.questionContent ?? q?.question_content ?? q?.content ?? "",
+          ),
+          answerContent: String(
+            q?.answerContent ?? q?.answer_content ?? q?.answer ?? "",
+          ),
+        }))
+        .filter((q) => normalize_content(q.questionContent).length > 0)
+        .sort(
+          (a, b) =>
+            (Number(a.orderNum ?? 0) || 0) - (Number(b.orderNum ?? 0) || 0),
+        );
+
+      set_application_form_list(normalized_forms);
 
       const server_status =
         applicant?.status ?? data?.status ?? data?.applicationStatus;
@@ -169,7 +183,6 @@ export default function ApplyForm() {
         data?.fileKey ??
         data?.file_key ??
         data?.filekey ??
-        attachment_answer ??
         "";
 
       set_file_key(String(fk || ""));
@@ -246,7 +259,6 @@ export default function ApplyForm() {
         club_member_id,
         decision_to_api(next),
       );
-
       await load_detail();
     } catch (e) {
       setDecision(prev);
@@ -333,6 +345,10 @@ export default function ApplyForm() {
     );
   }
 
+  const has_file_question = (application_form_list || []).some((q) =>
+    is_file_question_content(q?.questionContent),
+  );
+
   return (
     <div className="page-root">
       <div className="page-header sticky-header safe-area-top">
@@ -377,7 +393,7 @@ export default function ApplyForm() {
             <input
               id="dept"
               className="field_input"
-              value={form.dept}
+              value={applicant_info.dept}
               disabled
               readOnly
             />
@@ -388,7 +404,7 @@ export default function ApplyForm() {
             <input
               id="sid"
               className="field_input"
-              value={form.studentId}
+              value={applicant_info.studentId}
               disabled
               readOnly
             />
@@ -399,7 +415,7 @@ export default function ApplyForm() {
             <input
               id="uname"
               className="field_input"
-              value={form.name}
+              value={applicant_info.name}
               disabled
               readOnly
             />
@@ -410,78 +426,96 @@ export default function ApplyForm() {
             <input
               id="phone"
               className="field_input"
-              value={form.phone}
+              value={applicant_info.phone}
               disabled
               readOnly
             />
 
-            <fieldset className="fieldset">
-              <legend className="field_label">성별</legend>
-              <label className="radio_item">
-                <input
-                  type="radio"
-                  name="gender"
-                  checked={form.gender === "male"}
-                  disabled
-                  readOnly
-                />
-                남성
-              </label>
-              <label className="radio_item">
-                <input
-                  type="radio"
-                  name="gender"
-                  checked={form.gender === "female"}
-                  disabled
-                  readOnly
-                />
-                여성
-              </label>
-              <label className="radio_item">
-                <input
-                  type="radio"
-                  name="gender"
-                  checked={form.gender === "other"}
-                  disabled
-                  readOnly
-                />
-                기타
-              </label>
-            </fieldset>
+            {/* ✅ 지원서 문항/답변 전체 렌더링 */}
+            {(application_form_list || []).map((q, idx) => {
+              const qc = normalize_content(q?.questionContent);
+              const ac = String(q?.answerContent ?? "");
 
-            <label className="field_label" htmlFor="intro">
-              자기소개
-            </label>
-            <textarea
-              id="intro"
-              className="answer_area"
-              value={form.intro}
-              disabled
-              readOnly
-            />
+              const is_file = is_file_question_content(qc);
 
-            <div className="file_row view_only">
-              <span className="file_name">
-                {file_key ? display_file_name(file_key) : "첨부 없음"}
-                {file_url_loading ? (
-                  <span style={{ marginLeft: 8, opacity: 0.7 }}>
-                    (링크 생성중...)
+              return (
+                <div key={q?.questionId ?? `${idx}-${qc}`}>
+                  <label className="field_label">
+                    {qc || `질문 ${idx + 1}`}
+                  </label>
+
+                  {is_file ? (
+                    <div className="file_row view_only">
+                      <span className="file_name">
+                        {file_key ? display_file_name(file_key) : "첨부 없음"}
+                        {file_url_loading ? (
+                          <span style={{ marginLeft: 8, opacity: 0.7 }}>
+                            (링크 생성중...)
+                          </span>
+                        ) : null}
+                      </span>
+
+                      {file_key ? (
+                        <button
+                          type="button"
+                          className="outline_btn sm"
+                          onClick={on_download}
+                          disabled={!file_url}
+                          style={!file_url ? { opacity: 0.5 } : undefined}
+                        >
+                          열기/다운로드
+                        </button>
+                      ) : null}
+
+                      {/* 서버가 파일 질문에 answerContent도 주는 경우 표시 */}
+                      {normalize_content(ac) ? (
+                        <div style={{ width: "100%", marginTop: 10 }}>
+                          <textarea
+                            className="answer_area"
+                            value={ac}
+                            disabled
+                            readOnly
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <textarea
+                      className="answer_area"
+                      value={ac}
+                      disabled
+                      readOnly
+                    />
+                  )}
+                </div>
+              );
+            })}
+
+            {/* ✅ 파일 질문이 응답에 없더라도 file_key가 있으면 하단에 표시 */}
+            {!has_file_question && file_key ? (
+              <div>
+                <label className="field_label">첨부파일</label>
+                <div className="file_row view_only">
+                  <span className="file_name">
+                    {display_file_name(file_key)}
+                    {file_url_loading ? (
+                      <span style={{ marginLeft: 8, opacity: 0.7 }}>
+                        (링크 생성중...)
+                      </span>
+                    ) : null}
                   </span>
-                ) : null}
-              </span>
-
-              {file_key ? (
-                <button
-                  type="button"
-                  className="outline_btn sm"
-                  onClick={on_download}
-                  disabled={!file_url}
-                  style={!file_url ? { opacity: 0.5 } : undefined}
-                >
-                  열기/다운로드
-                </button>
-              ) : null}
-            </div>
+                  <button
+                    type="button"
+                    className="outline_btn sm"
+                    onClick={on_download}
+                    disabled={!file_url}
+                    style={!file_url ? { opacity: 0.5 } : undefined}
+                  >
+                    열기/다운로드
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             <div
               className="decision_toggle"
