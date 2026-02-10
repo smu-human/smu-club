@@ -52,6 +52,12 @@ jobs:
             echo "${{ secrets.OCI_API_KEY }}" > oci_api_key.pem
             chmod 600 oci_api_key.pem
             
+            # SSL / TLS 인증서 파일 생성
+            echo "${{ secrets.SSL_CERT }}" > cert.pem
+            echo "${{ secrets.SSL_KEY }}" > key.pem
+            chmod 600 cert.pem
+            chmod 600 key.pem
+            
             # Docker Compose 실행
             docker-compose --profile prod down || true
             docker builder prune -af
