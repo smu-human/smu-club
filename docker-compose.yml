@@ -85,9 +85,7 @@ services:
   ############################## 배포용 (PROD) ##############################
 
   backend2:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: bongguscha/smu-club-backend:latest
     restart: always
     depends_on:
       - db
