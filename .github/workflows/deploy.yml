@@ -74,9 +74,13 @@ jobs:
             echo "${{ secrets.OCI_API_KEY }}" > oci_api_key.pem
             chmod 600 oci_api_key.pem
             
-            # Docker Hub에서 최신 이미지 내려받기
-            docker-compose --profile prod pull
-            # 기존 컨테이너 중지 및 제거
+            # SSL / TLS 인증서 파일 생성
+            echo "${{ secrets.SSL_CERT }}" > cert.pem
+            echo "${{ secrets.SSL_KEY }}" > key.pem
+            chmod 600 cert.pem
+            chmod 600 key.pem
+            
+            # Docker Compose 실행
             docker-compose --profile prod down || true
             # 새 이미지로 컨테이너 실행 (빌드 과정 없이 바로 실행)
             docker-compose --profile prod up -d
