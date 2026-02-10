@@ -2,8 +2,14 @@
   margin: 0 auto;
   padding: 0 0 24px; /* 상단 패딩은 safe-area로 대체 */
   min-height: 100svh;
-  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Arial, sans-serif;
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
   background: transparent; /* body가 이미 전체 배경을 가짐 */
 } /* 상단바 */
 .home_header {
