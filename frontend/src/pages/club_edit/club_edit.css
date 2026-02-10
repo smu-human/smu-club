@@ -29,7 +29,7 @@
 
 .club_card {
   background: #fff;
-  border-radius: 0 0 12px 12px !important;
+  /* border-radius: 0 0 12px 12px !important; */
   padding: 14px;
   display: flex;
   flex-direction: column;

@@ -51,7 +51,7 @@ export default function ClubPage() {
   const is_owner = useMemo(() => owner_ids.has(String(id)), [owner_ids, id]);
   const is_applied = useMemo(
     () => applied_ids.has(String(id)),
-    [applied_ids, id]
+    [applied_ids, id],
   );
 
   const is_guest = useMemo(() => !is_logged_in(), []);
@@ -83,7 +83,7 @@ export default function ClubPage() {
             owners
               .map((c) => c?.clubId ?? c?.id ?? c?.club_id)
               .filter((v) => v !== undefined && v !== null)
-              .map(String)
+              .map(String),
           );
           set_owner_ids(next_owner);
         } else {
@@ -93,7 +93,7 @@ export default function ClubPage() {
         if (appsData.status === "fulfilled") {
           const apps = Array.isArray(appsData.value) ? appsData.value : [];
           const next_applied = new Set(
-            apps.map(get_id).filter((v) => v !== null)
+            apps.map(get_id).filter((v) => v !== null),
           );
           set_applied_ids(next_applied);
         } else {
@@ -145,8 +145,8 @@ export default function ClubPage() {
           urls_from_club_images.length > 0
             ? urls_from_club_images
             : thumb
-            ? [thumb]
-            : [];
+              ? [thumb]
+              : [];
 
         setImages(final_urls);
 
@@ -188,13 +188,13 @@ export default function ClubPage() {
     if (idx !== activeIndex) setActiveIndex(idx);
   };
 
-  const render_status = (status) => {
-    const s = status?.toUpperCase();
-    if (s === "OPEN") return "모집중";
-    if (s === "UPCOMING") return "모집 예정";
-    if (s === "CLOSED") return "모집 마감";
-    return s || "-";
-  };
+  // const render_status = (status) => {
+  //   const s = status?.toUpperCase();
+  //   if (s === "OPEN") return "모집중";
+  //   // if (s === "UPCOMING") return "모집 예정";
+  //   if (s === "CLOSED") return "모집 마감";
+  //   return s || "-";
+  // };
 
   const handleApply = async () => {
     if (!can_show_apply) return;
@@ -320,22 +320,22 @@ export default function ClubPage() {
                     <span className="label">연락처</span>
                     <span className="val">{club.contact || "-"}</span>
                   </li>
-                  <li>
+                  {/* <li>
                     <span className="label">모집 시작</span>
                     <span className="val">
                       {fmt_date(club.recruitingStart)}
                     </span>
-                  </li>
+                  </li> */}
                   <li>
                     <span className="label">모집 마감</span>
                     <span className="val">{fmt_date(club.recruitingEnd)}</span>
                   </li>
-                  <li>
+                  {/* <li>
                     <span className="label">상태</span>
                     <span className="val badge">
                       {render_status(club.recruitingStatus)}
                     </span>
-                  </li>
+                  </li> */}
                   <li>
                     <span className="label">동아리방</span>
                     <span className="val">{club.clubRoom || "-"}</span>

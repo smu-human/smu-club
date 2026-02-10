@@ -15,11 +15,11 @@ function ddayClass(d) {
   return "dday-neutral";
 }
 
-function ddayLabel(d) {
-  if (d == null) return "예정";
-  if (d <= 0) return "마감";
-  return `D-${d}`;
-}
+// function ddayLabel(d) {
+//   if (d == null) return "예정";
+//   if (d <= 0) return "마감";
+//   return `D-${d}`;
+// }
 
 const DEFAULT_LOGO = "/images/2.png";
 
@@ -192,7 +192,6 @@ export default function HomePage() {
               onChange={(e) => setSortKey(e.target.value)}
             >
               <option value="name">이름순</option>
-              <option value="members">회원수순</option>
               <option value="dday">마감 임박순</option>
             </select>
           </div>
@@ -230,24 +229,24 @@ export default function HomePage() {
                           c.status === "open"
                             ? "open"
                             : c.status === "upcoming"
-                            ? "upcoming"
-                            : "closed"
+                              ? "upcoming"
+                              : "closed"
                         }`}
                       >
                         {c.status === "open"
                           ? "신청 가능"
                           : c.status === "upcoming"
-                          ? "모집 예정"
-                          : "신청 불가"}
+                            ? "모집 예정"
+                            : "신청 불가"}
                       </span>
                       {c.members != null && (
                         <span className="members">· {c.members}명</span>
                       )}
                     </div>
                   </div>
-                  <span className={`dday ${ddayClass(c.dday)}`}>
+                  {/* <span className={`dday ${ddayClass(c.dday)}`}>
                     {ddayLabel(c.dday)}
-                  </span>
+                  </span> */}
                 </div>
 
                 <p className="club_desc">{c.desc}</p>

@@ -420,7 +420,7 @@ export default function ApplyFormEdit() {
                   </div>
                 )}
                 {/* ✅ 오너 양식 편집 화면에서는 업로드 동작 X (존재만 안내) */}
-                <div className="file_upload_section">
+                {/* <div className="file_upload_section">
                   <label className="field_label">첨부파일</label>
                   <div className="file_row view_only">
                     <span className="file_name">
@@ -429,7 +429,7 @@ export default function ApplyFormEdit() {
                         : "파일 업로드 항목"}
                     </span>
                   </div>
-                </div>
+                </div> */}
                 <div className="form_actions">
                   <button
                     className="primary_btn save_btn"

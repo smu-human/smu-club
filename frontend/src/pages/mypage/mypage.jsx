@@ -525,7 +525,7 @@ export default function MyPage() {
                         결과 확인
                       </button>
 
-                      <button
+                      {/* <button
                         onClick={() => {
                           if (!club_id)
                             return alert("동아리 id를 찾지 못했습니다.");
@@ -533,7 +533,7 @@ export default function MyPage() {
                         }}
                       >
                         삭제
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 );
@@ -649,7 +649,7 @@ export default function MyPage() {
                               : "모집종료"}
                         </button>
 
-                        <button onClick={() => hide_club(id)}>삭제</button>
+                        {/* <button onClick={() => hide_club(id)}>삭제</button> */}
                       </div>
                     </div>
                   );
