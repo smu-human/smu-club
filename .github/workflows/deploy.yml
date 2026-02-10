@@ -80,6 +80,8 @@ jobs:
             chmod 600 cert.pem
             chmod 600 key.pem
             
+            # Docker Hub에서 최신 이미지 내려받기
+            docker-compose --profile prod pull
             # Docker Compose 실행
             docker-compose --profile prod down || true
             # 새 이미지로 컨테이너 실행 (빌드 과정 없이 바로 실행)
