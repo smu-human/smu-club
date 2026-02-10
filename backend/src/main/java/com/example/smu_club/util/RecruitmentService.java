@@ -6,6 +6,7 @@ import com.example.smu_club.domain.RecruitingStatus;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -25,7 +26,8 @@ public class RecruitmentService {
                 .toList();
     }
 
-    @Transactional
+    //호출될 때마다 새 트랜잭션 생성
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public int closeRecruitments(List<ClosureTarget> targets) {
 
         //이미 다 open 이지만, 혹시 모르니 안전하게 filter 처리
@@ -35,7 +37,7 @@ public class RecruitmentService {
                 .toList();
 
         //빈 리스트로 쿼리 날리 에러 가능성 있음.
-        if(ids.isEmpty()){
+        if (ids.isEmpty()) {
             return 0;
         }
 
@@ -52,9 +54,9 @@ public class RecruitmentService {
 
         public static ClosureTarget from(Club club) {
             return ClosureTarget.builder()
-                        .clubId(club.getId())
-                        .previousStatus(club.getRecruitingStatus())
-                        .build();
+                    .clubId(club.getId())
+                    .previousStatus(club.getRecruitingStatus())
+                    .build();
         }
 
     }
