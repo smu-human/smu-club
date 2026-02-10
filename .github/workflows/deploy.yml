@@ -58,6 +58,8 @@ jobs:
             chmod 600 cert.pem
             chmod 600 key.pem
             
+            # Docker Hub에서 최신 이미지 내려받기
+            docker-compose --profile prod pull
             # Docker Compose 실행
             docker-compose --profile prod down || true
             docker builder prune -af
