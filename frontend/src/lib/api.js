@@ -84,10 +84,11 @@ function is_reissue_call(path) {
   return p.includes("/public/auth/reissue");
 }
 
+// ✅ 401이라도 LOGIN_FAILED면 만료로 보지 않음
 function is_expired_response(res, data) {
   if (data?.status === "FAIL" && data?.errorCode === "EXPIRED_TOKEN")
     return true;
-  if (res?.status === 401) return true;
+  if (res?.status === 401 && data?.errorCode !== "LOGIN_FAILED") return true;
   return false;
 }
 
@@ -155,6 +156,9 @@ export async function apiFetch(path, init = {}) {
 
   if (is_reissue_call(path)) return res;
 
+  // ✅ 로그인 실패(학번/비번 불일치)는 reissue/세션만료 처리 금지
+  if (data?.status === "FAIL" && data?.errorCode === "LOGIN_FAILED") return res;
+
   const expired = is_expired_response(res, data);
   if (!expired) return res;
 
@@ -191,8 +195,6 @@ export async function apiFetch(path, init = {}) {
 
     return res;
   } catch (e) {
-    // do_reissue 안에서 이미 emit_session_expired 할 수 있음
-    // 여기서도 안전하게 한 번 더 보장
     if (e?.code === "EXPIRED_TOKEN") {
       clear_tokens();
       emit_session_expired({ reason: "expired_token_throw" });
@@ -214,8 +216,11 @@ export async function apiJson(path, init) {
     err.raw = data;
     err.status = res.status;
 
-    // 여기서도 만료를 확정하면 전역 이벤트 발행
-    if (err.code === "EXPIRED_TOKEN" || res.status === 401) {
+    // ✅ 여기서도 401 전부 만료로 치지 말고 LOGIN_FAILED는 제외
+    if (
+      err.code === "EXPIRED_TOKEN" ||
+      (res.status === 401 && err.code !== "LOGIN_FAILED")
+    ) {
       clear_tokens();
       emit_session_expired({
         reason: "apiJson_error",
@@ -241,7 +246,11 @@ async function owner_fetch_json(path, init = {}) {
     err.status = res.status;
     err.raw = data;
 
-    if (err.code === "EXPIRED_TOKEN" || res.status === 401) {
+    // ✅ 401 전부 만료로 치지 말고 LOGIN_FAILED는 제외
+    if (
+      err.code === "EXPIRED_TOKEN" ||
+      (res.status === 401 && err.code !== "LOGIN_FAILED")
+    ) {
       clear_tokens();
       emit_session_expired({
         reason: "owner_fetch_json_error",
@@ -388,7 +397,7 @@ export async function owner_issue_upload_urls(files = []) {
     body: JSON.stringify({ files: payload_files }),
   });
 
-  return Array.isArray(res?.data) ? res.data : []; // [{ fileName, preSignedUrl }]
+  return Array.isArray(res?.data) ? res.data : [];
 }
 
 export async function owner_put_presigned_url(preSignedUrl, file) {
@@ -624,7 +633,7 @@ export async function member_issue_application_upload_url(file) {
       contentType: file?.type || "application/octet-stream",
     }),
   });
-  return res?.data || null; // { fileName, preSignedUrl }
+  return res?.data || null;
 }
 
 export async function member_put_presigned_url(preSignedUrl, file) {
