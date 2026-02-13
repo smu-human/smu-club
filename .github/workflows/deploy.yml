@@ -84,6 +84,7 @@ jobs:
             docker-compose --profile prod pull
             # Docker Compose 실행
             docker-compose --profile prod down || true
+            docker-compose --profile prod build --no-cache nginx
             # 새 이미지로 컨테이너 실행 (빌드 과정 없이 바로 실행)
             docker-compose --profile prod up -d
             
