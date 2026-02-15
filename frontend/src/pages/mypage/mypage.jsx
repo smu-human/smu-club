@@ -555,11 +555,11 @@ export default function MyPage() {
             <h2 className="mypage_title">동아리 운영/관리</h2>
 
             <div className="mypage_card">
-              {hidden_ids.size > 0 && (
+              {/* {hidden_ids.size > 0 && (
                 <button className="add_btn" type="button" onClick={unhide_all}>
                   숨김 해제(전체)
                 </button>
-              )}
+              )} */}
 
               {visible_managed_clubs.length === 0 ? (
                 <p className="empty">운영 중인 동아리가 없습니다.</p>
