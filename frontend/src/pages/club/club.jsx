@@ -336,10 +336,10 @@ export default function ClubPage() {
                       {render_status(club.recruitingStatus)}
                     </span>
                   </li> */}
-                  <li>
+                  {/* <li>
                     <span className="label">동아리방</span>
                     <span className="val">{club.clubRoom || "-"}</span>
-                  </li>
+                  </li> */}
                 </ul>
               </section>
               <section className="intro card">
