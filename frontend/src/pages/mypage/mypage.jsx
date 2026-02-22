@@ -425,18 +425,18 @@ export default function MyPage() {
     }
   };
 
-  const handleWithdraw = async () => {
-    const ok = window.confirm("정말 탈퇴하시겠습니까? 되돌릴 수 없습니다.");
-    if (!ok) return;
+  // const handleWithdraw = async () => {
+  //   const ok = window.confirm("정말 탈퇴하시겠습니까? 되돌릴 수 없습니다.");
+  //   if (!ok) return;
 
-    try {
-      await api_member_withdraw();
-      alert("탈퇴가 완료되었습니다.");
-      navigate("/");
-    } catch (err) {
-      set_error_msg(err?.message || "탈퇴에 실패했습니다.");
-    }
-  };
+  //   try {
+  //     await api_member_withdraw();
+  //     alert("탈퇴가 완료되었습니다.");
+  //     navigate("/");
+  //   } catch (err) {
+  //     set_error_msg(err?.message || "탈퇴에 실패했습니다.");
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -555,11 +555,11 @@ export default function MyPage() {
             <h2 className="mypage_title">동아리 운영/관리</h2>
 
             <div className="mypage_card">
-              {hidden_ids.size > 0 && (
+              {/* {hidden_ids.size > 0 && (
                 <button className="add_btn" type="button" onClick={unhide_all}>
                   숨김 해제(전체)
                 </button>
-              )}
+              )} */}
 
               {visible_managed_clubs.length === 0 ? (
                 <p className="empty">운영 중인 동아리가 없습니다.</p>
@@ -677,13 +677,13 @@ export default function MyPage() {
           <button type="button" className="link_btn" onClick={handleLogout}>
             로그아웃
           </button>
-          <button
+          {/* <button
             type="button"
             className="link_btn logout_red"
             onClick={handleWithdraw}
           >
             탈퇴
-          </button>
+          </button> */}
         </div>
       </main>
 

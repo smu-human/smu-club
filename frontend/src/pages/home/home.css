@@ -163,7 +163,7 @@
 .club_logo {
   width: 70px; /* 🔹 더 작은 아이콘처럼 */
   height: 70px;
-  border-radius: 8px;
+  /* border-radius: 8px; */
   object-fit: cover;
   flex-shrink: 0;
 }

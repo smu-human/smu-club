@@ -374,7 +374,7 @@ export default function ClubManage() {
               onChange={(e) => set_deadline(e.target.value)}
             />
 
-            <label className="field_label" htmlFor="clubRoom">
+            {/* <label className="field_label" htmlFor="clubRoom">
               동아리방
             </label>
             <input
@@ -383,7 +383,7 @@ export default function ClubManage() {
               type="text"
               value={club_room}
               onChange={(e) => set_club_room(e.target.value)}
-            />
+            /> */}
           </div>
         </section>
 

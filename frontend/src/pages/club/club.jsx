@@ -1,4 +1,5 @@
-// src/pages/club/club.jsx (전체)
+// src/pages/club/club.jsx (부분 교체: "지원하기" 노출 조건에 모집 시작 여부 추가)
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
 import "../../styles/globals.css";
@@ -34,6 +35,12 @@ function get_id(obj) {
   return v === undefined || v === null ? null : String(v);
 }
 
+function as_time(v) {
+  if (!v) return null;
+  const t = Date.parse(String(v));
+  return Number.isFinite(t) ? t : null;
+}
+
 export default function ClubPage() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -56,12 +63,55 @@ export default function ClubPage() {
 
   const is_guest = useMemo(() => !is_logged_in(), []);
 
+  // ✅ 모집 시작 여부 판단 (API가 어떤 키로 주는지 모르니 여러 케이스 대응)
+  const is_recruitment_started = useMemo(() => {
+    if (!club) return false;
+
+    // 1) boolean 플래그가 있다면 그걸 최우선
+    const flags = [
+      club?.recruitingStarted,
+      club?.isRecruitingStarted,
+      club?.recruitStarted,
+      club?.isRecruitStarted,
+      club?.isRecruiting,
+      club?.recruitingOpen,
+    ];
+    for (const f of flags) {
+      if (typeof f === "boolean") return f;
+    }
+
+    // 2) 상태값이 있다면 OPEN일 때만 true
+    const status = String(
+      club?.recruitingStatus ?? club?.status ?? club?.recruitStatus ?? "",
+    ).toUpperCase();
+    if (status) {
+      if (status === "OPEN") return true;
+      if (status === "CLOSED") return false;
+      if (status === "UPCOMING") return false;
+      if (status === "PENDING") return false;
+      if (status === "WAITING") return false;
+    }
+
+    // 3) 시작일이 있다면 now >= start 일 때만 true
+    const start = as_time(
+      club?.recruitingStart ??
+        club?.recruitStart ??
+        club?.recruitStartAt ??
+        club?.recruitingStartAt,
+    );
+    if (start !== null) return Date.now() >= start;
+
+    // 4) 아무 정보도 없으면 "시작 안함"으로 처리 (안전)
+    return false;
+  }, [club]);
+
   const can_show_apply = useMemo(() => {
     if (is_guest) return false;
     if (is_owner) return false;
     if (is_applied) return false;
+    if (!is_recruitment_started) return false; // ✅ 추가
     return true;
-  }, [is_guest, is_owner, is_applied]);
+  }, [is_guest, is_owner, is_applied, is_recruitment_started]);
 
   useEffect(() => {
     const load_owner_and_applied = async () => {
@@ -188,14 +238,6 @@ export default function ClubPage() {
     if (idx !== activeIndex) setActiveIndex(idx);
   };
 
-  // const render_status = (status) => {
-  //   const s = status?.toUpperCase();
-  //   if (s === "OPEN") return "모집중";
-  //   // if (s === "UPCOMING") return "모집 예정";
-  //   if (s === "CLOSED") return "모집 마감";
-  //   return s || "-";
-  // };
-
   const handleApply = async () => {
     if (!can_show_apply) return;
 
@@ -310,6 +352,7 @@ export default function ClubPage() {
                   </>
                 )}
               </section>
+
               <section className="club_meta card">
                 <ul className="info_list">
                   <li>
@@ -320,28 +363,13 @@ export default function ClubPage() {
                     <span className="label">연락처</span>
                     <span className="val">{club.contact || "-"}</span>
                   </li>
-                  {/* <li>
-                    <span className="label">모집 시작</span>
-                    <span className="val">
-                      {fmt_date(club.recruitingStart)}
-                    </span>
-                  </li> */}
                   <li>
                     <span className="label">모집 마감</span>
                     <span className="val">{fmt_date(club.recruitingEnd)}</span>
                   </li>
-                  {/* <li>
-                    <span className="label">상태</span>
-                    <span className="val badge">
-                      {render_status(club.recruitingStatus)}
-                    </span>
-                  </li> */}
-                  <li>
-                    <span className="label">동아리방</span>
-                    <span className="val">{club.clubRoom || "-"}</span>
-                  </li>
                 </ul>
               </section>
+
               <section className="intro card">
                 <h2 className="section_title">동아리 소개</h2>
 
