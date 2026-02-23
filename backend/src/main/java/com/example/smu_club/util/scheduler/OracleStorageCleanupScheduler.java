@@ -1,6 +1,7 @@
 package com.example.smu_club.util.scheduler;
 
 import com.example.smu_club.answer.repository.AnswerRepository;
+import com.example.smu_club.club.repository.ClubImageRepository;
 import com.example.smu_club.util.discord.annotation.DiscordAlert;
 import com.example.smu_club.util.oci.OciStorageService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.Set;
 public class OracleStorageCleanupScheduler {
     private final OciStorageService ociStorageService;
     private final AnswerRepository answerRepository;
+    private final ClubImageRepository clubImageRepository;
 
     @Scheduled(cron = "0 0 3 * * *") // 매일 새벽 3시에 실행
     @DiscordAlert("Oracle Cloud Storage 고아 파일 정리 스케줄러")
@@ -39,7 +41,10 @@ public class OracleStorageCleanupScheduler {
             return;
         }
 
-        List<String> dbFileKeys = answerRepository.findAllFileKeys();
+        List<String> dbFileKeys = new ArrayList<>();
+        dbFileKeys.addAll(answerRepository.findAllFileKeys());
+        dbFileKeys.addAll(clubImageRepository.findAllFileKeys());
+
         Set<String> validKeys = new HashSet<>(dbFileKeys);
 
         int deleteCount = 0;
