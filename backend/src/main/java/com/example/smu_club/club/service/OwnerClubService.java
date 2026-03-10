@@ -25,6 +25,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -129,7 +131,10 @@ public class OwnerClubService {
         }
 
         // 새로운 이미지 URL 목록 생성
-        List<String> newFileKeys = request.getUploadedImageFileNames();
+        List<String> newFileKeys = request.getUploadedImageFileNames()
+                .stream()
+                .map(key -> URLDecoder.decode(key, StandardCharsets.UTF_8))
+                .toList();
         String newThumbnailKey = newFileKeys.isEmpty() ? null : newFileKeys.getFirst();
 
         List<ClubImage> existingImages = clubImageRepository.findAllByClubId(clubId);
@@ -147,7 +152,7 @@ public class OwnerClubService {
         }
         // 버려진 기존 파일들에 대해서 ACTIVE -> DELETED
         if (!keysToDelete.isEmpty()) {
-            fileMetadataService.updateStatus(newFileKeys, FileStatus.DELETED);
+            fileMetadataService.updateStatus(keysToDelete, FileStatus.DELETED);
         }
 
         club.updateInfo(request, newThumbnailKey);
