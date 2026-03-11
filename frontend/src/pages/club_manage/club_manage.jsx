@@ -69,29 +69,27 @@ export default function ClubManage() {
   const [club_one_line, set_club_one_line] = useState("");
   const [leader_name, set_leader_name] = useState("");
   const [phone, set_phone] = useState("");
-
   const [deadline, set_deadline] = useState("");
-
   const [club_room, set_club_room] = useState("");
 
-  const [existing_images, set_existing_images] = useState([]); // object key string[]
-  const [new_images, set_new_images] = useState([]); // File[]
+  const [existing_images, set_existing_images] = useState([]);
+  const [new_images, set_new_images] = useState([]);
+
   const [is_loading, set_is_loading] = useState(true);
   const [is_saving, set_is_saving] = useState(false);
 
-  // ✅ 실시간 “실제 렌더” 프리뷰
+  const [editor_html, set_editor_html] = useState("");
   const [preview_html, set_preview_html] = useState("");
   const [show_live_preview, set_show_live_preview] = useState(true);
-
-  // ✅ 풀스크린(모달 느낌)
   const [is_editor_fullscreen, set_is_editor_fullscreen] = useState(false);
 
   const preview_timer_ref = useRef(null);
+
   const sync_preview_from_editor = () => {
     if (preview_timer_ref.current) clearTimeout(preview_timer_ref.current);
 
     preview_timer_ref.current = setTimeout(() => {
-      const html = editorRef.current?.getInstance().getHTML() || "";
+      const html = editorRef.current?.getInstance()?.getHTML() || "";
       set_preview_html(html);
     }, 200);
   };
@@ -100,30 +98,13 @@ export default function ClubManage() {
     const on_key = (e) => {
       if (e.key === "Escape") set_is_editor_fullscreen(false);
     };
+
     window.addEventListener("keydown", on_key);
-    return () => window.removeEventListener("keydown", on_key);
+
+    return () => {
+      window.removeEventListener("keydown", on_key);
+    };
   }, []);
-
-  const get_detail = async () => {
-    const detail = await fetch_owner_club_detail(clubId);
-
-    set_club_name(detail?.name ?? "");
-    set_club_one_line(detail?.title ?? "");
-    set_leader_name(detail?.president ?? "");
-    set_phone(detail?.contact ?? "");
-
-    set_deadline((detail?.recruitingEnd ?? "").slice(0, 10));
-
-    set_club_room(detail?.clubRoom ?? "");
-
-    set_existing_images(normalize_existing_images(detail));
-
-    const html = detail?.description ?? "";
-    const inst = editorRef.current?.getInstance();
-    if (inst) inst.setHTML(html || "");
-
-    set_preview_html(html || "");
-  };
 
   useEffect(() => {
     if (!clubId) {
@@ -133,7 +114,19 @@ export default function ClubManage() {
 
     const load = async () => {
       try {
-        await get_detail();
+        const detail = await fetch_owner_club_detail(clubId);
+
+        set_club_name(detail?.name ?? "");
+        set_club_one_line(detail?.title ?? "");
+        set_leader_name(detail?.president ?? "");
+        set_phone(detail?.contact ?? "");
+        set_deadline((detail?.recruitingEnd ?? "").slice(0, 10));
+        set_club_room(detail?.clubRoom ?? "");
+        set_existing_images(normalize_existing_images(detail));
+
+        const html = detail?.description ?? "";
+        set_editor_html(html);
+        set_preview_html(html);
       } catch (e) {
         alert(e?.message || "동아리 정보를 불러오지 못했습니다.");
         navigate("/mypage");
@@ -147,8 +140,7 @@ export default function ClubManage() {
     return () => {
       if (preview_timer_ref.current) clearTimeout(preview_timer_ref.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clubId]);
+  }, [clubId, navigate]);
 
   const on_pick_new_images = (e) => {
     const files = Array.from(e.target.files || []);
@@ -184,7 +176,7 @@ export default function ClubManage() {
         return;
       }
 
-      const intro_html = editorRef.current?.getInstance().getHTML() || "";
+      const intro_html = editorRef.current?.getInstance()?.getHTML() || "";
 
       const uploaded_new = new_images.length
         ? await owner_upload_images(new_images)
@@ -297,6 +289,7 @@ export default function ClubManage() {
             >
               이미지 추가
             </label>
+
             <input
               id="clubGalleryNew"
               type="file"
@@ -415,7 +408,7 @@ export default function ClubManage() {
                     set_is_editor_fullscreen((v) => !v);
                     setTimeout(() => {
                       const html =
-                        editorRef.current?.getInstance().getHTML() || "";
+                        editorRef.current?.getInstance()?.getHTML() || "";
                       set_preview_html(html);
                     }, 0);
                   }}
@@ -433,7 +426,9 @@ export default function ClubManage() {
             >
               <div className="editor_col">
                 <Editor
+                  key={editor_html}
                   ref={editorRef}
+                  initialValue={editor_html}
                   height={is_editor_fullscreen ? "74vh" : "520px"}
                   initialEditType="wysiwyg"
                   previewStyle="tab"
