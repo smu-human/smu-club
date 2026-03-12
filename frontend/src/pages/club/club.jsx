@@ -357,12 +357,18 @@ export default function ClubPage() {
                 <ul className="info_list">
                   <li>
                     <span className="label">회장</span>
-                    <span className="val">{club.president || "-"}</span>
+                    <span className="val">
+                      {is_guest ? "로그인 필요" : club.president || "-"}
+                    </span>
                   </li>
+
                   <li>
                     <span className="label">연락처</span>
-                    <span className="val">{club.contact || "-"}</span>
+                    <span className="val">
+                      {is_guest ? "로그인 필요" : club.contact || "-"}
+                    </span>
                   </li>
+
                   <li>
                     <span className="label">모집 마감</span>
                     <span className="val">{fmt_date(club.recruitingEnd)}</span>
