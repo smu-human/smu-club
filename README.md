@@ -2,7 +2,7 @@
 # SMU-CLUB :: 상명대학교 동아리 관리 및 홍보 플랫폼
 
 <div align="center">
-  <img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/ad111a4b-a9c0-4ca3-a9e5-31d7835a3aa0" />
+  <img width="700" height="400" alt="image" src="https://github.com/user-attachments/assets/ad111a4b-a9c0-4ca3-a9e5-31d7835a3aa0" />
 </div>
 <br/>
 
